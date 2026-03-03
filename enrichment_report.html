@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sillage — Enrichment Test Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #0f0f13; color: #e0d8d0; min-height: 100vh; padding: 40px 20px; }
+  h1 { font-size: 28px; font-weight: 700; color: #c9a84c; margin-bottom: 4px; }
+  .subtitle { color: #5a5a6a; font-size: 14px; margin-bottom: 30px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 32px; }
+  .stat { background: #1a1a22; border: 1px solid #2e2e38; border-radius: 10px;
+           padding: 16px 24px; text-align: center; }
+  .stat .num { font-size: 32px; font-weight: 700; }
+  .stat .lbl { font-size: 12px; color: #5a5a6a; text-transform: uppercase;
+                letter-spacing: 0.08em; margin-top: 4px; }
+  .stat.ok .num { color: #4ade80; }
+  .stat.bad .num { color: #f87171; }
+  .stat.tot .num { color: #c9a84c; }
+
+  .card { background: #1a1a22; border: 1px solid #2e2e38; border-radius: 12px;
+           padding: 24px; margin-bottom: 20px; max-width: 800px; }
+  .card.failed { border-color: #f8717144; }
+  .card.success { border-color: #4ade8033; }
+  .card-header { display: flex; justify-content: space-between;
+                  align-items: flex-start; margin-bottom: 20px; }
+  .brand { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #8a7060; margin-bottom: 4px; }
+  .fragname { font-size: 20px; font-weight: 600; color: #ede5da; }
+  .badge { padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .badge.success { background: #4ade8022; color: #4ade80; border: 1px solid #4ade8044; }
+  .badge.failed  { background: #f8717122; color: #f87171; border: 1px solid #f8717144; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .field { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .field label { color: #5a5a6a; min-width: 100px; }
+  .field span { color: #c8c0b8; }
+
+  .notes-section { background: #13131a; border-radius: 8px; padding: 16px;
+                    margin-bottom: 16px; }
+  .notes-row { display: flex; align-items: flex-start; gap: 10px;
+                margin-bottom: 10px; font-size: 14px; }
+  .notes-row:last-child { margin-bottom: 0; }
+  .notes-row label { color: #5a5a6a; min-width: 90px; padding-top: 2px; }
+  .notes-row div { flex: 1; }
+
+  .pill { display: inline-block; background: rgba(139,110,78,0.2);
+           border: 1px solid rgba(139,110,78,0.35); color: #c8a878;
+           padding: 2px 8px; border-radius: 4px; font-size: 12px;
+           margin: 2px 2px 2px 0; }
+
+  .url-row { font-size: 13px; color: #5a5a6a; margin-bottom: 12px; }
+  .url-row a { color: #c9a84c; text-decoration: none; word-break: break-all; }
+  .url-row a:hover { text-decoration: underline; }
+  .url-row label { margin: 0 8px; }
+
+  .flags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .flag { padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .flag.disc  { background: #f8717122; color: #f87171; }
+  .flag.tester{ background: #60a5fa22; color: #60a5fa; }
+  .flag.le    { background: #a78bfa22; color: #a78bfa; }
+  .flag.excl  { background: #fbbf2422; color: #fbbf24; }
+  .flag.cond  { background: #34d39922; color: #34d399; }
+
+  .hit  { color: #4ade80; }
+  .miss { color: #f87171; }
+  .empty { color: #3d3d50; }
+
+  .footer { margin-top: 32px; font-size: 12px; color: #3d3d50; max-width: 800px; }
+</style>
+</head>
+<body>
+  <h1>🌿 Sillage — Enrichment Test Report</h1>
+  <div class="subtitle">Generated March 02, 2026 at 01:42 PM · 5 fragrances tested</div>
+
+  <div class="summary">
+    <div class="stat tot"><div class="num">5</div><div class="lbl">Tested</div></div>
+    <div class="stat ok"><div class="num">5</div><div class="lbl">Enriched</div></div>
+    <div class="stat bad"><div class="num">0</div><div class="lbl">Failed / Pending</div></div>
+  </div>
+
+  
+        <div class="card success">
+            <div class="card-header">
+                <div>
+                    <div class="brand">4711</div>
+                    <div class="fragname">Acqua Colonia Intense Wakening Woods of Scandinavia</div>
+                </div>
+                <span class="badge success">✓ Enriched</span>
+            </div>
+
+            <div class="grid2">
+                <div class="field">
+                    <span class="miss">✗</span> <label>Perfumer</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Year</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Concentration</label>
+                    <span>EdC</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Gender</label>
+                    <span>Unisex</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Rating</label>
+                    <span><strong>4.0</strong> / 5.0</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Votes</label>
+                    <span>—</span>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Top Notes</label>
+                    <div><span class="pill">almond milk</span> <span class="pill">indian oud</span> <span class="pill">italian iris</span> <span class="pill">spruce</span> <span class="pill">toffee</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Heart Notes</label>
+                    <div><span class="pill">cistus incanus</span> <span class="pill">geranium</span> <span class="pill">lavender</span> <span class="pill">musk</span> <span class="pill">resins</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Base Notes</label>
+                    <div><span class="pill">amber</span> <span class="pill">leatherwood</span> <span class="pill">mushroom</span> <span class="pill">neroli</span> <span class="pill">petitgrain</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Accords</label>
+                    <div><span class="pill">gourmand</span> <span class="pill">oud</span> <span class="pill">citrus</span> <span class="pill">floral</span> <span class="pill">amber</span> <span class="pill">woody</span> <span class="pill">sweet</span> <span class="pill">rose</span></div>
+                </div>
+            </div>
+
+            <div class="url-row">
+                🔗 <label>Fragrantica URL</label> <span class="empty">—</span>
+            </div>
+
+            <!-- Sheet flags -->
+            <div class="flags">
+                
+                <span class="flag tester">Tester</span>
+                
+                
+                <span class="flag cond">no cap</span>
+            </div>
+        </div>
+        
+        <div class="card success">
+            <div class="card-header">
+                <div>
+                    <div class="brand">4711</div>
+                    <div class="fragname">Remix Green Oasis</div>
+                </div>
+                <span class="badge success">✓ Enriched</span>
+            </div>
+
+            <div class="grid2">
+                <div class="field">
+                    <span class="miss">✗</span> <label>Perfumer</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Year</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Concentration</label>
+                    <span>EdC</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Gender</label>
+                    <span>Unisex</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Rating</label>
+                    <span><strong>4.0</strong> / 5.0</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Votes</label>
+                    <span>—</span>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Top Notes</label>
+                    <div><span class="pill">N/A</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Heart Notes</label>
+                    <div><span class="pill">N/A</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Base Notes</label>
+                    <div><span class="pill">N/A</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Accords</label>
+                    <div><span class="pill">gourmand</span> <span class="pill">oud</span> <span class="pill">citrus</span> <span class="pill">floral</span> <span class="pill">amber</span> <span class="pill">woody</span> <span class="pill">sweet</span> <span class="pill">rose</span></div>
+                </div>
+            </div>
+
+            <div class="url-row">
+                🔗 <label>Fragrantica URL</label> <span class="empty">—</span>
+            </div>
+
+            <!-- Sheet flags -->
+            <div class="flags">
+                
+                
+                <span class="flag le">Limited Edition</span>
+                
+                
+            </div>
+        </div>
+        
+        <div class="card success">
+            <div class="card-header">
+                <div>
+                    <div class="brand">Acqua di Parma</div>
+                    <div class="fragname">Arancia di Capri</div>
+                </div>
+                <span class="badge success">✓ Enriched</span>
+            </div>
+
+            <div class="grid2">
+                <div class="field">
+                    <span class="miss">✗</span> <label>Perfumer</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Year</label>
+                    <span>1999</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Concentration</label>
+                    <span>EdT</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Gender</label>
+                    <span>Male</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Rating</label>
+                    <span><strong>3.79</strong> / 5.0</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Votes</label>
+                    <span>—</span>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Top Notes</label>
+                    <div><span class="pill">Orange</span> <span class="pill">Sicilian Mandarin</span> <span class="pill">Bergamot</span> <span class="pill">Lemon</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Heart Notes</label>
+                    <div><span class="pill">Petitgrain</span> <span class="pill">Cardamom</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Base Notes</label>
+                    <div><span class="pill">Caramel</span> <span class="pill">Musk</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Accords</label>
+                    <div><span class="pill">citrus</span> <span class="pill">gourmand</span></div>
+                </div>
+            </div>
+
+            <div class="url-row">
+                🔗 <label>Fragrantica URL</label> <span class="empty">—</span>
+            </div>
+
+            <!-- Sheet flags -->
+            <div class="flags">
+                
+                
+                
+                
+                
+            </div>
+        </div>
+        
+        <div class="card success">
+            <div class="card-header">
+                <div>
+                    <div class="brand">Acqua di Parma</div>
+                    <div class="fragname">Cipresso di Toscana</div>
+                </div>
+                <span class="badge success">✓ Enriched</span>
+            </div>
+
+            <div class="grid2">
+                <div class="field">
+                    <span class="miss">✗</span> <label>Perfumer</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Year</label>
+                    <span>2005</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Concentration</label>
+                    <span>EdT</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Gender</label>
+                    <span>Unisex</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Rating</label>
+                    <span><strong>3.96</strong> / 5.0</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Votes</label>
+                    <span>—</span>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Top Notes</label>
+                    <div><span class="pill">Rosemary</span> <span class="pill">Basil</span> <span class="pill">Sage</span> <span class="pill">Grapefruit</span> <span class="pill">Petitgrain</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Heart Notes</label>
+                    <div><span class="pill">Pine Tree</span> <span class="pill">Lavender</span> <span class="pill">Coriander</span> <span class="pill">Cardamom</span> <span class="pill">Jasmine</span> <span class="pill">Lily-of-the-Valley</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Base Notes</label>
+                    <div><span class="pill">Cypress</span> <span class="pill">Silver Pine</span> <span class="pill">Vetiver</span> <span class="pill">Oakmoss</span> <span class="pill">Cedar</span> <span class="pill">Patchouli</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Accords</label>
+                    <div><span class="pill">aromatic</span> <span class="pill">woody</span> <span class="pill">fresh spicy</span> <span class="pill">green</span> <span class="pill">herbal</span></div>
+                </div>
+            </div>
+
+            <div class="url-row">
+                🔗 <label>Fragrantica URL</label> <span class="empty">—</span>
+            </div>
+
+            <!-- Sheet flags -->
+            <div class="flags">
+                <span class="flag disc">Discontinued</span>
+                
+                
+                
+                
+            </div>
+        </div>
+        
+        <div class="card success">
+            <div class="card-header">
+                <div>
+                    <div class="brand">Acqua di Parma</div>
+                    <div class="fragname">Bergamotto di Calabria</div>
+                </div>
+                <span class="badge success">✓ Enriched</span>
+            </div>
+
+            <div class="grid2">
+                <div class="field">
+                    <span class="miss">✗</span> <label>Perfumer</label>
+                    <span>—</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Year</label>
+                    <span>2010</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Concentration</label>
+                    <span>EdT</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Gender</label>
+                    <span>Unisex</span>
+                </div>
+                <div class="field">
+                    <span class="hit">✓</span> <label>Rating</label>
+                    <span><strong>4.06</strong> / 5.0</span>
+                </div>
+                <div class="field">
+                    <span class="miss">✗</span> <label>Votes</label>
+                    <span>—</span>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Top Notes</label>
+                    <div><span class="pill">Bergamot</span> <span class="pill">Citron</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Heart Notes</label>
+                    <div><span class="pill">Ginger</span> <span class="pill">Cedar</span> <span class="pill">Flowers</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Base Notes</label>
+                    <div><span class="pill">Vetyver</span> <span class="pill">Musk</span> <span class="pill">Benzoin</span></div>
+                </div>
+                <div class="notes-row">
+                    <span class="hit">✓</span>
+                    <label>Accords</label>
+                    <div><span class="pill">citrus</span> <span class="pill">woody</span> <span class="pill">aromatic</span> <span class="pill">fresh spicy</span> <span class="pill">warm spicy</span></div>
+                </div>
+            </div>
+
+            <div class="url-row">
+                🔗 <label>Fragrantica URL</label> <span class="empty">—</span>
+            </div>
+
+            <!-- Sheet flags -->
+            <div class="flags">
+                
+                
+                
+                
+                
+            </div>
+        </div>
+        
+
+  <div class="footer">
+    ✓ = data found &nbsp;|&nbsp; ✗ = not found &nbsp;|&nbsp;
+    Flags (Discontinued, Tester, etc.) come from your Google Sheet Notes column.<br>
+    If fields show ✗, the Fragrantica page may need a parser adjustment — share this report and it'll be fixed.
+  </div>
+</body>
+</html>
