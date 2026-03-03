@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path("data/sillage.db")
+import os
+DB_PATH = Path(os.environ.get("DB_PATH", "data/sillage.db"))
 
 def get_db():
     con = sqlite3.connect(DB_PATH)
