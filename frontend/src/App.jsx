@@ -1,3 +1,4 @@
+// v2
 import { useState, useEffect, useCallback, useRef } from "react";
 import InsightsTab from "./InsightsTab.jsx";
 import WishlistTab from "./WishlistTab.jsx";
