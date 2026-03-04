@@ -1,7 +1,7 @@
 // InsightsTab.jsx — drop into frontend/src/
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:8000/api";
+const API = "https://olfactori-production.up.railway.app/api";
 
 const css = `
   .ins-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
