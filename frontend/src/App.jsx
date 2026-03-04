@@ -683,9 +683,11 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
     ["top_notes","middle_notes","base_notes","main_accords"].forEach(k => {
       payload[k] = form[k].split(",").map(s=>s.trim()).filter(Boolean);
     });
-    ["size_ml","year_released","personal_rating"].forEach(k => {
-      if (payload[k] !== "") payload[k] = parseFloat(payload[k]) || null;
-    });
+  ["size_ml","year_released","personal_rating"].forEach(k => {
+  payload[k] = payload[k] !== "" && payload[k] !== null && payload[k] !== undefined
+    ? parseFloat(payload[k]) || null
+    : null;
+});
     const res = await fetch(`${API}/fragrances/${frag.id}`, {
       method: "PATCH",
       headers: {"Content-Type":"application/json"},
