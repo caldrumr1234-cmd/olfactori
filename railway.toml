@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "python -c \"import os; os.remove('/data/sillage.db') if os.path.exists('/data/sillage.db') else None; print('cleared')\" && bash startup.sh"
+startCommand = "bash startup.sh"
