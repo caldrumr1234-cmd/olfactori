@@ -38,4 +38,5 @@ count = con.execute('SELECT COUNT(*) FROM fragrances').fetchone()[0]
 print('Fragrances:', count)
 "
 
+#!/bin/bash
 exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080}
