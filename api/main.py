@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings
 
-app = FastAPI(title="Olfactori API", version="1.0.0", redirect_slashes=False)
+app = FastAPI(title="Olfactori API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
