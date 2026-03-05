@@ -6,10 +6,6 @@ venv/
 .env
 *.env
 
-# Database
-data/sillage.db
-data/*.db
-
 # Node
 frontend/node_modules/
 frontend/dist/
