@@ -5,7 +5,7 @@ import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
 
 
-const API = "https://olfactori-production.up.railway.app/api/";
+const API = "https://olfactori-production.up.railway.app/api/"; // v3
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────
 const css = `
