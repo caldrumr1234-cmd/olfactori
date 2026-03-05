@@ -1,7 +1,7 @@
 // WishlistTab.jsx — drop into frontend/src/
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:8000/api";
+const API = "https://olfactori-production.up.railway.app/api";
 
 const css = `
   .wl-grid {
