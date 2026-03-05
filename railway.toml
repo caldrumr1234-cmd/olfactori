@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "rm -f /data/sillage.db && bash startup.sh"
+startCommand = "bash startup.sh"
