@@ -28,3 +28,10 @@ app.include_router(settings.router,   prefix="/api/settings",   tags=["settings"
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": "Olfactori"}
+    @app.get("/api/debug")
+def debug():
+    import os
+    db = os.environ.get("DB_PATH", "not set")
+    exists = os.path.exists(db)
+    size = os.path.getsize(db) if exists else 0
+    return {"db_path": db, "exists": exists, "size": size}
