@@ -12,7 +12,7 @@ class WearEntry(BaseModel):
     fragrance_id: int
     worn_date:    str  # YYYY-MM-DD
 
-@router.get("/")
+@router.get("")
 def get_wear_log(db = Depends(get_db)):
     rows = db.execute("""
         SELECT w.*, f.brand, f.name, f.fragella_image_url, f.custom_image_url
@@ -21,7 +21,7 @@ def get_wear_log(db = Depends(get_db)):
     """).fetchall()
     return [dict(r) for r in rows]
 
-@router.post("/")
+@router.post("")
 def log_wear(entry: WearEntry, db = Depends(get_db)):
     row = db.execute("SELECT id FROM fragrances WHERE id=?", (entry.fragrance_id,)).fetchone()
     if not row:

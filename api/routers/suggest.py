@@ -9,7 +9,7 @@ from api.database import get_db, row_to_dict
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 def suggest_fragrance(
     occasion: Optional[str] = Query(None),   # casual / work / evening / date / gym / special
     lat:      Optional[float]= Query(None),

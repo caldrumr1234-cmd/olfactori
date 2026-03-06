@@ -20,14 +20,14 @@ class WishlistItem(BaseModel):
     fragrantica_url: Optional[str]   = None
     image_url:       Optional[str]   = None
 
-@router.get("/")
+@router.get("")
 def get_wishlist(db = Depends(get_db)):
     rows = db.execute(
         "SELECT * FROM wishlist WHERE is_purchased=0 ORDER BY priority ASC, added_at DESC"
     ).fetchall()
     return rows_to_list(rows)
 
-@router.post("/")
+@router.post("")
 def add_to_wishlist(item: WishlistItem, db = Depends(get_db)):
     cur = db.execute("""
         INSERT INTO wishlist (brand, name, concentration, size_ml, notes,
