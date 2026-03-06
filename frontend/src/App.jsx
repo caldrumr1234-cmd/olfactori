@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import InsightsTab from "./InsightsTab.jsx";
 import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
+import { EnrichPanel } from "./EnrichPanel.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -188,7 +189,7 @@ const css = `
   }
   .card-img {
     width: 100%; aspect-ratio: 1;
-    background: var(--bg3);
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; position: relative;
   }
@@ -328,7 +329,7 @@ const css = `
   @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
   .drawer-hero {
     position: relative; height: 240px;
-    background: var(--bg3);
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
   }
@@ -903,7 +904,7 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
           </div>
 
           <div className="drawer-tabs">
-            {["info","notes","wear","edit"].map(t => (
+            {["info","notes","wear","edit","enrich"].map(t => (
               <button key={t} className={`drawer-tab ${tab===t?"active":""}`}
                 onClick={() => { setTab(t); setEditing(t==="edit"); }}>
                 {t.charAt(0).toUpperCase()+t.slice(1)}
@@ -1128,6 +1129,15 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
                 ))}
               </div>
             </div>
+          )}
+
+          {tab === "enrich" && (
+            <EnrichPanel
+              frag={frag}
+              API={API}
+              toast={toast}
+              onUpdate={onUpdate}
+            />
           )}
         </div>
 
