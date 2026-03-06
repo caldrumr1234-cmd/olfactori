@@ -19,7 +19,7 @@ def get_wear_log(db = Depends(get_db)):
         FROM wear_log w JOIN fragrances f ON f.id = w.fragrance_id
         ORDER BY w.worn_date DESC LIMIT 100
     """).fetchall()
-    return [dict(r) for r in rows]
+    return [{k: r[k] for k in r.keys()} for r in rows]
 
 @router.post("")
 def log_wear(entry: WearEntry, db = Depends(get_db)):

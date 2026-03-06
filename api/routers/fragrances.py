@@ -152,7 +152,7 @@ def get_fragrance(frag_id: int, db = Depends(get_db)):
     result = row_to_dict(row)
     # Attach wear log
     result["wear_log"] = [
-        dict(r) for r in db.execute(
+        {k: r[k] for k in r.keys()} for r in db.execute(
             "SELECT * FROM wear_log WHERE fragrance_id = ? ORDER BY worn_date DESC",
             (frag_id,)
         ).fetchall()

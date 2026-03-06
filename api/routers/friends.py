@@ -28,7 +28,7 @@ def list_invites(db = Depends(get_db)):
     rows = db.execute(
         "SELECT * FROM friend_invites ORDER BY created_at DESC"
     ).fetchall()
-    return [dict(r) for r in rows]
+    return [{k: r[k] for k in r.keys()} for r in rows]
 
 @router.post("/invites")
 def create_invite(data: InviteCreate, db = Depends(get_db)):
