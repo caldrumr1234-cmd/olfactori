@@ -237,11 +237,12 @@ export default function WardrobeTab({ onOpenFrag }) {
         const cur = d.current || {};
         const temp = cur.temperature_2m ?? 70;
         const code = cur.weathercode ?? 0;
-        let season = "Spring";
-        if (temp >= 75) season = "Summer";
-        else if (temp >= 55) season = "Spring";
-        else if (temp >= 40) season = "Fall";
-        else season = "Winter";
+        const month = new Date().getMonth(); // 0=Jan, 11=Dec
+        let season;
+        if (month >= 2 && month <= 4)       season = "Spring";  // Mar–May
+        else if (month >= 5 && month <= 7)  season = "Summer";  // Jun–Aug
+        else if (month >= 8 && month <= 10) season = "Fall";    // Sep–Nov
+        else                                season = "Winter";   // Dec–Feb
         setWeather({ temp_f: temp, code, season });
         setWeatherLoading(false);
       })
@@ -252,9 +253,12 @@ export default function WardrobeTab({ onOpenFrag }) {
   }, [coords]);
 
   const updateCity = () => {
-    // Geocode using Open-Meteo geocoding API
-    const q = encodeURIComponent(cityInput);
-    fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${q}&count=1`)
+    // Strip state abbreviations like "NY" or "CA" — Open-Meteo doesn't handle them
+    const cleaned = cityInput
+      .replace(/,?\s+[A-Z]{2}$/, "")  // remove ", NY" or " NY" at end
+      .trim();
+    const q = encodeURIComponent(cleaned);
+    fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${q}&count=5&country_code=US`)
       .then(r => r.json())
       .then(d => {
         const r = d.results?.[0];
