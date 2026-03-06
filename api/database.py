@@ -21,8 +21,9 @@ def get_db():
         con.close()
 
 def row_to_dict(row: sqlite3.Row) -> dict:
-    d = dict(row)
-    # Auto-parse JSON fields
+    if row is None:
+        return {}
+    d = {k: row[k] for k in row.keys()}
     json_fields = [
         "top_notes", "middle_notes", "base_notes",
         "main_accords", "season_tags", "occasion_tags",
