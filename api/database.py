@@ -14,6 +14,7 @@ def get_db():
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA foreign_keys=ON")
+    con = sqlite3.connect(DB_PATH, check_same_thread=False)
     try:
         yield con
     finally:
