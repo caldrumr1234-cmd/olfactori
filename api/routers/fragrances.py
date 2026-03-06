@@ -61,7 +61,7 @@ class FragranceCreate(BaseModel):
     personal_notes:Optional[str]   = None
 
 # ── LIST / SEARCH ─────────────────────────────────────────────
-@router.get("/")
+@@router.get("")
 def list_fragrances(
     search:       Optional[str]  = Query(None),
     brand:        Optional[str]  = Query(None),
