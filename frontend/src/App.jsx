@@ -4,7 +4,7 @@ import InsightsTab from "./InsightsTab.jsx";
 import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
 import ExploreTab from "./ExploreTab.jsx";
-import { EnrichPanel } from "./EnrichPanel.jsx";
+import WardrobeTab from "./WardrobeTab.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -189,10 +189,10 @@ const css = `
     box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   }
   .card-img {
-    width: 100%; aspect-ratio: 1;
+    width: 100%; height: 200px;
     background: var(--bg3);
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; position: relative;
+    overflow: hidden; position: relative; flex-shrink: 0;
   }
   .card-img img {
     width: 80%; height: 80%; object-fit: contain;
@@ -1350,7 +1350,6 @@ export default function Olfactori() {
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [activeFrag, setActiveFrag] = useState(null);
-  const [showSuggest, setShowSuggest] = useState(false);
   const [showAdd, setShowAdd]  = useState(false);
   const [toast, setToastMsg]   = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -1428,17 +1427,7 @@ export default function Olfactori() {
     ));
   };
 
-  const handleNoteFilter = (note) => {
-    setSearch(note);
-    setFilters({});
-    setTab("collection");
-    loadFragrances(note, {});
-  };
-
-  const handleOpenFrag = (frag) => {
-    setActiveFrag(frag);
-    setTab("collection");
-  };
+  // Alphabet jump
   const jumpToLetter = (letter) => {
     const target = frags.find(f => {
       const c = (f.brand || "").charAt(0).toUpperCase();
@@ -1452,7 +1441,6 @@ export default function Olfactori() {
   const tabs = [
     { id:"collection", label:"Collection" },
     { id:"insights",   label:"Insights"   },
-    { id:"explore",    label:"Explore"    },
     { id:"wishlist",   label:"Wishlist"   },
     { id:"wardrobe",   label:"Wardrobe"   },
     { id:"admin",      label:"Admin"      },
@@ -1476,9 +1464,6 @@ export default function Olfactori() {
             ))}
           </div>
           <div className="nav-right">
-            <button className="suggest-btn" onClick={() => setShowSuggest(true)}>
-              🎯 Suggest
-            </button>
             <button className="icon-btn" title="Add fragrance" onClick={() => setShowAdd(true)}>＋</button>
             <button className="icon-btn" title="Sample requests" style={{position:"relative"}} onClick={() => setTab("admin")}>
               📬
@@ -1582,16 +1567,9 @@ export default function Olfactori() {
           )}
 
           {tab === "insights" && <InsightsTab />}
-          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onOpenFrag={handleOpenFrag} />}
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
-          {tab === "wardrobe" && (
-            <div className="empty">
-              <span className="empty-icon">🌤️</span>
-              <span className="empty-text">Wardrobe Mode Coming Soon</span>
-              <span className="empty-sub">Weather-aware daily recommendations with full occasion + season picker.</span>
-            </div>
-          )}
+          {tab === "wardrobe" && <WardrobeTab onOpenFrag={handleOpenFrag} />}
 
           {tab === "admin" && <AdminTab toast={showToast} />}
         </main>
@@ -1606,11 +1584,6 @@ export default function Olfactori() {
             onWear={updateLastWorn}
             toast={showToast}
           />
-        )}
-
-        {/* SUGGEST MODAL */}
-        {showSuggest && (
-          <SuggestModal onClose={() => setShowSuggest(false)} toast={showToast} />
         )}
 
         {/* ADD MODAL */}
