@@ -1435,6 +1435,18 @@ export default function Olfactori() {
     ));
   };
 
+  const handleNoteFilter = (note) => {
+    setSearch(note);
+    setFilters({});
+    setTab("collection");
+    loadFragrances(note, {});
+  };
+
+  const handleOpenFrag = (frag) => {
+    setActiveFrag(frag);
+    setTab("collection");
+  };
+
   // Alphabet jump
   const jumpToLetter = (letter) => {
     const target = frags.find(f => {
