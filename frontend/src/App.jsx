@@ -1567,8 +1567,20 @@ export default function Olfactori() {
 
               {/* SHELF SELECT ACTION BAR */}
               {shelfSelectMode && (
-                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",marginBottom:4,borderBottom:"1px solid var(--border)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",marginBottom:4,borderBottom:"1px solid var(--border)",flexWrap:"wrap"}}>
                   <span style={{fontSize:12,color:"var(--gold)"}}>🗄 Shelf mode — {shelfSelected.size} selected</span>
+                  <button
+                    style={{background:"none",border:"1px solid var(--border)",borderRadius:8,color:"var(--text3)",padding:"5px 12px",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s"}}
+                    onClick={() => {
+                      const allIds = frags.map(f => f.id);
+                      const allSelected = allIds.every(id => shelfSelected.has(id));
+                      if (allSelected) {
+                        setShelfSelected(new Set());
+                      } else {
+                        setShelfSelected(new Set(allIds));
+                      }
+                    }}
+                  >{frags.every(f => shelfSelected.has(f.id)) && frags.length > 0 ? "Deselect All" : "Select All"}</button>
                   <button
                     style={{marginLeft:"auto",background:"var(--gold)",border:"none",borderRadius:8,color:"#0c0c0f",padding:"6px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}
                     disabled={shelfSelected.size === 0}

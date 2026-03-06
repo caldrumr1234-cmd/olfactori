@@ -15,12 +15,14 @@ class UsedToHaveCreate(BaseModel):
     name: str
     reason: Optional[str] = None
     notes: Optional[str] = None
+    custom_image_url: Optional[str] = None
 
 class UsedToHaveUpdate(BaseModel):
     brand: Optional[str] = None
     name: Optional[str] = None
     reason: Optional[str] = None
     notes: Optional[str] = None
+    custom_image_url: Optional[str] = None
 
 def ensure_table(db):
     db.execute("""
@@ -30,6 +32,7 @@ def ensure_table(db):
             name TEXT NOT NULL,
             reason TEXT,
             notes TEXT,
+            custom_image_url TEXT,
             created_at TEXT DEFAULT (date('now'))
         )
     """)
@@ -52,8 +55,8 @@ def list_used_to_have(search: str = "", db = Depends(get_db)):
 def add_used_to_have(body: UsedToHaveCreate, db = Depends(get_db)):
     ensure_table(db)
     cur = db.execute(
-        "INSERT INTO used_to_have (brand, name, reason, notes) VALUES (?, ?, ?, ?)",
-        (body.brand, body.name, body.reason, body.notes)
+        "INSERT INTO used_to_have (brand, name, reason, notes, custom_image_url) VALUES (?, ?, ?, ?, ?)",
+        (body.brand, body.name, body.reason, body.notes, body.custom_image_url)
     )
     db.commit()
     row = db.execute("SELECT * FROM used_to_have WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -66,10 +69,11 @@ def update_used_to_have(item_id: int, body: UsedToHaveUpdate, db = Depends(get_d
     if not item:
         raise HTTPException(status_code=404, detail="Entry not found")
     fields, vals = [], []
-    if body.brand  is not None: fields.append("brand = ?");  vals.append(body.brand)
-    if body.name   is not None: fields.append("name = ?");   vals.append(body.name)
-    if body.reason is not None: fields.append("reason = ?"); vals.append(body.reason)
-    if body.notes  is not None: fields.append("notes = ?");  vals.append(body.notes)
+    if body.brand            is not None: fields.append("brand = ?");            vals.append(body.brand)
+    if body.name             is not None: fields.append("name = ?");             vals.append(body.name)
+    if body.reason           is not None: fields.append("reason = ?");           vals.append(body.reason)
+    if body.notes            is not None: fields.append("notes = ?");            vals.append(body.notes)
+    if body.custom_image_url is not None: fields.append("custom_image_url = ?"); vals.append(body.custom_image_url)
     if fields:
         vals.append(item_id)
         db.execute(f"UPDATE used_to_have SET {', '.join(fields)} WHERE id = ?", vals)
