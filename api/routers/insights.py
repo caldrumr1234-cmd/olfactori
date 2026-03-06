@@ -224,3 +224,57 @@ def recently_worn(limit: int = 10, db = Depends(get_db)):
         LIMIT ?
     """, (limit,)).fetchall()
     return {"fragrances": [{k: r[k] for k in r.keys()} for r in rows]}
+
+@router.get("/wear_trends")
+def wear_trends(year: int = None, db = Depends(get_db)):
+    """Brand, accord, and note trends from wear log for a given year."""
+    import datetime
+    if not year:
+        year = datetime.date.today().year
+
+    start = f"{year}-01-01"
+    end   = f"{year}-12-31"
+
+    # Top brands worn
+    top_brands = db.execute("""
+        SELECT f.brand, COUNT(*) as cnt
+        FROM wear_log w JOIN fragrances f ON f.id = w.fragrance_id
+        WHERE w.worn_date >= ? AND w.worn_date <= ?
+        GROUP BY f.brand ORDER BY cnt DESC LIMIT 10
+    """, (start, end)).fetchall()
+
+    # Top accords worn
+    top_accords = db.execute("""
+        SELECT fn.note_name, COUNT(*) as cnt
+        FROM wear_log w
+        JOIN fragrances f ON f.id = w.fragrance_id
+        JOIN fragrance_notes fn ON fn.fragrance_id = f.id
+        WHERE fn.note_position = 'accord'
+          AND w.worn_date >= ? AND w.worn_date <= ?
+        GROUP BY fn.note_name ORDER BY cnt DESC LIMIT 10
+    """, (start, end)).fetchall()
+
+    # Top notes worn (top + middle + base)
+    top_notes = db.execute("""
+        SELECT fn.note_name, COUNT(*) as cnt
+        FROM wear_log w
+        JOIN fragrances f ON f.id = w.fragrance_id
+        JOIN fragrance_notes fn ON fn.fragrance_id = f.id
+        WHERE fn.note_position IN ('top', 'middle', 'base')
+          AND w.worn_date >= ? AND w.worn_date <= ?
+        GROUP BY fn.note_name ORDER BY cnt DESC LIMIT 10
+    """, (start, end)).fetchall()
+
+    # Total wears for the year
+    total = db.execute("""
+        SELECT COUNT(*) FROM wear_log
+        WHERE worn_date >= ? AND worn_date <= ?
+    """, (start, end)).fetchone()[0]
+
+    return {
+        "year": year,
+        "total_wears": total,
+        "top_brands": [{k: r[k] for k in r.keys()} for r in top_brands],
+        "top_accords": [{k: r[k] for k in r.keys()} for r in top_accords],
+        "top_notes": [{k: r[k] for k in r.keys()} for r in top_notes],
+    }
