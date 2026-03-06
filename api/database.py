@@ -10,7 +10,6 @@ import os
 DB_PATH = Path(os.environ.get("DB_PATH", "data/sillage.db"))
 
 def get_db():
-    con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA foreign_keys=ON")
