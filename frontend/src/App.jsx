@@ -197,7 +197,6 @@ const css = `
     width: 80%; height: 80%; object-fit: contain;
     transition: transform 0.3s, opacity 0.4s;
     opacity: 0;
-    mix-blend-mode: luminosity;
   }
   .card-img img.loaded { opacity: 1; }
   .card:hover .card-img img { transform: scale(1.05); }
@@ -337,7 +336,6 @@ const css = `
   .drawer-hero img {
     height: 85%; width: auto; max-width: 80%;
     object-fit: contain; opacity: 0; transition: opacity 0.4s;
-    mix-blend-mode: luminosity;
   }
   .drawer-hero img.loaded { opacity: 1; }
   .drawer-hero-placeholder { font-size: 72px; opacity: 0.1; }
