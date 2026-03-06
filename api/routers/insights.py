@@ -171,3 +171,56 @@ def seasonal_balance(db = Depends(get_db)):
         """, (f"%{season}%",)).fetchone()[0]
         result[season] = {"count": count, "pct": round(count/total*100, 1) if total else 0}
     return {"seasons": result, "total": total}
+
+@router.get("/wear_heatmap")
+def wear_heatmap(year: int = None, db = Depends(get_db)):
+    """Daily wear counts for a given year — for GitHub-style heatmap."""
+    import datetime
+    if not year:
+        year = datetime.date.today().year
+    rows = db.execute("""
+        SELECT worn_date, COUNT(*) as cnt
+        FROM wear_log
+        WHERE worn_date >= ? AND worn_date <= ?
+        GROUP BY worn_date
+        ORDER BY worn_date
+    """, (f"{year}-01-01", f"{year}-12-31")).fetchall()
+    return {
+        "year": year,
+        "days": [{k: r[k] for k in r.keys()} for r in rows]
+    }
+
+@router.get("/wear_by_month")
+def wear_by_month(year: int = None, db = Depends(get_db)):
+    """Wear counts grouped by month for a given year."""
+    import datetime
+    if not year:
+        year = datetime.date.today().year
+    rows = db.execute("""
+        SELECT strftime('%m', worn_date) as month, COUNT(*) as cnt
+        FROM wear_log
+        WHERE worn_date >= ? AND worn_date <= ?
+        GROUP BY month
+        ORDER BY month
+    """, (f"{year}-01-01", f"{year}-12-31")).fetchall()
+    months = {str(i).zfill(2): 0 for i in range(1, 13)}
+    for r in rows:
+        months[r["month"]] = r["cnt"]
+    return {
+        "year": year,
+        "months": [{"month": k, "cnt": v} for k, v in months.items()]
+    }
+
+@router.get("/recently_worn")
+def recently_worn(limit: int = 10, db = Depends(get_db)):
+    """Most recently worn fragrances."""
+    rows = db.execute("""
+        SELECT f.id, f.brand, f.name, f.last_worn_date,
+               f.fragella_image_url, f.custom_image_url,
+               f.main_accords, f.concentration
+        FROM fragrances f
+        WHERE f.last_worn_date IS NOT NULL
+        ORDER BY f.last_worn_date DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+    return {"fragrances": [{k: r[k] for k in r.keys()} for r in rows]}

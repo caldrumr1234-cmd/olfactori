@@ -42,3 +42,21 @@ def delete_wear(entry_id: int, db = Depends(get_db)):
     db.execute("DELETE FROM wear_log WHERE id=?", (entry_id,))
     db.commit()
     return {"deleted": True}
+
+@router.get("/full")
+def get_full_wear_log(offset: int = 0, limit: int = 50, db = Depends(get_db)):
+    """Paginated full wear log."""
+    total = db.execute("SELECT COUNT(*) FROM wear_log").fetchone()[0]
+    rows = db.execute("""
+        SELECT w.id, w.worn_date, f.id as fragrance_id, f.brand, f.name,
+               f.fragella_image_url, f.custom_image_url
+        FROM wear_log w JOIN fragrances f ON f.id = w.fragrance_id
+        ORDER BY w.worn_date DESC
+        LIMIT ? OFFSET ?
+    """, (limit, offset)).fetchall()
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "entries": [{k: r[k] for k in r.keys()} for r in rows]
+    }
