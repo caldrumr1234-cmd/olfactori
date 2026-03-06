@@ -4,22 +4,21 @@ api/database.py — SQLite connection and helpers
 import sqlite3
 import json
 from pathlib import Path
-from typing import Any
-
 import os
+
 DB_PATH = Path(os.environ.get("DB_PATH", "data/sillage.db"))
 
 def get_db():
+    con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA foreign_keys=ON")
-    con = sqlite3.connect(DB_PATH, check_same_thread=False)
     try:
         yield con
     finally:
         con.close()
 
-def row_to_dict(row: sqlite3.Row) -> dict:
+def row_to_dict(row) -> dict:
     if row is None:
         return {}
     d = {k: row[k] for k in row.keys()}
