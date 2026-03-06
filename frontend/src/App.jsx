@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import InsightsTab from "./InsightsTab.jsx";
 import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
+import ExploreTab from "./ExploreTab.jsx";
 import { EnrichPanel } from "./EnrichPanel.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
@@ -1427,7 +1428,17 @@ export default function Olfactori() {
     ));
   };
 
-  // Alphabet jump
+  const handleNoteFilter = (note) => {
+    setSearch(note);
+    setFilters({});
+    setTab("collection");
+    loadFragrances(note, {});
+  };
+
+  const handleOpenFrag = (frag) => {
+    setActiveFrag(frag);
+    setTab("collection");
+  };
   const jumpToLetter = (letter) => {
     const target = frags.find(f => {
       const c = (f.brand || "").charAt(0).toUpperCase();
@@ -1441,6 +1452,7 @@ export default function Olfactori() {
   const tabs = [
     { id:"collection", label:"Collection" },
     { id:"insights",   label:"Insights"   },
+    { id:"explore",    label:"Explore"    },
     { id:"wishlist",   label:"Wishlist"   },
     { id:"wardrobe",   label:"Wardrobe"   },
     { id:"admin",      label:"Admin"      },
@@ -1570,6 +1582,7 @@ export default function Olfactori() {
           )}
 
           {tab === "insights" && <InsightsTab />}
+          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onOpenFrag={handleOpenFrag} />}
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
           {tab === "wardrobe" && (
