@@ -325,31 +325,57 @@ def _normalize_fragella(data: dict) -> dict:
 # ── FRAGRANTICA SEARCH ────────────────────────────────────────
 def _find_fragrantica_url(brand: str, name: str) -> str | None:
     """
-    Use Google to find the Fragrantica URL for a fragrance.
-    Google handles spelling/accent variations far better than Fragrantica's own search.
+    Search Fragrantica directly and return the best matching perfume URL.
+    Tries multiple search strategies for robustness.
     """
     try:
         from bs4 import BeautifulSoup
-        query = f"site:fragrantica.com/perfume {brand} {name}".replace(" ", "+")
-        google_url = f"https://www.google.com/search?q={query}&num=5"
-        with httpx.Client() as client:
-            resp = _fetch(client, google_url)
-        if not resp:
-            return None
-        soup = BeautifulSoup(resp.text, "lxml")
         target = f"{brand} {name}".lower()
-        # Google results contain fragrantica.com/perfume/ links
-        for a in soup.select("a[href]"):
-            href = a.get("href", "")
-            # Google wraps links in /url?q=
-            if "/url?q=" in href:
-                href = href.split("/url?q=")[1].split("&")[0]
-            if "fragrantica.com/perfume/" in href and re.search(r"-\d+\.html", href):
-                # Fuzzy check the URL path against our target
+
+        def search_ft(query: str):
+            encoded = query.replace(" ", "+")
+            url = f"https://www.fragrantica.com/search/?query={encoded}"
+            with httpx.Client() as client:
+                resp = _fetch(client, url)
+            if not resp:
+                return None
+            soup = BeautifulSoup(resp.text, "lxml")
+            best_url, best_score = None, 0
+            for a in soup.select("a[href*='/perfume/']"):
+                href = a.get("href", "")
+                if not href.startswith("http"):
+                    href = "https://www.fragrantica.com" + href
+                # Must have numeric ID pattern
+                if not re.search(r"-\d+\.html$", href):
+                    continue
+                text = a.get_text(strip=True).lower()
                 path = href.split("/perfume/")[-1].replace("-", " ").replace(".html", "").lower()
-                score = fuzz.token_set_ratio(target, path)
-                if score >= 45:  # lower threshold since URL slugs drop accents
-                    return href
+                score = max(
+                    fuzz.token_set_ratio(target, text),
+                    fuzz.token_set_ratio(target, path),
+                )
+                if score > best_score:
+                    best_score = score
+                    best_url = href
+            return best_url if best_score >= 45 else None
+
+        # Strategy 1: full "brand name"
+        result = search_ft(f"{brand} {name}")
+        if result:
+            return result
+
+        # Strategy 2: name only (helps when brand name has accents/variations)
+        result = search_ft(name)
+        if result:
+            return result
+
+        # Strategy 3: first word of brand + name
+        short_brand = brand.split()[0] if brand else ""
+        if short_brand and short_brand.lower() != brand.lower():
+            result = search_ft(f"{short_brand} {name}")
+            if result:
+                return result
+
         return None
     except Exception:
         return None

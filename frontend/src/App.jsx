@@ -57,9 +57,9 @@ const css = `
     height: 56px;
   }
   .nav-logo {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 6px;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 300; letter-spacing: 0.04em;
+    font-size: 22px; font-weight: 300;
     color: var(--gold); text-transform: uppercase;
     margin-right: 32px; flex-shrink: 0;
   }
@@ -1453,8 +1453,7 @@ export default function Olfactori() {
         {/* NAV */}
         <nav className="nav">
           <div className="nav-logo">
-            <LogoIcon />
-            Olf<span>actori</span>
+            <LogoIcon /><span style={{letterSpacing:"0.04em"}}>Olf<i>actori</i></span>
           </div>
           <div className="nav-tabs">
             {tabs.map(t => (
