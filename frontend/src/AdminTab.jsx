@@ -1,7 +1,7 @@
 // AdminTab.jsx — drop into frontend/src/
 import { useState, useEffect } from "react";
 
-const API = "https://olfactori-production.up.railway.app/api/";
+const API = "https://olfactori-production.up.railway.app/api";
 
 const css = `
   .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }

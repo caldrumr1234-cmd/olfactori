@@ -1,7 +1,7 @@
 // WishlistTab.jsx — drop into frontend/src/
 import { useState, useEffect } from "react";
 
-const API = "https://olfactori-production.up.railway.app/api/";
+const API = "https://olfactori-production.up.railway.app/api";
 
 const css = `
   .wl-grid {
@@ -163,7 +163,7 @@ export default function WishlistTab({ toast }) {
   useEffect(() => {
     fetch(`${API}/wishlist`)
       .then(r => r.json())
-      .then(data => { setItems(data); setLoading(false); })
+      .then(data => { setItems(Array.isArray(data) ? data : data.items || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
