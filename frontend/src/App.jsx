@@ -692,7 +692,7 @@ function Stars({ value, onChange }) {
 
 // ── FRAGRANCE CARD ────────────────────────────────────────────
 function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
-  const accords = parseArr(frag.main_accords).slice(0, 3);
+  const accords = parseArr(frag.main_accords);
   const img     = imgSrc(frag);
   const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -727,18 +727,14 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
       <div className="card-body">
         <div className="card-brand">{frag.brand}</div>
         <div className="card-name">{frag.name}</div>
-        {accords.length > 0 && (
-          <div className="card-pills">
-            {accords.map(a => <span key={a} className="pill accord">{a}</span>)}
-          </div>
-        )}
-        <div className="card-flags">
-          {frag.is_tester         === 1 && <span className="flag tester">Tester</span>}
-          {frag.is_discontinued   === 1 && <span className="flag disc">Disc.</span>}
-          {frag.is_limited_edition=== 1 && <span className="flag limited">LE</span>}
-          {frag.is_exclusive      === 1 && <span className="flag exclusive">Excl.</span>}
+        <div className="card-meta">
+          {frag.is_tester          === 1 && <span className="flag tester">Tester</span>}
+          {frag.is_discontinued    === 1 && <span className="flag disc">Disc.</span>}
+          {frag.is_limited_edition === 1 && <span className="flag limited">LE</span>}
+          {frag.is_exclusive       === 1 && <span className="flag exclusive">Excl.</span>}
+          {frag.concentration && <span className="flag" style={{background:"var(--bg3)",color:"var(--text3)",border:"1px solid var(--border)"}}>{frag.concentration}</span>}
+          {accords.map(a => <span key={a} className="pill accord">{a}</span>)}
         </div>
-        {frag.concentration && <div className="card-conc">{frag.concentration}</div>}
       </div>
     </div>
   );
