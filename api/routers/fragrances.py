@@ -870,8 +870,9 @@ def enrich_image_only(frag_id: int, db = Depends(get_db)):
 @router.post("/{frag_id}/enrich/image/preview")
 def enrich_image_preview(frag_id: int, db = Depends(get_db)):
     """
-    Search for the best image candidate and return it for user confirmation.
-    Does NOT save anything — frontend shows preview and user confirms.
+    Return image candidate for user confirmation without saving anything.
+    If fragrantica_url is already stored, extract ID and build fimgs URL instantly.
+    Otherwise fall back to Fragella image.
     """
     row = db.execute("SELECT * FROM fragrances WHERE id = ?", (frag_id,)).fetchone()
     if not row:
@@ -880,11 +881,35 @@ def enrich_image_preview(frag_id: int, db = Depends(get_db)):
         raise HTTPException(400, "Enrichment is locked for this fragrance")
 
     frag = row_to_dict(row)
-    result = _fetch_best_image(frag["brand"], frag["name"], frag.get("fragrantica_url"))
+    ft_url = frag.get("fragrantica_url")
+
+    # Fast path — Fragrantica URL already stored, extract ID and build CDN URL directly
+    if ft_url:
+        ft_id = _fragrantica_id_from_url(ft_url)
+        if ft_id:
+            return {
+                "url":             _fimgs_url(ft_id),
+                "source":          "fragrantica",
+                "fragrantica_url": ft_url,
+            }
+
+    # Slow path — no Fragrantica URL stored, fall back to Fragella only
+    # (Fragrantica search disabled — too unreliable on Railway)
+    fe_data = _fetch_fragella(frag["brand"], frag["name"])
+    if fe_data:
+        norm = _normalize_fragella(fe_data)
+        img  = norm.get("fragella_image_url")
+        if img:
+            return {
+                "url":             img,
+                "source":          "fragella",
+                "fragrantica_url": None,
+            }
+
     return {
-        "url":             result.get("url"),
-        "source":          result.get("source"),
-        "fragrantica_url": result.get("fragrantica_url") or frag.get("fragrantica_url"),
+        "url":             None,
+        "source":          "manual_needed",
+        "fragrantica_url": None,
     }
 
 
