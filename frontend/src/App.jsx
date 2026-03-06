@@ -5,6 +5,7 @@ import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
 import ExploreTab from "./ExploreTab.jsx";
 import WardrobeTab from "./WardrobeTab.jsx";
+import { EnrichPanel } from "./EnrichPanel.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
