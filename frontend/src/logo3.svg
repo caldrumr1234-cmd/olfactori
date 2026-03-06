@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Neck -->
+  <rect x="19" y="6" width="10" height="5" rx="1.5" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+  <!-- Collar -->
+  <rect x="16" y="11" width="16" height="3" rx="1" fill="#c9a84c"/>
+  <!-- Body -->
+  <rect x="11" y="14" width="26" height="28" rx="3" fill="none" stroke="#c9a84c" stroke-width="1.8"/>
+  <!-- Inner body highlight -->
+  <rect x="14" y="17" width="20" height="22" rx="2" fill="none" stroke="rgba(201,168,76,0.25)" stroke-width="1"/>
+  <!-- Cap nub -->
+  <rect x="21" y="3" width="6" height="3" rx="1" fill="#c9a84c"/>
+  <!-- Horizontal rule inside body -->
+  <line x1="14" y1="30" x2="34" y2="30" stroke="rgba(201,168,76,0.3)" stroke-width="0.8"/>
+</svg>

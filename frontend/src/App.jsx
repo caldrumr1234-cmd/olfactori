@@ -1,11 +1,10 @@
-// v2
+// v3 — UI polish + logo + alphabet nav
 import { useState, useEffect, useCallback, useRef } from "react";
 import InsightsTab from "./InsightsTab.jsx";
 import WishlistTab from "./WishlistTab.jsx";
 import AdminTab from "./AdminTab.jsx";
 
-
-const API = "https://olfactori-production.up.railway.app/api"; // v3
+const API = "https://olfactori-production.up.railway.app/api";
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────
 const css = `
@@ -57,22 +56,30 @@ const css = `
     height: 56px;
   }
   .nav-logo {
+    display: flex; align-items: center; gap: 10px;
     font-family: 'Cormorant Garamond', serif;
     font-size: 22px; font-weight: 300; letter-spacing: 0.12em;
     color: var(--gold); text-transform: uppercase;
     margin-right: 32px; flex-shrink: 0;
   }
   .nav-logo span { font-style: italic; }
-  .nav-tabs { display: flex; gap: 2px; flex: 1; }
+  .nav-logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+  .nav-tabs { display: flex; gap: 2px; flex: 1; position: relative; }
   .nav-tab {
     background: none; border: none; color: var(--text2);
     font-family: 'DM Sans', sans-serif; font-size: 13px;
     padding: 8px 14px; border-radius: 6px; cursor: pointer;
-    transition: all 0.15s; white-space: nowrap;
-    letter-spacing: 0.03em;
+    transition: color 0.15s; white-space: nowrap;
+    letter-spacing: 0.03em; position: relative;
   }
-  .nav-tab:hover { color: var(--text); background: var(--bg3); }
-  .nav-tab.active { color: var(--gold); background: var(--gold-dim); }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--gold); }
+  .nav-tab.active::after {
+    content: ''; position: absolute; bottom: -9px; left: 14px; right: 14px;
+    height: 2px; background: var(--gold); border-radius: 1px;
+    animation: slideUnderline 0.2s ease;
+  }
+  @keyframes slideUnderline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .nav-right { display: flex; gap: 8px; align-items: center; margin-left: auto; }
   .suggest-btn {
     background: var(--gold); color: #0c0c0f;
@@ -84,11 +91,11 @@ const css = `
   .suggest-btn:hover { background: var(--gold2); transform: translateY(-1px); }
   .icon-btn {
     background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2); border-radius: 8px;
+    color: var(--text3); border-radius: 8px;
     width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all 0.15s; font-size: 16px;
   }
-  .icon-btn:hover { color: var(--text); border-color: var(--border2); }
+  .icon-btn:hover { color: var(--text2); border-color: var(--border2); }
   .badge {
     background: var(--red); color: white; border-radius: 10px;
     font-size: 10px; padding: 2px 5px; margin-left: -6px; margin-top: -10px;
@@ -122,12 +129,12 @@ const css = `
   .search-input::placeholder { color: var(--text3); }
   .filter-select {
     background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); color: var(--text);
+    border-radius: var(--radius); color: var(--text2);
     padding: 9px 12px; font-size: 13px;
     font-family: 'DM Sans', sans-serif; cursor: pointer;
     outline: none; transition: border-color 0.15s;
   }
-  .filter-select:focus { border-color: var(--gold); }
+  .filter-select:focus { border-color: var(--border2); }
   .view-toggle {
     display: flex; gap: 2px; background: var(--bg2);
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -138,10 +145,30 @@ const css = `
     padding: 5px 9px; border-radius: 7px; cursor: pointer;
     transition: all 0.15s; font-size: 15px;
   }
-  .view-btn.active { background: var(--bg3); color: var(--gold); }
+  .view-btn.active { background: var(--bg3); color: var(--text2); }
   .count-badge {
     color: var(--text3); font-size: 13px; white-space: nowrap;
   }
+
+  /* ALPHABET NAV */
+  .alpha-nav {
+    display: flex; gap: 2px; flex-wrap: wrap;
+    margin-bottom: 16px; padding: 8px 12px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .alpha-btn {
+    background: none; border: none; color: var(--text3);
+    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    width: 24px; height: 24px; border-radius: 4px;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500;
+  }
+  .alpha-btn:hover { color: var(--text2); background: var(--bg3); }
+  .alpha-btn.active { color: var(--gold); background: var(--gold-dim); }
+  .alpha-btn.disabled { color: var(--border2); cursor: default; }
+  .alpha-btn.disabled:hover { background: none; color: var(--border2); }
 
   /* GRID */
   .grid {
@@ -152,12 +179,12 @@ const css = `
   .card {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); overflow: hidden;
-    cursor: pointer; transition: all 0.2s;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     position: relative;
   }
   .card:hover {
-    border-color: var(--border2); transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    border-color: var(--border2); transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   }
   .card-img {
     width: 100%; aspect-ratio: 1;
@@ -167,12 +194,37 @@ const css = `
   }
   .card-img img {
     width: 80%; height: 80%; object-fit: contain;
-    transition: transform 0.3s;
+    transition: transform 0.3s, opacity 0.4s;
+    opacity: 0;
   }
+  .card-img img.loaded { opacity: 1; }
   .card:hover .card-img img { transform: scale(1.05); }
   .card-img-placeholder {
     font-size: 36px; opacity: 0.2;
   }
+
+  /* SKELETON LOADER */
+  @keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg3) 25%, var(--border) 50%, var(--bg3) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+  .skeleton-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .skeleton-img { width: 100%; aspect-ratio: 1; }
+  .skeleton-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .skeleton-line { height: 10px; }
+  .skeleton-line.short { width: 60%; }
+  .skeleton-line.long { width: 90%; }
+  .skeleton-line.med { width: 75%; }
+
   .card-body { padding: 12px; }
   .card-brand {
     font-size: 10px; color: var(--text3); letter-spacing: 0.1em;
@@ -187,9 +239,26 @@ const css = `
   .pill {
     font-size: 10px; padding: 2px 7px; border-radius: 12px;
     background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2); white-space: nowrap;
+    color: var(--text3); white-space: nowrap;
+    transition: transform 0.15s;
   }
-  .pill.accord { border-color: rgba(201,168,76,0.3); color: var(--gold); }
+  .pill:hover { transform: scale(1.05); }
+  .pill.accord {
+    border-color: rgba(201,168,76,0.3); color: var(--gold);
+    background: var(--gold-dim);
+  }
+  .note-tag {
+    font-size: 12px; padding: 3px 9px; border-radius: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2); transition: transform 0.15s;
+  }
+  .note-tag:hover { transform: scale(1.05); }
+  .accord-tag {
+    font-size: 12px; padding: 4px 10px; border-radius: 12px;
+    background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold); transition: transform 0.15s;
+  }
+  .accord-tag:hover { transform: scale(1.05); }
   .card-flags { display: flex; gap: 4px; flex-wrap: wrap; }
   .flag {
     font-size: 9px; padding: 2px 6px; border-radius: 4px;
@@ -265,8 +334,9 @@ const css = `
   }
   .drawer-hero img {
     height: 85%; width: auto; max-width: 80%;
-    object-fit: contain;
+    object-fit: contain; opacity: 0; transition: opacity 0.4s;
   }
+  .drawer-hero img.loaded { opacity: 1; }
   .drawer-hero-placeholder { font-size: 72px; opacity: 0.1; }
   .drawer-hero-overlay {
     position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
@@ -295,7 +365,10 @@ const css = `
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; margin-bottom: 20px;
   }
-  .meta-item { background: var(--bg3); border-radius: 8px; padding: 10px 14px; }
+  .meta-item {
+    background: var(--bg3); border-radius: 8px; padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
   .meta-label { font-size: 10px; color: var(--text3); letter-spacing: 0.08em;
                 text-transform: uppercase; margin-bottom: 3px; }
   .meta-value { font-size: 14px; color: var(--text); }
@@ -311,17 +384,7 @@ const css = `
     padding-top: 3px; flex-shrink: 0;
   }
   .notes-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-  .note-tag {
-    font-size: 12px; padding: 3px 9px; border-radius: 12px;
-    background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2);
-  }
   .accord-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-  .accord-tag {
-    font-size: 12px; padding: 4px 10px; border-radius: 12px;
-    background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3);
-    color: var(--gold);
-  }
   .rating-bars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
   .rating-row { display: flex; align-items: center; gap: 10px; }
   .rating-label { font-size: 12px; color: var(--text3); width: 80px; flex-shrink: 0; }
@@ -345,8 +408,11 @@ const css = `
   }
   .btn-primary { background: var(--gold); color: #0c0c0f; }
   .btn-primary:hover { background: var(--gold2); }
-  .btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-  .btn-secondary:hover { color: var(--text); border-color: var(--border2); }
+  .btn-secondary {
+    background: var(--bg3); color: var(--text3);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { color: var(--text2); border-color: var(--border2); }
   .btn-danger { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
   .btn-danger:hover { background: rgba(224,85,85,0.25); }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -377,10 +443,14 @@ const css = `
   .modal {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: 16px; width: 100%; max-width: 480px;
-    box-shadow: var(--shadow); animation: scaleIn 0.2s ease;
+    box-shadow: var(--shadow);
+    animation: modalEnter 0.25s cubic-bezier(0.16,1,0.3,1);
     overflow: hidden;
   }
-  @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  @keyframes modalEnter {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
   .modal-header {
     padding: 20px 24px 16px;
     border-bottom: 1px solid var(--border);
@@ -476,13 +546,16 @@ const css = `
 
   /* TOAST */
   .toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 24px; right: 24px;
     background: var(--bg3); border: 1px solid var(--border2);
     border-radius: 10px; padding: 10px 18px; font-size: 13px;
     color: var(--text); z-index: 500; box-shadow: var(--shadow);
-    animation: toastIn 0.2s ease; pointer-events: none;
+    animation: toastSlide 0.25s cubic-bezier(0.16,1,0.3,1); pointer-events: none;
   }
-  @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(10px); } }
+  @keyframes toastSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* STAR RATING */
   .stars { display: flex; gap: 2px; }
@@ -533,6 +606,61 @@ const formatDate = (d) => {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+// ── LOGO SVG ──────────────────────────────────────────────────
+function LogoIcon() {
+  return (
+    <svg className="nav-logo-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <rect x="21" y="3" width="6" height="3" rx="1" fill="#c9a84c"/>
+      <rect x="19" y="6" width="10" height="5" rx="1.5" fill="none" stroke="#c9a84c" strokeWidth="1.5"/>
+      <rect x="16" y="11" width="16" height="3" rx="1" fill="#c9a84c"/>
+      <rect x="11" y="14" width="26" height="28" rx="3" fill="none" stroke="#c9a84c" strokeWidth="1.8"/>
+      <rect x="14" y="17" width="20" height="22" rx="2" fill="none" stroke="rgba(201,168,76,0.25)" strokeWidth="1"/>
+      <line x1="14" y1="30" x2="34" y2="30" stroke="rgba(201,168,76,0.3)" strokeWidth="0.8"/>
+    </svg>
+  );
+}
+
+// ── SKELETON CARD ─────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton skeleton-img" />
+      <div className="skeleton-body">
+        <div className="skeleton skeleton-line short" />
+        <div className="skeleton skeleton-line long" />
+        <div className="skeleton skeleton-line med" />
+      </div>
+    </div>
+  );
+}
+
+// ── ALPHABET NAV ──────────────────────────────────────────────
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#".split("");
+
+function AlphaNav({ frags, onJump }) {
+  const available = new Set(
+    frags.map(f => {
+      const c = (f.brand || "").charAt(0).toUpperCase();
+      return /[A-Z]/.test(c) ? c : "#";
+    })
+  );
+
+  return (
+    <div className="alpha-nav">
+      {LETTERS.map(l => (
+        <button
+          key={l}
+          className={`alpha-btn ${available.has(l) ? "" : "disabled"}`}
+          onClick={() => available.has(l) && onJump(l)}
+          title={available.has(l) ? `Jump to ${l}` : ""}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── STAR RATING ───────────────────────────────────────────────
 function Stars({ value, onChange }) {
   const [hover, setHover] = useState(null);
@@ -555,6 +683,8 @@ function Stars({ value, onChange }) {
 function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
   const accords = parseArr(frag.main_accords).slice(0, 3);
   const img     = imgSrc(frag);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <div
       className="card"
@@ -570,10 +700,16 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
         }}/>
       )}
       <div className="card-img">
-        {img
-          ? <img src={img} alt={frag.name} onError={e => e.target.style.display="none"} />
-          : <span className="card-img-placeholder">🧴</span>
-        }
+        {img ? (
+          <img
+            src={img} alt={frag.name}
+            className={imgLoaded ? "loaded" : ""}
+            onLoad={() => setImgLoaded(true)}
+            onError={e => e.target.style.display="none"}
+          />
+        ) : (
+          <span className="card-img-placeholder">🧴</span>
+        )}
       </div>
       <div className="card-body">
         <div className="card-brand">{frag.brand}</div>
@@ -650,8 +786,10 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
   const [wearDate, setWearDate] = useState(localToday);
   const [wearLog, setWearLog] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [heroLoaded, setHeroLoaded] = useState(false);
 
   useEffect(() => {
+    setHeroLoaded(false);
     setForm({
       brand: frag.brand, name: frag.name,
       concentration: frag.concentration || "",
@@ -672,7 +810,6 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
       base_notes: parseArr(frag.base_notes).join(", "),
       main_accords: parseArr(frag.main_accords).join(", "),
     });
-    // Load wear log
     fetch(`${API}/fragrances/${frag.id}`).then(r=>r.json()).then(d => {
       setWearLog(d.wear_log || []);
     });
@@ -684,11 +821,10 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
     ["top_notes","middle_notes","base_notes","main_accords"].forEach(k => {
       payload[k] = form[k].split(",").map(s=>s.trim()).filter(Boolean);
     });
-  ["size_ml","year_released","personal_rating"].forEach(k => {
-  payload[k] = payload[k] !== "" && payload[k] !== null && payload[k] !== undefined
-    ? parseFloat(payload[k]) || null
-    : null;
-});
+    ["size_ml","year_released","personal_rating"].forEach(k => {
+      payload[k] = payload[k] !== "" && payload[k] !== null && payload[k] !== undefined
+        ? parseFloat(payload[k]) || null : null;
+    });
     const res = await fetch(`${API}/fragrances/${frag.id}`, {
       method: "PATCH",
       headers: {"Content-Type":"application/json"},
@@ -715,7 +851,6 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
       onWear(frag.id, wearDate);
       toast("Logged ✓");
     } else {
-      console.error("Wear log failed:", res.status, await res.text());
       toast("Error logging wear — check console");
     }
   };
@@ -745,7 +880,10 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
       <div className="drawer">
         <div className="drawer-hero">
           {img
-            ? <img src={img} alt={frag.name} onError={e => e.target.style.display="none"} />
+            ? <img src={img} alt={frag.name}
+                className={heroLoaded ? "loaded" : ""}
+                onLoad={() => setHeroLoaded(true)}
+                onError={e => e.target.style.display="none"} />
             : <span className="drawer-hero-placeholder">🧴</span>
           }
           <div className="drawer-hero-overlay" />
@@ -1057,22 +1195,12 @@ function SuggestModal({ onClose, toast }) {
         <div className="modal-body">
           {!result ? (
             <>
-              {loc && (
-                <div className="weather-chip">
-                  📍 Location detected — checking weather...
-                </div>
-              )}
-              <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>
-                What are you doing today?
-              </div>
+              {loc && <div className="weather-chip">📍 Location detected — checking weather...</div>}
+              <div style={{fontSize:13,color:"var(--text2)",marginBottom:12}}>What are you doing today?</div>
               <div className="occasion-grid">
                 {occasions.map(o => (
-                  <button
-                    key={o.id}
-                    className={`occasion-btn ${occasion===o.id?"active":""}`}
-                    onClick={() => suggest(o.id)}
-                    disabled={loading}
-                  >
+                  <button key={o.id} className={`occasion-btn ${occasion===o.id?"active":""}`}
+                    onClick={() => suggest(o.id)} disabled={loading}>
                     <span className="occasion-icon">{o.icon}</span>
                     {o.label}
                   </button>
@@ -1083,9 +1211,7 @@ function SuggestModal({ onClose, toast }) {
           ) : (
             <>
               {result.weather?.temp_f && (
-                <div className="weather-chip">
-                  🌡️ {Math.round(result.weather.temp_f)}°F · {result.season || ""}
-                </div>
+                <div className="weather-chip">🌡️ {Math.round(result.weather.temp_f)}°F · {result.season || ""}</div>
               )}
               {result.suggestion && (
                 <>
@@ -1094,15 +1220,12 @@ function SuggestModal({ onClose, toast }) {
                     <div className="suggest-card-img">
                       {imgSrc(result.suggestion)
                         ? <img src={imgSrc(result.suggestion)} alt="" />
-                        : <span style={{fontSize:28}}>🧴</span>
-                      }
+                        : <span style={{fontSize:28}}>🧴</span>}
                     </div>
                     <div className="suggest-info">
                       <div className="suggest-brand">{result.suggestion.brand}</div>
                       <div className="suggest-name">{result.suggestion.name}</div>
-                      <div className="suggest-accords">
-                        {parseArr(result.suggestion.main_accords).slice(0,3).join(" · ")}
-                      </div>
+                      <div className="suggest-accords">{parseArr(result.suggestion.main_accords).slice(0,3).join(" · ")}</div>
                     </div>
                   </div>
                 </>
@@ -1124,9 +1247,7 @@ function SuggestModal({ onClose, toast }) {
                 </>
               )}
               <button className="btn btn-secondary" style={{width:"100%",marginTop:12}}
-                onClick={() => { setResult(null); setOccasion(null); }}>
-                Try Again
-              </button>
+                onClick={() => { setResult(null); setOccasion(null); }}>Try Again</button>
             </>
           )}
         </div>
@@ -1146,10 +1267,7 @@ function AddModal({ onClose, onAdd, toast }) {
     const res = await fetch(`${API}/fragrances`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        ...form,
-        size_ml: form.size_ml ? parseFloat(form.size_ml) : null
-      })
+      body: JSON.stringify({ ...form, size_ml: form.size_ml ? parseFloat(form.size_ml) : null })
     });
     if (res.ok) {
       const frag = await res.json();
@@ -1217,7 +1335,7 @@ export default function Olfactori() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState("");
   const [filters, setFilters] = useState({});
-  const [view, setView]       = useState("grid");  // grid | table
+  const [view, setView]       = useState("grid");
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [activeFrag, setActiveFrag] = useState(null);
@@ -1226,6 +1344,7 @@ export default function Olfactori() {
   const [toast, setToastMsg]   = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
   const searchTimer = useRef(null);
+  const cardRefs = useRef({});
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -1298,6 +1417,17 @@ export default function Olfactori() {
     ));
   };
 
+  // Alphabet jump
+  const jumpToLetter = (letter) => {
+    const target = frags.find(f => {
+      const c = (f.brand || "").charAt(0).toUpperCase();
+      return letter === "#" ? !/[A-Z]/.test(c) : c === letter;
+    });
+    if (target && cardRefs.current[target.id]) {
+      cardRefs.current[target.id].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const tabs = [
     { id:"collection", label:"Collection" },
     { id:"insights",   label:"Insights"   },
@@ -1312,7 +1442,10 @@ export default function Olfactori() {
       <div className="app">
         {/* NAV */}
         <nav className="nav">
-          <div className="nav-logo">Olf<span>actori</span></div>
+          <div className="nav-logo">
+            <LogoIcon />
+            Olf<span>actori</span>
+          </div>
           <div className="nav-tabs">
             {tabs.map(t => (
               <button key={t.id} className={`nav-tab ${tab===t.id?"active":""}`}
@@ -1385,9 +1518,16 @@ export default function Olfactori() {
                 <span className="count-badge">{frags.length} / {total}</span>
               </div>
 
+              {/* ALPHABET NAV — only in grid view, not while loading */}
+              {!loading && view === "grid" && frags.length > 0 && (
+                <AlphaNav frags={frags} onJump={jumpToLetter} />
+              )}
+
               {/* CONTENT */}
               {loading ? (
-                <div className="loading"><div className="spinner" /> Loading collection...</div>
+                <div className="grid">
+                  {Array.from({length: 12}).map((_,i) => <SkeletonCard key={i} />)}
+                </div>
               ) : frags.length === 0 ? (
                 <div className="empty">
                   <span className="empty-icon">🧴</span>
@@ -1397,13 +1537,15 @@ export default function Olfactori() {
               ) : view === "grid" ? (
                 <div className="grid">
                   {frags.map(f => (
-                    <FragCard
-                      key={f.id} frag={f}
-                      selected={selected.has(f.id)}
-                      selectMode={selectMode}
-                      onSelect={toggleSelect}
-                      onClick={setActiveFrag}
-                    />
+                    <div key={f.id} ref={el => cardRefs.current[f.id] = el}>
+                      <FragCard
+                        frag={f}
+                        selected={selected.has(f.id)}
+                        selectMode={selectMode}
+                        onSelect={toggleSelect}
+                        onClick={setActiveFrag}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -1419,7 +1561,6 @@ export default function Olfactori() {
           )}
 
           {tab === "insights" && <InsightsTab />}
-
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
           {tab === "wardrobe" && (
