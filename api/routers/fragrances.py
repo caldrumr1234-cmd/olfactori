@@ -324,29 +324,33 @@ def _normalize_fragella(data: dict) -> dict:
 
 # ── FRAGRANTICA SEARCH ────────────────────────────────────────
 def _find_fragrantica_url(brand: str, name: str) -> str | None:
-    """Search Fragrantica and return the best matching URL."""
+    """
+    Use Google to find the Fragrantica URL for a fragrance.
+    Google handles spelling/accent variations far better than Fragrantica's own search.
+    """
     try:
         from bs4 import BeautifulSoup
-        query = f"{brand} {name}".replace(" ", "+")
-        search_url = f"https://www.fragrantica.com/search/?query={query}"
+        query = f"site:fragrantica.com/perfume {brand} {name}".replace(" ", "+")
+        google_url = f"https://www.google.com/search?q={query}&num=5"
         with httpx.Client() as client:
-            resp = _fetch(client, search_url)
+            resp = _fetch(client, google_url)
         if not resp:
             return None
         soup = BeautifulSoup(resp.text, "lxml")
-        # Fragrantica search results are in divs with perfume links
         target = f"{brand} {name}".lower()
-        best_url, best_score = None, 0
-        for a in soup.select("a[href*='/perfume/']"):
+        # Google results contain fragrantica.com/perfume/ links
+        for a in soup.select("a[href]"):
             href = a.get("href", "")
-            if not href.startswith("http"):
-                href = "https://www.fragrantica.com" + href
-            text = a.get_text(strip=True).lower()
-            score = fuzz.token_set_ratio(target, text)
-            if score > best_score:
-                best_score = score
-                best_url = href
-        return best_url if best_score >= 55 else None
+            # Google wraps links in /url?q=
+            if "/url?q=" in href:
+                href = href.split("/url?q=")[1].split("&")[0]
+            if "fragrantica.com/perfume/" in href and re.search(r"-\d+\.html", href):
+                # Fuzzy check the URL path against our target
+                path = href.split("/perfume/")[-1].replace("-", " ").replace(".html", "").lower()
+                score = fuzz.token_set_ratio(target, path)
+                if score >= 45:  # lower threshold since URL slugs drop accents
+                    return href
+        return None
     except Exception:
         return None
 
@@ -835,6 +839,27 @@ def enrich_image_only(frag_id: int, db = Depends(get_db)):
         return {"status": "ok", "url": result["url"], "source": result["source"]}
 
     return {"status": "manual_needed", "url": None, "source": "manual_needed"}
+
+
+@router.post("/{frag_id}/enrich/image/preview")
+def enrich_image_preview(frag_id: int, db = Depends(get_db)):
+    """
+    Search for the best image candidate and return it for user confirmation.
+    Does NOT save anything — frontend shows preview and user confirms.
+    """
+    row = db.execute("SELECT * FROM fragrances WHERE id = ?", (frag_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Not found")
+    if row["enrichment_locked"]:
+        raise HTTPException(400, "Enrichment is locked for this fragrance")
+
+    frag = row_to_dict(row)
+    result = _fetch_best_image(frag["brand"], frag["name"], frag.get("fragrantica_url"))
+    return {
+        "url":             result.get("url"),
+        "source":          result.get("source"),
+        "fragrantica_url": result.get("fragrantica_url") or frag.get("fragrantica_url"),
+    }
 
 
 @router.post("/{frag_id}/enrich/apply")

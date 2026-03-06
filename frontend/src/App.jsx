@@ -57,9 +57,9 @@ const css = `
     height: 56px;
   }
   .nav-logo {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 8px;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 300; letter-spacing: 0.12em;
+    font-size: 22px; font-weight: 300; letter-spacing: 0.04em;
     color: var(--gold); text-transform: uppercase;
     margin-right: 32px; flex-shrink: 0;
   }
