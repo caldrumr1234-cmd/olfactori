@@ -6,6 +6,8 @@ import AdminTab from "./AdminTab.jsx";
 import ExploreTab from "./ExploreTab.jsx";
 import WardrobeTab from "./WardrobeTab.jsx";
 import { EnrichPanel } from "./EnrichPanel.jsx";
+import ShelvesTab from "./ShelvesTab.jsx";
+import UsedToHaveTab from "./UsedToHaveTab.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -1358,6 +1360,9 @@ export default function Olfactori() {
   const [view, setView]       = useState("grid");
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
+  const [shelfSelectMode, setShelfSelectMode] = useState(false);
+  const [shelfSelected, setShelfSelected] = useState(new Set());
+  const [shelfSelectCallback, setShelfSelectCallback] = useState(null);
   const [activeFrag, setActiveFrag] = useState(null);
   const [showAdd, setShowAdd]  = useState(false);
   const [toast, setToastMsg]   = useState(null);
@@ -1460,12 +1465,14 @@ export default function Olfactori() {
   };
 
   const tabs = [
-    { id:"collection", label:"Collection" },
-    { id:"insights",   label:"Insights"   },
-    { id:"explore",    label:"Explore"    },
-    { id:"wishlist",   label:"Wishlist"   },
-    { id:"wardrobe",   label:"Wardrobe"   },
-    { id:"admin",      label:"Admin"      },
+    { id:"collection",  label:"Collection"  },
+    { id:"insights",    label:"Insights"    },
+    { id:"explore",     label:"Explore"     },
+    { id:"wishlist",    label:"Wishlist"    },
+    { id:"wardrobe",    label:"Wardrobe"    },
+    { id:"shelves",     label:"Shelves"     },
+    { id:"usedtohave",  label:"Used to Have"},
+    { id:"admin",       label:"Admin"       },
   ];
 
   return (
@@ -1531,6 +1538,11 @@ export default function Olfactori() {
                   {["woody","citrus","floral","oriental","fresh","gourmand","spicy","amber","oud","leather","aquatic","green"].map(a=><option key={a} value={a}>{a.charAt(0).toUpperCase()+a.slice(1)}</option>)}
                 </select>
 
+                <select className="filter-select" onChange={e => handleFilter("discontinued", e.target.value)}>
+                  <option value="">All Status</option>
+                  <option value="true">Discontinued</option>
+                </select>
+
                 <div className="view-toggle">
                   <button className={`view-btn ${view==="grid"?"active":""}`} onClick={() => setView("grid")}>⊞</button>
                   <button className={`view-btn ${view==="table"?"active":""}`} onClick={() => setView("table")}>≡</button>
@@ -1539,12 +1551,39 @@ export default function Olfactori() {
                 <button
                   className={`icon-btn ${selectMode?"active":""}`}
                   title="Sample select mode"
-                  onClick={() => { setSelectMode(!selectMode); setSelected(new Set()); }}
+                  onClick={() => { setSelectMode(!selectMode); setSelected(new Set()); setShelfSelectMode(false); setShelfSelected(new Set()); }}
                   style={selectMode ? {borderColor:"var(--gold)",color:"var(--gold)"} : {}}
                 >☑</button>
 
+                <button
+                  className={`icon-btn ${shelfSelectMode?"active":""}`}
+                  title="Add to shelf"
+                  onClick={() => { setShelfSelectMode(!shelfSelectMode); setShelfSelected(new Set()); setSelectMode(false); setSelected(new Set()); }}
+                  style={shelfSelectMode ? {borderColor:"var(--gold)",color:"var(--gold)",background:"var(--gold-dim)"} : {}}
+                >🗄</button>
+
                 <span className="count-badge">{frags.length} / {total}</span>
               </div>
+
+              {/* SHELF SELECT ACTION BAR */}
+              {shelfSelectMode && (
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",marginBottom:4,borderBottom:"1px solid var(--border)"}}>
+                  <span style={{fontSize:12,color:"var(--gold)"}}>🗄 Shelf mode — {shelfSelected.size} selected</span>
+                  <button
+                    style={{marginLeft:"auto",background:"var(--gold)",border:"none",borderRadius:8,color:"#0c0c0f",padding:"6px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}
+                    disabled={shelfSelected.size === 0}
+                    onClick={() => {
+                      if (shelfSelectCallback) shelfSelectCallback([...shelfSelected]);
+                      else { setTab("shelves"); }
+                      setShelfSelectMode(false); setShelfSelected(new Set());
+                    }}
+                  >Add to Shelf →</button>
+                  <button
+                    style={{background:"none",border:"1px solid var(--border)",borderRadius:8,color:"var(--text3)",padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}
+                    onClick={() => { setShelfSelectMode(false); setShelfSelected(new Set()); }}
+                  >Cancel</button>
+                </div>
+              )}
 
               {/* ALPHABET NAV — only in grid view, not while loading */}
               {!loading && view === "grid" && frags.length > 0 && (
@@ -1568,9 +1607,11 @@ export default function Olfactori() {
                     <div key={f.id} ref={el => cardRefs.current[f.id] = el}>
                       <FragCard
                         frag={f}
-                        selected={selected.has(f.id)}
-                        selectMode={selectMode}
-                        onSelect={toggleSelect}
+                        selected={selectMode ? selected.has(f.id) : shelfSelectMode ? shelfSelected.has(f.id) : false}
+                        selectMode={selectMode || shelfSelectMode}
+                        onSelect={selectMode ? toggleSelect : (id) => {
+                          setShelfSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+                        }}
                         onClick={setActiveFrag}
                       />
                     </div>
@@ -1579,9 +1620,11 @@ export default function Olfactori() {
               ) : (
                 <TableView
                   frags={frags}
-                  selected={selected}
-                  selectMode={selectMode}
-                  onSelect={toggleSelect}
+                  selected={selectMode ? selected : shelfSelectMode ? shelfSelected : new Set()}
+                  selectMode={selectMode || shelfSelectMode}
+                  onSelect={selectMode ? toggleSelect : (id) => {
+                    setShelfSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+                  }}
                   onClick={setActiveFrag}
                 />
               )}
@@ -1593,6 +1636,20 @@ export default function Olfactori() {
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
           {tab === "wardrobe" && <WardrobeTab onOpenFrag={handleOpenFrag} />}
+
+          {tab === "shelves" && (
+            <ShelvesTab
+              toast={showToast}
+              onPickFragrances={(cb) => {
+                setShelfSelectCallback(() => cb);
+                setShelfSelectMode(true);
+                setShelfSelected(new Set());
+                setTab("collection");
+              }}
+            />
+          )}
+
+          {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
           {tab === "admin" && <AdminTab toast={showToast} />}
         </main>
