@@ -163,8 +163,15 @@ export function EnrichPanel({ frag, API, toast, onUpdate }) {
       {/* LOADING STATE */}
       {status === "loading" && (
         <div style={{ fontSize: 12, color: "var(--text3)", display: "flex", flexDirection: "column", gap: 4 }}>
-          <div>Querying Fragella, Fragrantica, Basenotes, Parfumo…</div>
-          <div style={{ fontSize: 11, color: "var(--text3)", opacity: 0.7 }}>This may take 10–30 seconds</div>
+          <div>
+            {mode === "image"
+              ? "Fetching image from Fragrantica CDN…"
+              : "Querying Fragella, Fragrantica, Basenotes, Parfumo…"
+            }
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text3)", opacity: 0.7 }}>
+            {mode === "image" ? "Usually under 5 seconds" : "This may take 10–30 seconds"}
+          </div>
         </div>
       )}
 

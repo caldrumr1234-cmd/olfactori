@@ -663,35 +663,55 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
 
 
 # ── IMAGE FETCH ───────────────────────────────────────────────
+def _fragrantica_id_from_url(url: str) -> str | None:
+    """Extract numeric ID from Fragrantica URL e.g. .../Name-38166.html -> 38166"""
+    if not url:
+        return None
+    m = re.search(r'-(\d+)\.html', url)
+    return m.group(1) if m else None
+
+
+def _fimgs_url(fragrantica_id: str) -> str:
+    """Construct fimgs.net CDN image URL from Fragrantica perfume ID."""
+    return f"https://fimgs.net/mdimg/perfume-thumbs/375x500.{fragrantica_id}.jpg"
+
+
 def _fetch_best_image(brand: str, name: str, fragrantica_url: str = None) -> dict:
     """
-    Try Fragrantica first, then Fragella.
-    Returns {"url": str, "source": str} or {"url": None, "source": "manual_needed"}
+    Build image URL from Fragrantica CDN (fimgs.net) using perfume ID extracted
+    from the Fragrantica URL. Falls back to searching Fragrantica, then Fragella.
+    Returns {"url": str, "source": str, "fragrantica_url": str|None}
     """
-    # 1. Fragrantica page image
-    if fragrantica_url:
-        ft_data = _scrape_fragrantica(fragrantica_url)
-        img = ft_data.get("fragrantica_image_url")
-        if img:
-            return {"url": img, "source": "fragrantica"}
+    result = {"url": None, "source": "manual_needed", "fragrantica_url": None}
 
-    # 2. Find fragrantica URL and scrape
+    # 1. Extract ID from stored Fragrantica URL -> direct CDN link, no scraping needed
+    ft_id = _fragrantica_id_from_url(fragrantica_url)
+    if ft_id:
+        result["url"] = _fimgs_url(ft_id)
+        result["source"] = "fragrantica"
+        return result
+
+    # 2. Search Fragrantica to find the URL, then extract ID
     found_url = _find_fragrantica_url(brand, name)
     if found_url:
-        ft_data = _scrape_fragrantica(found_url)
-        img = ft_data.get("fragrantica_image_url")
-        if img:
-            return {"url": img, "source": "fragrantica", "fragrantica_url": found_url}
+        ft_id = _fragrantica_id_from_url(found_url)
+        if ft_id:
+            result["url"] = _fimgs_url(ft_id)
+            result["source"] = "fragrantica"
+            result["fragrantica_url"] = found_url
+            return result
 
-    # 3. Fragella image
+    # 3. Fragella fallback
     fe_data = _fetch_fragella(brand, name)
     if fe_data:
         norm = _normalize_fragella(fe_data)
         img = norm.get("fragella_image_url")
         if img:
-            return {"url": img, "source": "fragella"}
+            result["url"] = img
+            result["source"] = "fragella"
+            return result
 
-    return {"url": None, "source": "manual_needed"}
+    return result
 
 
 # ══════════════════════════════════════════════════════════════
