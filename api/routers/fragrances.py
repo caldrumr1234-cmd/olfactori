@@ -61,7 +61,7 @@ class FragranceCreate(BaseModel):
     personal_notes:Optional[str]   = None
 
 # ── LIST / SEARCH ─────────────────────────────────────────────
-@@router.get("")
+@router.get("")
 def list_fragrances(
     search:       Optional[str]  = Query(None),
     brand:        Optional[str]  = Query(None),
@@ -161,7 +161,7 @@ def get_fragrance(frag_id: int, db = Depends(get_db)):
 
 
 # ── CREATE ────────────────────────────────────────────────────
-@router.post("/")
+@router.post("")
 def create_fragrance(data: FragranceCreate, db = Depends(get_db)):
     cur = db.execute("""
         INSERT INTO fragrances (brand, name, size_ml, concentration, personal_notes,
