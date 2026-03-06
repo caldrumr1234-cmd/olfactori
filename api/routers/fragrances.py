@@ -61,7 +61,7 @@ class FragranceCreate(BaseModel):
     personal_notes:Optional[str]   = None
 
 # ── LIST / SEARCH ─────────────────────────────────────────────
-@router.get("")
+@router.get("/")
 def list_fragrances(
     search:       Optional[str]  = Query(None),
     brand:        Optional[str]  = Query(None),
@@ -525,8 +525,8 @@ def get_stats(db = Depends(get_db)):
     return {
         "total": total, "enriched": enriched, "brands": brands,
         "testers": testers, "discontinued": disc, "limited": limited,
-        "top_accords":   [dict(r) for r in accords],
-        "by_concentration": [dict(r) for r in by_conc],
-        "by_decade":     [dict(r) for r in by_decade],
-        "by_gender":     [dict(r) for r in by_gender],
+        "top_accords":   [{k: r[k] for k in r.keys()} for r in accords],
+        "by_concentration": [{k: r[k] for k in r.keys()} for r in by_conc],
+        "by_decade":     [{k: r[k] for k in r.keys()} for r in by_decade],
+        "by_gender":     [{k: r[k] for k in r.keys()} for r in by_gender],
     }
