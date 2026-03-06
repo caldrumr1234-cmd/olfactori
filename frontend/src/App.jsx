@@ -189,18 +189,24 @@ const css = `
     box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   }
   .card-img {
-    width: 100%; height: 200px;
+    width: 100%; aspect-ratio: 1;
     background: var(--bg3);
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; position: relative; flex-shrink: 0;
+    overflow: hidden; position: relative;
   }
-  .card-img img {
-    width: 80%; height: 80%; object-fit: contain;
+  .card-img-inner {
+    width: 75%; height: 75%;
+    background: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; overflow: hidden; flex-shrink: 0;
+  }
+  .card-img-inner img {
+    width: 100%; height: 100%; object-fit: contain;
     transition: transform 0.3s, opacity 0.4s;
     opacity: 0;
   }
-  .card-img img.loaded { opacity: 1; }
-  .card:hover .card-img img { transform: scale(1.05); }
+  .card-img-inner img.loaded { opacity: 1; }
+  .card:hover .card-img-inner img { transform: scale(1.05); }
   .card-img-placeholder {
     font-size: 36px; opacity: 0.2;
   }
@@ -702,16 +708,18 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
         }}/>
       )}
       <div className="card-img">
-        {img ? (
-          <img
-            src={img} alt={frag.name}
-            className={imgLoaded ? "loaded" : ""}
-            onLoad={() => setImgLoaded(true)}
-            onError={e => e.target.style.display="none"}
-          />
-        ) : (
-          <span className="card-img-placeholder">🧴</span>
-        )}
+        <div className="card-img-inner">
+          {img ? (
+            <img
+              src={img} alt={frag.name}
+              className={imgLoaded ? "loaded" : ""}
+              onLoad={() => setImgLoaded(true)}
+              onError={e => e.target.style.display="none"}
+            />
+          ) : (
+            <span className="card-img-placeholder">🧴</span>
+          )}
+        </div>
       </div>
       <div className="card-body">
         <div className="card-brand">{frag.brand}</div>
