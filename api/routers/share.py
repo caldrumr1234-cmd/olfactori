@@ -22,8 +22,7 @@ def get_share_profile(username: str, db=Depends(get_db)):
                perfumer, top_notes, middle_notes, base_notes,
                fragella_image_url, custom_image_url,
                want_to_trade, want_to_sell, want_to_give_away,
-               is_tester, is_limited_edition, is_exclusive, is_discontinued,
-               rating, fragrantica_url
+               is_tester, is_limited_edition, is_exclusive, is_discontinued
         FROM fragrances
         ORDER BY brand, name
     """).fetchall()
