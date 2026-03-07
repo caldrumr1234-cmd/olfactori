@@ -194,31 +194,102 @@ function AddInviteModal({ onClose, onAdd, toast }) {
 
 // ── BATCH ENRICH COMPONENT ───────────────────────────────────
 function BatchEnrich({ toast }) {
-  const [running, setRunning] = useState(false);
-  const [results, setResults] = useState([]);
-  const [summary, setSummary] = useState(null);
+  const [running, setRunning]   = useState(false);
+  const [stopped, setStopped]   = useState(false);
+  const [results, setResults]   = useState([]);
+  const [summary, setSummary]   = useState(null);
   const [progress, setProgress] = useState(0);
-  const logRef = useRef(null);
+  const [current, setCurrent]   = useState("");
+  const logRef    = useRef(null);
+  const stopRef   = useRef(false);
 
   async function startBatch() {
     setRunning(true);
-    setResults([{ status: "running", name: "Starting batch enrich — this may take several minutes…" }]);
+    setStopped(false);
+    setResults([]);
     setSummary(null);
     setProgress(0);
+    setCurrent("");
+    stopRef.current = false;
+
+    // 1. Fetch all fragrances
+    let frags = [];
     try {
-      const res = await fetch(`${API}/fragrances/enrich/batch`, { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(`${API}/fragrances?limit=500`);
       const data = await res.json();
-      setSummary(data.summary);
-      setResults(data.results);
-      setProgress(100);
-      toast?.(`Batch complete: ${data.summary.updated} updated, ${data.summary.errors} errors`);
+      frags = data.items || [];
     } catch (e) {
-      setResults([{ status: "error", name: "Batch failed: " + e.message }]);
-      toast?.("Batch enrich failed");
-    } finally {
+      setResults([{ status: "error", name: "Failed to load fragrances: " + e.message }]);
       setRunning(false);
+      return;
     }
+
+    const counts = { updated: 0, complete: 0, no_data: 0, errors: 0 };
+    const log = [];
+
+    for (let i = 0; i < frags.length; i++) {
+      if (stopRef.current) { setStopped(true); break; }
+
+      const f = frags[i];
+      const label = `${f.brand} ${f.name}`;
+      setCurrent(label);
+      setProgress(Math.round((i / frags.length) * 100));
+
+      try {
+        // Call enrich/smart — returns merged + conflicts
+        const smartRes = await fetch(`${API}/fragrances/${f.id}/enrich/smart`, { method: "POST" });
+        if (!smartRes.ok) throw new Error(`HTTP ${smartRes.status}`);
+        const smart = await smartRes.json();
+
+        if (smart.status === "complete") {
+          counts.complete++;
+          log.push({ status: "complete", name: label });
+        } else if (!smart.merged || Object.keys(smart.merged).length === 0) {
+          counts.no_data++;
+          log.push({ status: "no_data", name: label });
+        } else {
+          // Filter out image fields — never update images in batch
+          const safeData = Object.fromEntries(
+            Object.entries(smart.merged).filter(([k]) =>
+              !["fragella_image_url", "custom_image_url"].includes(k)
+            )
+          );
+          if (Object.keys(safeData).length === 0) {
+            counts.no_data++;
+            log.push({ status: "no_data", name: label });
+          } else {
+            // Apply the merged data
+            const applyRes = await fetch(`${API}/fragrances/${f.id}/enrich/apply`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: safeData, lock: false }),
+            });
+            if (!applyRes.ok) throw new Error(`Apply HTTP ${applyRes.status}`);
+            counts.updated++;
+            log.push({ status: "updated", name: label, updated: Object.keys(safeData) });
+          }
+        }
+      } catch (e) {
+        counts.errors++;
+        log.push({ status: "error", name: label, error: e.message });
+      }
+
+      // Update log in batches of 5 to avoid excessive re-renders
+      if (i % 5 === 0 || i === frags.length - 1) {
+        setResults([...log]);
+      }
+    }
+
+    setResults([...log]);
+    setProgress(100);
+    setCurrent("");
+    setSummary({ total: frags.length, ...counts });
+    setRunning(false);
+    toast?.(`Batch complete: ${counts.updated} updated, ${counts.errors} errors`);
+  }
+
+  function stopBatch() {
+    stopRef.current = true;
   }
 
   // Auto-scroll log
@@ -226,43 +297,57 @@ function BatchEnrich({ toast }) {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [results]);
 
-  const statusIcon = { updated: "✓", complete: "·", no_data: "–", error: "✗", running: "⟳" };
+  const statusIcon = { updated: "✓", complete: "·", no_data: "–", error: "✗" };
 
   return (
     <div>
       <div className="batch-controls">
-        <button className="btn btn-primary" onClick={startBatch} disabled={running}>
-          {running ? "⟳ Running…" : "▶ Start Batch Enrich"}
-        </button>
+        {!running ? (
+          <button className="btn btn-primary" onClick={startBatch}>
+            ▶ Start Batch Enrich
+          </button>
+        ) : (
+          <button className="btn btn-danger" onClick={stopBatch}>
+            ⏹ Stop
+          </button>
+        )}
         {summary && (
           <div className="batch-summary">
             <div className="batch-stat"><span className="batch-stat-label">Total:</span><span className="batch-stat-val">{summary.total}</span></div>
             <div className="batch-stat"><span className="batch-stat-label">Updated:</span><span className="batch-stat-val" style={{color:"var(--green)"}}>{summary.updated}</span></div>
             <div className="batch-stat"><span className="batch-stat-label">Already complete:</span><span className="batch-stat-val">{summary.complete}</span></div>
-            <div className="batch-stat"><span className="batch-stat-label">No data found:</span><span className="batch-stat-val">{summary.no_data}</span></div>
+            <div className="batch-stat"><span className="batch-stat-label">No data:</span><span className="batch-stat-val">{summary.no_data}</span></div>
             <div className="batch-stat"><span className="batch-stat-label">Errors:</span><span className="batch-stat-val" style={{color:summary.errors>0?"var(--red)":"inherit"}}>{summary.errors}</span></div>
           </div>
         )}
       </div>
-      {running && (
-        <div className="batch-progress-bar">
-          <div className="batch-progress-fill" style={{width:`${progress}%`}} />
+
+      {(running || progress > 0) && (
+        <div style={{marginBottom:10}}>
+          <div className="batch-progress-bar">
+            <div className="batch-progress-fill" style={{width:`${progress}%`}} />
+          </div>
+          {current && <div style={{fontSize:11,color:"var(--text3)",marginTop:3}}>⟳ {current}</div>}
         </div>
       )}
+
       {results.length > 0 && (
         <div className="batch-log" ref={logRef}>
           {results.map((r, i) => (
             <div key={i} className={`batch-log-row ${r.status}`}>
-              <span style={{opacity:0.5}}>{statusIcon[r.status] || "·"}</span>
-              <span>{r.name}</span>
+              <span style={{opacity:0.5,flexShrink:0}}>{statusIcon[r.status] || "·"}</span>
+              <span style={{flexShrink:0}}>{r.name}</span>
               {r.updated?.length > 0 && (
-                <span style={{opacity:0.6, fontSize:11}}>→ {r.updated.join(", ")}</span>
+                <span style={{opacity:0.6,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  → {r.updated.join(", ")}
+                </span>
               )}
-              {r.error && <span style={{opacity:0.7}}>{r.error}</span>}
+              {r.error && <span style={{opacity:0.7,fontSize:11}}>{r.error}</span>}
             </div>
           ))}
         </div>
       )}
+
       {!running && results.length === 0 && (
         <div style={{color:"var(--text3)",fontSize:13}}>
           Searches Fragella, Basenotes, and Parfumo for missing fields only. Requires 2 matching sources to update (except perfumer — first match wins). Images are never touched. Locked fragrances are skipped.
