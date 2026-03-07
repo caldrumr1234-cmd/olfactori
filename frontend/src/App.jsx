@@ -185,6 +185,17 @@ const css = `
   }
 
   /* ALPHABET NAV */
+  .scroll-top-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; transition: all 0.2s; box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none;
+  }
+  .scroll-top-btn.visible { opacity: 1; pointer-events: all; }
+  .scroll-top-btn:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
   .alpha-nav {
     display: flex; gap: 2px; flex-wrap: wrap;
     margin-bottom: 16px; padding: 8px 12px;
@@ -779,6 +790,58 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
         </div>
       </div>
     </div>
+    {showGoneModal && (
+      <GoneModal frag={frag} onConfirm={handleMarkGone} onClose={() => setShowGoneModal(false)} />
+    )}
+  );
+}
+
+// ── GONE MODAL ────────────────────────────────────────────────
+const GONE_REASONS = [
+  { value: "sold",     label: "💸 Sold" },
+  { value: "used up",  label: "🫧 Used Up" },
+  { value: "gifted",   label: "🎁 Gifted" },
+  { value: "lost",     label: "😬 Lost" },
+  { value: "returned", label: "↩️ Returned" },
+  { value: "other",    label: "• Other" },
+];
+
+function GoneModal({ frag, onConfirm, onClose }) {
+  const [reason, setReason] = useState("other");
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{maxWidth:360}} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">Mark as Gone</span>
+          <button className="icon-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{fontSize:13,color:"var(--text2)",marginBottom:14,lineHeight:1.5}}>
+            This will move <strong style={{color:"var(--text)"}}>{frag.brand} — {frag.name}</strong> to your <em>Used to Have</em> collection.
+          </p>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {GONE_REASONS.map(r => (
+              <label key={r.value} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",
+                padding:"8px 12px",borderRadius:"var(--radius)",border:"1px solid",
+                borderColor: reason===r.value ? "var(--gold)" : "var(--border)",
+                background: reason===r.value ? "var(--gold-dim)" : "var(--bg3)",
+                transition:"all 0.15s",fontSize:13,color:"var(--text2)"}}>
+                <input type="radio" name="gone-reason" value={r.value}
+                  checked={reason===r.value}
+                  onChange={() => setReason(r.value)}
+                  style={{accentColor:"var(--gold)"}}
+                />
+                {r.label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(reason)}>Move to Used to Have</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -829,7 +892,7 @@ function TableView({ frags, selected, selectMode, onSelect, onClick }) {
 }
 
 // ── DETAIL DRAWER ─────────────────────────────────────────────
-function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
+function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
@@ -914,12 +977,21 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
     setWearLog(prev => prev.filter(w => w.id !== id));
   };
 
+  const [showGoneModal, setShowGoneModal] = useState(false);
+
   const confirmDelete = async () => {
     if (!window.confirm(`Remove "${frag.brand} — ${frag.name}" from your collection?`)) return;
     await fetch(`${API}/fragrances/${frag.id}`, { method: "DELETE" });
     onDelete(frag.id);
     onClose();
     toast("Removed");
+  };
+
+  const handleMarkGone = async (reason) => {
+    setShowGoneModal(false);
+    await onMarkGone(frag, reason);
+    onClose();
+    toast(`Moved "${frag.name}" to Used to Have ✓`);
   };
 
   const img = imgSrc(frag);
@@ -1209,7 +1281,9 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
             : <>
                 <button className="btn btn-secondary" onClick={() => { setTab("edit"); setEditing(true); }}>Edit</button>
                 <button className="btn btn-secondary" onClick={() => setTab("wear")}>Log Wear</button>
-                <button className="btn btn-secondary btn-sm" style={{marginLeft:"auto"}} onClick={onClose}>Close</button>
+                <button className="btn btn-secondary btn-sm" title="Move to Used to Have" onClick={() => setShowGoneModal(true)}
+                  style={{marginLeft:"auto",color:"var(--text3)"}}>Gone 👋</button>
+                <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
               </>
           }
         </div>
@@ -1414,6 +1488,13 @@ export default function Olfactori() {
   const [pendingRequests, setPendingRequests] = useState(0);
   const searchTimer = useRef(null);
   const cardRefs = useRef({});
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -1480,6 +1561,23 @@ export default function Olfactori() {
   const deleteFrag = (id) => {
     setFrags(prev => prev.filter(f => f.id !== id));
     setTotal(t => t - 1);
+  };
+
+  const markAsGone = async (frag, reason) => {
+    // Add to Used to Have
+    await fetch(`${API}/used_to_have`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        brand: frag.brand,
+        name: frag.name,
+        reason: reason || "other",
+        custom_image_url: frag.custom_image_url || frag.fragella_image_url || null,
+      }),
+    });
+    // Delete from collection
+    await fetch(`${API}/fragrances/${frag.id}`, { method: "DELETE" });
+    deleteFrag(frag.id);
   };
 
   const addFrag = (frag) => {
@@ -1845,6 +1943,7 @@ export default function Olfactori() {
             onClose={() => setActiveFrag(null)}
             onUpdate={updateFrag}
             onDelete={deleteFrag}
+            onMarkGone={markAsGone}
             onWear={updateLastWorn}
             toast={showToast}
           />
@@ -1869,6 +1968,13 @@ export default function Olfactori() {
 
         {/* TOAST */}
         {toast && <div className="toast">{toast}</div>}
+
+        {/* SCROLL TO TOP */}
+        <button
+          className={`scroll-top-btn ${showScrollTop ? "visible" : ""}`}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          title="Back to top"
+        >↑</button>
       </div>
     </>
   );
