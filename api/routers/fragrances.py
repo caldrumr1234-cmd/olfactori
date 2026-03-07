@@ -62,6 +62,9 @@ class FragranceUpdate(BaseModel):
     is_reformulated:     Optional[bool] = None
     personal_notes:      Optional[str]  = None
     enrichment_locked:   Optional[bool] = None
+    want_to_trade:       Optional[bool] = None
+    want_to_sell:        Optional[bool] = None
+    want_to_give_away:   Optional[bool] = None
 
 class FragranceCreate(BaseModel):
     brand:         str
@@ -88,6 +91,9 @@ def list_fragrances(
     perfumer:     Optional[str]  = Query(None),
     min_rating:   Optional[float]= Query(None),
     size_bucket:  Optional[str]  = Query(None),
+    want_to_trade:    Optional[bool] = Query(None),
+    want_to_sell:     Optional[bool] = Query(None),
+    want_to_give_away:Optional[bool] = Query(None),
     sort:         str            = Query("brand_name"),
     limit:        int            = Query(500),
     offset:       int            = Query(0),
@@ -132,6 +138,15 @@ def list_fragrances(
         elif size_bucket == "small":  q += " AND size_ml > 30 AND size_ml <= 75"
         elif size_bucket == "medium": q += " AND size_ml > 75 AND size_ml <= 100"
         elif size_bucket == "large":  q += " AND size_ml > 100"
+    if want_to_trade is not None:
+        q += " AND want_to_trade = ?"
+        params.append(1 if want_to_trade else 0)
+    if want_to_sell is not None:
+        q += " AND want_to_sell = ?"
+        params.append(1 if want_to_sell else 0)
+    if want_to_give_away is not None:
+        q += " AND want_to_give_away = ?"
+        params.append(1 if want_to_give_away else 0)
 
     if note:
         q += """ AND id IN (

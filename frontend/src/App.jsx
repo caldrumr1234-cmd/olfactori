@@ -316,6 +316,14 @@ const css = `
     font-size: 12px; z-index: 2;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
+  .card-corner-icons {
+    position: absolute; bottom: 6px; right: 6px;
+    display: flex; flex-direction: column; gap: 3px; z-index: 2; align-items: flex-end;
+  }
+  .card-corner-icon {
+    font-size: 13px; line-height: 1;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  }
   .card-select-overlay {
     position: absolute; inset: 0;
     border: 2px solid var(--gold); border-radius: var(--radius);
@@ -750,6 +758,13 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
             <span className="card-img-placeholder">🧴</span>
           )}
         </div>
+        {(frag.want_to_trade === 1 || frag.want_to_sell === 1 || frag.want_to_give_away === 1) && (
+          <div className="card-corner-icons">
+            {frag.want_to_trade    === 1 && <span className="card-corner-icon" title="Want to Trade">🤝</span>}
+            {frag.want_to_sell     === 1 && <span className="card-corner-icon" title="Want to Sell">💰</span>}
+            {frag.want_to_give_away=== 1 && <span className="card-corner-icon" title="Want to Give Away">🎁</span>}
+          </div>
+        )}
       </div>
       <div className="card-body">
         <div className="card-brand">{frag.brand}</div>
@@ -841,6 +856,9 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
       is_tester: !!frag.is_tester,
       is_limited_edition: !!frag.is_limited_edition,
       enrichment_locked: !!frag.enrichment_locked,
+      want_to_trade: !!frag.want_to_trade,
+      want_to_sell: !!frag.want_to_sell,
+      want_to_give_away: !!frag.want_to_give_away,
       top_notes: parseArr(frag.top_notes).join(", "),
       middle_notes: parseArr(frag.middle_notes).join(", "),
       base_notes: parseArr(frag.base_notes).join(", "),
@@ -1156,6 +1174,9 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
                   ["is_tester","Tester"],
                   ["is_limited_edition","Limited Edition"],
                   ["enrichment_locked","Lock Enrichment 🔒"],
+                  ["want_to_trade","🤝 Want to Trade"],
+                  ["want_to_sell","💰 Want to Sell"],
+                  ["want_to_give_away","🎁 Want to Give Away"],
                 ].map(([k,label])=>(
                   <label key={k} className="form-check">
                     <input type="checkbox" checked={!!form[k]} onChange={e=>setForm({...form,[k]:e.target.checked})} />
@@ -1412,6 +1433,9 @@ export default function Olfactori() {
     if (f.perfumer) params.set("perfumer", f.perfumer);
     if (f.min_rating != null) params.set("min_rating", f.min_rating);
     if (f.size_bucket) params.set("size_bucket", f.size_bucket);
+    if (f.want_to_trade)     params.set("want_to_trade", "true");
+    if (f.want_to_sell)      params.set("want_to_sell", "true");
+    if (f.want_to_give_away) params.set("want_to_give_away", "true");
     const res = await fetch(`${API}/fragrances?${params}`);
     const data = await res.json();
     setFrags(data.items || []);
@@ -1678,6 +1702,27 @@ export default function Olfactori() {
                           onClick={() => handleFilter("min_rating", filters.min_rating===s ? null : s)}>
                           ★
                         </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Availability */}
+                  <div className="filter-group">
+                    <label>Availability</label>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                      {[
+                        ["want_to_trade",     "🤝 Want to Trade"],
+                        ["want_to_sell",      "💰 Want to Sell"],
+                        ["want_to_give_away", "🎁 Want to Give Away"],
+                      ].map(([key, label]) => (
+                        <label key={key} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--text2)",cursor:"pointer"}}>
+                          <input type="checkbox"
+                            checked={!!filters[key]}
+                            onChange={e => handleFilter(key, e.target.checked ? "true" : "")}
+                            style={{accentColor:"var(--gold)"}}
+                          />
+                          {label}
+                        </label>
                       ))}
                     </div>
                   </div>

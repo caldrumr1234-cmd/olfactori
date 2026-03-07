@@ -17,6 +17,10 @@ import sqlite3
 con = sqlite3.connect('/data/sillage.db')
 migrations = [
     'ALTER TABLE used_to_have ADD COLUMN custom_image_url TEXT',
+    'ALTER TABLE fragrances ADD COLUMN want_to_trade INTEGER DEFAULT 0',
+    'ALTER TABLE fragrances ADD COLUMN want_to_sell INTEGER DEFAULT 0',
+    'ALTER TABLE fragrances ADD COLUMN want_to_give_away INTEGER DEFAULT 0',
+    'ALTER TABLE wishlist ADD COLUMN custom_image_url TEXT',
 ]
 for m in migrations:
     try:

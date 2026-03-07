@@ -10,15 +10,26 @@ from api.database import get_db, row_to_dict, rows_to_list
 router = APIRouter()
 
 class WishlistItem(BaseModel):
-    brand:           str
-    name:            str
-    concentration:   Optional[str]   = None
-    size_ml:         Optional[float] = None
-    notes:           Optional[str]   = None
-    priority:        Optional[int]   = 3
-    target_price:    Optional[float] = None
-    fragrantica_url: Optional[str]   = None
-    image_url:       Optional[str]   = None
+    brand:            str
+    name:             str
+    concentration:    Optional[str]   = None
+    size_ml:          Optional[float] = None
+    notes:            Optional[str]   = None
+    priority:         Optional[int]   = 3
+    target_price:     Optional[float] = None
+    fragrantica_url:  Optional[str]   = None
+    custom_image_url: Optional[str]   = None
+
+class WishlistUpdate(BaseModel):
+    brand:            Optional[str]   = None
+    name:             Optional[str]   = None
+    concentration:    Optional[str]   = None
+    size_ml:          Optional[float] = None
+    notes:            Optional[str]   = None
+    priority:         Optional[int]   = None
+    target_price:     Optional[float] = None
+    fragrantica_url:  Optional[str]   = None
+    custom_image_url: Optional[str]   = None
 
 @router.get("")
 def get_wishlist(db = Depends(get_db)):
@@ -31,13 +42,26 @@ def get_wishlist(db = Depends(get_db)):
 def add_to_wishlist(item: WishlistItem, db = Depends(get_db)):
     cur = db.execute("""
         INSERT INTO wishlist (brand, name, concentration, size_ml, notes,
-                              priority, target_price, fragrantica_url, image_url)
+                              priority, target_price, fragrantica_url, custom_image_url)
         VALUES (?,?,?,?,?,?,?,?,?)
     """, (item.brand, item.name, item.concentration, item.size_ml,
           item.notes, item.priority, item.target_price,
-          item.fragrantica_url, item.image_url))
+          item.fragrantica_url, item.custom_image_url))
     db.commit()
     return row_to_dict(db.execute("SELECT * FROM wishlist WHERE id=?", (cur.lastrowid,)).fetchone())
+
+@router.patch("/{item_id}")
+def update_wishlist(item_id: int, data: WishlistUpdate, db = Depends(get_db)):
+    row = db.execute("SELECT * FROM wishlist WHERE id=?", (item_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Not found")
+    updates = {k: v for k, v in data.dict(exclude_none=True).items()}
+    if not updates:
+        return row_to_dict(row)
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    db.execute(f"UPDATE wishlist SET {set_clause} WHERE id=?", list(updates.values()) + [item_id])
+    db.commit()
+    return row_to_dict(db.execute("SELECT * FROM wishlist WHERE id=?", (item_id,)).fetchone())
 
 @router.patch("/{item_id}/purchased")
 def mark_purchased(item_id: int, db = Depends(get_db)):
