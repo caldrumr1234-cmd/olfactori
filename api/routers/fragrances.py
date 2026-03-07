@@ -138,15 +138,19 @@ def list_fragrances(
         elif size_bucket == "small":  q += " AND size_ml > 30 AND size_ml <= 75"
         elif size_bucket == "medium": q += " AND size_ml > 75 AND size_ml <= 100"
         elif size_bucket == "large":  q += " AND size_ml > 100"
+    # OR logic — show frags matching any of the selected availability flags
+    avail_clauses = []
     if want_to_trade is not None:
-        q += " AND want_to_trade = ?"
+        avail_clauses.append("want_to_trade = ?")
         params.append(1 if want_to_trade else 0)
     if want_to_sell is not None:
-        q += " AND want_to_sell = ?"
+        avail_clauses.append("want_to_sell = ?")
         params.append(1 if want_to_sell else 0)
     if want_to_give_away is not None:
-        q += " AND want_to_give_away = ?"
+        avail_clauses.append("want_to_give_away = ?")
         params.append(1 if want_to_give_away else 0)
+    if avail_clauses:
+        q += " AND (" + " OR ".join(avail_clauses) + ")"
 
     if note:
         q += """ AND id IN (
