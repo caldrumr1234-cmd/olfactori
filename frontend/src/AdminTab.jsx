@@ -516,6 +516,105 @@ function DiscontinuedScrape({ toast }) {
 }
 
 
+
+// ── SECURITY PANEL ────────────────────────────────────────────
+function SecurityPanel({ toast }) {
+  const [settings, setSettings] = useState([]);
+  const [saving, setSaving]     = useState(null);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/security`)
+      .then(r => r.json())
+      .then(d => { setSettings(d.settings || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const toggle = async (key, currentVal) => {
+    const newVal = currentVal ? 0 : 1;
+    setSaving(key);
+    const token = sessionStorage.getItem("olfactori_token");
+    try {
+      await fetch(`${API}/security/${key}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ public: newVal }),
+      });
+      setSettings(prev => prev.map(s => s.key === key ? { ...s, public: newVal } : s));
+      toast(`${newVal ? "Public" : "Private"}`);
+    } catch (e) {
+      toast("Error saving setting");
+    }
+    setSaving(null);
+  };
+
+  const reset = async () => {
+    if (!confirm("Reset all settings to private?")) return;
+    const token = sessionStorage.getItem("olfactori_token");
+    await fetch(`${API}/security/reset`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    setSettings(prev => prev.map(s => ({ ...s, public: 0 })));
+    toast("All settings reset to private");
+  };
+
+  if (loading) return <div style={{color:"var(--text3)",fontSize:13}}>Loading...</div>;
+
+  const groups = {};
+  settings.forEach(s => {
+    if (!groups[s.grp]) groups[s.grp] = [];
+    groups[s.grp].push(s);
+  });
+
+  return (
+    <div>
+      <p style={{fontSize:13,color:"var(--text3)",marginBottom:16}}>
+        Control what non-admin visitors can see. Admin always has full access.
+        Edit controls, enrichment, and the Admin tab are always private regardless of these settings.
+      </p>
+      {Object.entries(groups).map(([group, items]) => (
+        <div key={group} style={{marginBottom:20}}>
+          <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",
+            letterSpacing:"0.1em",marginBottom:10,fontWeight:600}}>{group}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:2}}>
+            {items.map(s => (
+              <div key={s.key} style={{
+                display:"flex",alignItems:"center",justifyContent:"space-between",
+                padding:"10px 14px",background:"var(--bg3)",borderRadius:8,
+                border:"1px solid var(--border)",
+              }}>
+                <span style={{fontSize:13,color:"var(--text2)"}}>{s.label}</span>
+                <button
+                  onClick={() => toggle(s.key, s.public)}
+                  disabled={saving === s.key}
+                  style={{
+                    width:44,height:24,borderRadius:12,border:"none",cursor:"pointer",
+                    background: s.public ? "var(--green)" : "var(--border2)",
+                    position:"relative",transition:"background 0.2s",flexShrink:0,
+                  }}
+                  title={s.public ? "Public — click to make private" : "Private — click to make public"}
+                >
+                  <span style={{
+                    position:"absolute",top:3,
+                    left: s.public ? "calc(100% - 21px)" : "3px",
+                    width:18,height:18,borderRadius:"50%",
+                    background:"white",transition:"left 0.2s",
+                    boxShadow:"0 1px 3px rgba(0,0,0,0.3)",
+                  }}/>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <button className="btn btn-danger btn-sm" onClick={reset} style={{marginTop:8}}>
+        Reset All to Private
+      </button>
+    </div>
+  );
+}
+
 export default function AdminTab({ toast }) {
   const [invites,  setInvites]  = useState([]);
   const [requests, setRequests] = useState([]);
@@ -731,6 +830,17 @@ export default function AdminTab({ toast }) {
           </div>
           <div className="admin-section-body">
             <DiscontinuedScrape toast={toast} />
+          </div>
+        </div>
+
+        {/* ── SECURITY ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🔒 Access Control</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Toggle what non-admin visitors can see</span>
+          </div>
+          <div className="admin-section-body">
+            <SecurityPanel toast={toast} />
           </div>
         </div>
 

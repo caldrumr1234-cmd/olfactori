@@ -21,6 +21,7 @@ migrations = [
     'ALTER TABLE fragrances ADD COLUMN want_to_sell INTEGER DEFAULT 0',
     'ALTER TABLE fragrances ADD COLUMN want_to_give_away INTEGER DEFAULT 0',
     'ALTER TABLE wishlist ADD COLUMN custom_image_url TEXT',
+    'CREATE TABLE IF NOT EXISTS security_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, label TEXT, grp TEXT, public INTEGER DEFAULT 0)',
     '''CREATE TABLE IF NOT EXISTS decants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL DEFAULT \'decant\',

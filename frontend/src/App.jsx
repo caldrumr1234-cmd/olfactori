@@ -914,7 +914,7 @@ function TableView({ frags, selected, selectMode, onSelect, onClick }) {
 }
 
 // ── DETAIL DRAWER ─────────────────────────────────────────────
-function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
+function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
@@ -923,6 +923,7 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
   const [wearLog, setWearLog] = useState([]);
   const [saving, setSaving] = useState(false);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [showGone, setShowGone] = useState(false);
 
   useEffect(() => {
     setHeroLoaded(false);
@@ -1042,7 +1043,7 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
           </div>
 
           <div className="drawer-tabs">
-            {["info","notes","wear","edit","enrich"].map(t => (
+            {["info","notes","wear",...(isAdminUser?["edit","enrich"]:[])].map(t => (
               <button key={t} className={`drawer-tab ${tab===t?"active":""}`}
                 onClick={() => { setTab(t); setEditing(t==="edit"); }}>
                 {t.charAt(0).toUpperCase()+t.slice(1)}
@@ -1289,11 +1290,14 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast }) {
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
                 <button className="btn btn-secondary" onClick={() => { setTab("info"); setEditing(false); }}>Cancel</button>
-                <button className="btn btn-danger btn-sm" style={{marginLeft:"auto"}} onClick={confirmDelete}>Remove</button>
+                {isAdminUser && <button className="btn btn-danger btn-sm" style={{marginLeft:"auto"}} onClick={confirmDelete}>Remove</button>}
               </>
             : <>
-                <button className="btn btn-secondary" onClick={() => { setTab("edit"); setEditing(true); }}>Edit</button>
-                <button className="btn btn-secondary" onClick={() => setTab("wear")}>Log Wear</button>
+                {isAdminUser && <button className="btn btn-secondary" onClick={() => { setTab("edit"); setEditing(true); }}>Edit</button>}
+                {isAdminUser && <button className="btn btn-secondary" onClick={() => setTab("wear")}>Log Wear</button>}
+                {isAdminUser && onMarkGone && (
+                  <button className="btn btn-secondary" onClick={() => setShowGone(true)}>Gone 👋</button>
+                )}
                 <button className="btn btn-secondary btn-sm" style={{marginLeft:"auto"}} onClick={onClose}>Close</button>
               </>
           }
@@ -1481,6 +1485,12 @@ function AddModal({ onClose, onAdd, toast }) {
 // ── MAIN APP ──────────────────────────────────────────────────
 export default function Olfactori() {
   const [tab, setTab]         = useState("collection");
+  // ── AUTH ──────────────────────────────────────────────────
+  const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);
+  const [isAdmin,  setIsAdmin]  = useState(false);
+  const [authReady,setAuthReady]= useState(false);
+  const [security, setSecurity] = useState({});
+
   const [frags, setFrags]     = useState([]);
   const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(true);
@@ -1531,6 +1541,45 @@ export default function Olfactori() {
   }, [search, filters]);
 
   useEffect(() => { loadFragrances(); }, []);
+
+  // ── AUTH INIT ─────────────────────────────────────────────
+  useEffect(() => {
+    // Check for token in URL (after OAuth redirect)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    const authError = params.get("auth_error");
+    if (urlToken) {
+      sessionStorage.setItem("olfactori_token", urlToken);
+      setToken(urlToken);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    if (authError) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    const activeToken = urlToken || token;
+    if (activeToken) {
+      fetch(`${API}/auth/me`, {
+        headers: { "Authorization": `Bearer ${activeToken}` }
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.authenticated && d.role === "admin") setIsAdmin(true);
+          setAuthReady(true);
+        })
+        .catch(() => setAuthReady(true));
+    } else {
+      setAuthReady(true);
+    }
+    // Load security settings
+    fetch(`${API}/security`)
+      .then(r => r.json())
+      .then(d => {
+        const map = {};
+        (d.settings || []).forEach(s => { map[s.key] = s.public === 1; });
+        setSecurity(map);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -1591,6 +1640,18 @@ export default function Olfactori() {
     setTab("notes");
   };
 
+  const signIn = () => {
+    window.location.href = `${API}/auth/login`;
+  };
+  const signOut = () => {
+    sessionStorage.removeItem("olfactori_token");
+    setToken(null);
+    setIsAdmin(false);
+  };
+
+  // canSee — returns true if admin OR the setting is public
+  const canSee = (key) => isAdmin || security[key] === true;
+
   const handleOpenFrag = (frag) => {
     setActiveFrag(frag);
     // don't switch tab — drawer renders on top of current tab
@@ -1636,18 +1697,23 @@ export default function Olfactori() {
     }
   };
 
-  const tabs = [
-    { id:"collection",  label:"Collection"  },
-    { id:"insights",    label:"Insights"    },
-    { id:"explore",     label:"Explore"     },
-    { id:"wishlist",    label:"Wishlist"    },
-    { id:"wardrobe",    label:"Wardrobe"    },
-    { id:"shelves",     label:"Shelves"     },
-    { id:"notes",       label:"Notes"       },
-    { id:"usedtohave",  label:"Used to Have"},
-    { id:"decants",     label:"Decants & Samples"},
-    { id:"admin",       label:"Admin"       },
+  const allTabs = [
+    { id:"collection",  label:"Collection",        secKey:"tab_collection"  },
+    { id:"insights",    label:"Insights",          secKey:"tab_insights"    },
+    { id:"explore",     label:"Explore",           secKey:"tab_explore"     },
+    { id:"wishlist",    label:"Wishlist",          secKey:"tab_wishlist"    },
+    { id:"wardrobe",    label:"Wardrobe",          secKey:"tab_wardrobe"    },
+    { id:"shelves",     label:"Shelves",           secKey:"tab_shelves"     },
+    { id:"notes",       label:"Notes",             secKey:"tab_notes"       },
+    { id:"usedtohave",  label:"Used to Have",      secKey:"tab_usedtohave"  },
+    { id:"decants",     label:"Decants & Samples", secKey:"tab_decants"     },
+    { id:"admin",       label:"Admin",             secKey:null              }, // always admin-only
   ];
+  const tabs = allTabs.filter(t => {
+    if (t.id === "admin") return isAdmin;
+    if (!t.secKey) return true;
+    return canSee(t.secKey);
+  });
 
   return (
     <>
@@ -1667,15 +1733,28 @@ export default function Olfactori() {
             ))}
           </div>
           <div className="nav-right">
-            <button className="icon-btn" title="Add fragrance" onClick={() => setShowAdd(true)}>＋</button>
-            <button className="icon-btn" title="Sample requests" style={{position:"relative"}} onClick={() => setTab("admin")}>
-              📬
-              {pendingRequests > 0 && <span className="badge">{pendingRequests}</span>}
-            </button>
+            {isAdmin && <button className="icon-btn" title="Add fragrance" onClick={() => setShowAdd(true)}>＋</button>}
+            {isAdmin && (
+              <button className="icon-btn" title="Sample requests" style={{position:"relative"}} onClick={() => setTab("admin")}>
+                📬
+                {pendingRequests > 0 && <span className="badge">{pendingRequests}</span>}
+              </button>
+            )}
             <button className="icon-btn" title="Print catalog"
               onClick={() => window.open(`${API}/export/catalog`, "_blank")}>
               🖨️
             </button>
+            {isAdmin ? (
+              <button className="icon-btn" title="Sign out" onClick={signOut}
+                style={{fontSize:11,width:"auto",padding:"0 10px",color:"var(--text3)"}}>
+                Sign Out
+              </button>
+            ) : (
+              <button className="suggest-btn" onClick={signIn}
+                style={{padding:"6px 14px",fontSize:12}}>
+                🔑 Sign In
+              </button>
+            )}
           </div>
         </nav>
 
@@ -1938,7 +2017,7 @@ export default function Olfactori() {
           )}
 
           {tab === "insights" && <InsightsTab />}
-          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onHouseFilter={handleHouseFilter} onOpenFrag={handleOpenFrag} />}
+          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onHouseFilter={handleHouseFilter} onOpenFrag={handleOpenFrag} canSee={canSee} />}
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
           {tab === "wardrobe" && <WardrobeTab onOpenFrag={handleOpenFrag} />}
@@ -1974,6 +2053,7 @@ export default function Olfactori() {
             onMarkGone={markAsGone}
             onWear={updateLastWorn}
             toast={showToast}
+            isAdminUser={isAdmin}
           />
         )}
 
