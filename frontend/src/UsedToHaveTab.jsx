@@ -62,9 +62,9 @@ const css = `
   .uth-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 480px; background: var(--bg1); border-left: 1px solid var(--border); z-index: 301; overflow-y: auto; animation: slideInRight 0.25s ease; display: flex; flex-direction: column; }
   @keyframes slideInRight { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .uth-drawer-hero { width: 100%; aspect-ratio: 1; max-height: 300px; background: var(--bg3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative; }
-  .uth-drawer-hero img { width: 70%; height: 70%; object-fit: contain; }
-  .uth-drawer-hero-placeholder { font-size: 64px; opacity: 0.2; }
+  .uth-drawer-hero { width: 100%; height: 320px; background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.12) 0%, var(--bg3) 70%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative; }
+  .uth-drawer-hero img { width: auto; height: 90%; max-width: 88%; object-fit: contain; }
+  .uth-drawer-hero-placeholder { font-size: 64px; opacity: 0.12; }
   .uth-drawer-close { position: absolute; top: 14px; right: 14px; background: rgba(0,0,0,0.5); border: none; color: var(--text2); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .uth-drawer-close:hover { background: rgba(0,0,0,0.8); color: var(--text); }
   .uth-drawer-body { padding: 24px 28px; flex: 1; }

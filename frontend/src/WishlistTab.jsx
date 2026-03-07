@@ -59,12 +59,13 @@ const css = `
   }
   @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   .wl-drawer-hero {
-    width: 100%; aspect-ratio: 1; background: var(--bg3);
+    width: 100%; height: 320px;
+    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.12) 0%, var(--bg3) 70%);
     display: flex; align-items: center; justify-content: center;
-    position: relative; flex-shrink: 0;
+    position: relative; flex-shrink: 0; overflow: hidden;
   }
-  .wl-drawer-hero img { width: 60%; height: 60%; object-fit: contain; }
-  .wl-drawer-hero-placeholder { font-size: 64px; opacity: 0.15; }
+  .wl-drawer-hero img { width: auto; height: 90%; max-width: 88%; object-fit: contain; }
+  .wl-drawer-hero-placeholder { font-size: 64px; opacity: 0.12; }
   .wl-drawer-close {
     position: absolute; top: 12px; right: 12px;
     background: var(--bg2); border: 1px solid var(--border);
