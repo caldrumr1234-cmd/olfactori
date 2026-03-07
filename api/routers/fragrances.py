@@ -504,25 +504,41 @@ def _scrape_basenotes(brand: str, name: str) -> dict:
                 return result
             soup2 = BeautifulSoup(resp2.text, "lxml")
 
-        # Notes
-        for section in soup2.select(".notescontainer, .notes-grid"):
-            label = section.get_text(strip=True).lower()
-            notes_list = [n.text.strip() for n in section.select("a, span.note")]
-            if "top" in label:    result["top_notes"]    = notes_list
-            elif "middle" in label or "heart" in label: result["middle_notes"] = notes_list
-            elif "base" in label: result["base_notes"]   = notes_list
+        # Notes — Basenotes uses a table with header rows labeling top/middle/base
+        current_tier = None
+        for el in soup2.select("table.fragrance-notes tr, .fragrance-notes tr, tr"):
+            header = el.select_one("th, td.notes-header, .tier-label")
+            if header:
+                txt = header.get_text(strip=True).lower()
+                if "top" in txt:              current_tier = "top_notes"
+                elif "middle" in txt or "heart" in txt: current_tier = "middle_notes"
+                elif "base" in txt:           current_tier = "base_notes"
+                continue
+            if current_tier:
+                notes_list = [a.get_text(strip=True) for a in el.select("a") if a.get_text(strip=True)]
+                if notes_list:
+                    result.setdefault(current_tier, []).extend(notes_list)
 
         # Year
-        for el in soup2.select("td, .meta-value"):
+        for el in soup2.select("td, .meta-value, .fragrance-details td"):
             m = re.search(r'\b(19[5-9]\d|20[0-2]\d)\b', el.text)
             if m:
                 result["year_released"] = int(m.group())
                 break
 
-        # Perfumer
-        for a in soup2.select('a[href*="/perfumer/"], a[href*="/nose/"]'):
-            result["perfumer"] = a.text.strip()
-            break
+        # Perfumer — Basenotes uses /noses/ not /perfumer/
+        for a in soup2.select('a[href*="/noses/"], a[href*="/perfumer/"]'):
+            txt = a.get_text(strip=True)
+            if txt:
+                result["perfumer"] = txt
+                break
+
+        # Gender / Concentration
+        for el in soup2.select(".fragrance-details td, td"):
+            txt = el.get_text(strip=True).lower()
+            if "for women" in txt and "men" in txt: result.setdefault("gender_class", "Unisex")
+            elif "for women" in txt:                result.setdefault("gender_class", "Female")
+            elif "for men" in txt:                  result.setdefault("gender_class", "Male")
 
     except Exception:
         pass
@@ -557,31 +573,64 @@ def _scrape_parfumo(brand: str, name: str) -> dict:
                 return result
             soup2 = BeautifulSoup(resp2.text, "lxml")
 
-        # Notes
-        for div in soup2.select(".notes_list, .olfactory_pyramid"):
-            for item in div.select(".note_name, a"):
-                txt = item.text.strip()
-                if txt:
-                    result.setdefault("main_accords", []).append(txt)
+        # Notes — Parfumo olfactory pyramid has labeled sections
+        for section in soup2.select(".olfactory_pyramid .pyramid_part, .notes_pyramid .part, .notes-section"):
+            label_el = section.select_one(".pyramid_label, .notes_label, h3, h4, strong, .label")
+            label = label_el.get_text(strip=True).lower() if label_el else ""
+            notes_list = [n.get_text(strip=True) for n in section.select(".note_name, .note, a[href*='/Notes/']") if n.get_text(strip=True)]
+            if not notes_list:
+                continue
+            if "top" in label:                      result["top_notes"]    = notes_list
+            elif "heart" in label or "middle" in label: result["middle_notes"] = notes_list
+            elif "base" in label:                   result["base_notes"]   = notes_list
+            elif "accord" in label or not label:
+                result.setdefault("main_accords", []).extend(notes_list)
+
+        # Accords — dedicated accord section
+        for div in soup2.select(".accords_list, .main_accords, [class*='accord']"):
+            accords = [a.get_text(strip=True) for a in div.select("a, span.accord_name") if a.get_text(strip=True)]
+            if accords:
+                result["main_accords"] = accords
+                break
 
         # Year
-        for el in soup2.select(".meta, .details td"):
+        for el in soup2.select(".meta_content, .details_list dt, .details_list dd, .meta"):
             m = re.search(r'\b(19[5-9]\d|20[0-2]\d)\b', el.text)
             if m:
                 result["year_released"] = int(m.group())
                 break
 
-        # Perfumer
-        for a in soup2.select('a[href*="/Perfumers/"]'):
-            result["perfumer"] = a.text.strip()
-            break
+        # Perfumer — Parfumo links perfumers via /Perfumers/ path or labels in details
+        for a in soup2.select('a[href*="/Perfumers/"], a[href*="/perfumer/"]'):
+            txt = a.get_text(strip=True)
+            if txt and txt.lower() not in ("perfumers", "all perfumers"):
+                result["perfumer"] = txt
+                break
+        if not result.get("perfumer"):
+            # fallback: look for dt "Perfumer" then read sibling dd
+            for dt in soup2.select("dt"):
+                if "perfumer" in dt.get_text(strip=True).lower():
+                    dd = dt.find_next_sibling("dd")
+                    if dd:
+                        txt = dd.get_text(strip=True)
+                        if txt:
+                            result["perfumer"] = txt
+                    break
 
         # Gender
-        for el in soup2.select(".gender, .meta"):
-            txt = el.text.strip().lower()
-            if "unisex" in txt:     result["gender_class"] = "Unisex"
-            elif "women" in txt:    result["gender_class"] = "Female"
-            elif "men" in txt:      result["gender_class"] = "Male"
+        for el in soup2.select(".gender_icon, .meta_content, .gender, .meta"):
+            txt = el.get_text(strip=True).lower()
+            if "unisex" in txt:     result["gender_class"] = "Unisex"; break
+            elif "women" in txt:    result["gender_class"] = "Female"; break
+            elif "men" in txt:      result["gender_class"] = "Male";   break
+
+        # Concentration
+        for dt in soup2.select("dt"):
+            if "concentration" in dt.get_text(strip=True).lower() or "type" in dt.get_text(strip=True).lower():
+                dd = dt.find_next_sibling("dd")
+                if dd:
+                    result.setdefault("concentration", dd.get_text(strip=True))
+                break
 
     except Exception:
         pass
@@ -650,6 +699,12 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
                     conflicts.append({"field": field, "values": source_vals})
             continue
 
+        # Perfumer: accept first match from any source, no majority needed
+        if field == "perfumer":
+            if vals:
+                merged[field] = vals[0]
+            continue
+
         majority = _majority_value(vals)
         if majority is not None:
             merged[field] = majority
@@ -690,6 +745,28 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
             conflicts.append({"field": field, "values": source_vals})
 
     return merged, conflicts
+
+
+# ── PERFUMER FRAGRANTICA FALLBACK ────────────────────────────
+def _fetch_perfumer_fragrantica(brand: str, name: str, fragrantica_url: str = None) -> str | None:
+    """Last-resort perfumer lookup from Fragrantica. Returns name string or None."""
+    from bs4 import BeautifulSoup
+    try:
+        ft_url = fragrantica_url or _find_fragrantica_url(brand, name)
+        if not ft_url:
+            return None
+        with httpx.Client() as client:
+            resp = _fetch(client, ft_url)
+        if not resp:
+            return None
+        soup = BeautifulSoup(resp.text, "lxml")
+        for a in soup.select('a[href*="/noses/"]'):
+            txt = a.get_text(strip=True)
+            if txt:
+                return txt
+    except Exception:
+        pass
+    return None
 
 
 # ── IMAGE FETCH ───────────────────────────────────────────────
@@ -782,6 +859,12 @@ def enrich_smart(frag_id: int, db = Depends(get_db)):
     # Only keep fields that were actually missing
     merged = {k: v for k, v in merged.items() if k in missing}
     conflicts = [c for c in conflicts if c["field"] in missing]
+
+    # Perfumer fallback — if still missing after all sources, try Fragrantica
+    if "perfumer" in missing and not merged.get("perfumer"):
+        ft_perfumer = _fetch_perfumer_fragrantica(brand, name, sources.get("fragrantica_url"))
+        if ft_perfumer:
+            merged["perfumer"] = ft_perfumer
 
     # Image — only if missing
     image_result = None
@@ -1014,6 +1097,117 @@ def get_similar(frag_id: int, db = Depends(get_db)):
     except Exception:
         pass
     return {"similar_fragrances": []}
+
+
+# ── BATCH ENRICH ─────────────────────────────────────────────
+@router.post("/enrich/batch")
+def batch_enrich(db = Depends(get_db)):
+    """
+    Batch enrich all fragrances with missing data.
+    Uses Fragella + Basenotes + Parfumo only (no Fragrantica scraping).
+    Perfumer: first match wins. All other fields: require 2 matching sources.
+    Images are skipped entirely.
+    Auto-applies updates without user confirmation.
+    Returns a summary of what was updated.
+    """
+    rows = db.execute("SELECT * FROM fragrances WHERE enrichment_locked = 0 OR enrichment_locked IS NULL").fetchall()
+    frags = [row_to_dict(r) for r in rows]
+
+    results = []
+    for frag in frags:
+        missing = _get_missing_fields_no_image(frag)
+        if not missing:
+            results.append({"id": frag["id"], "name": frag["name"], "status": "complete", "updated": []})
+            continue
+
+        brand, name = frag["brand"], frag["name"]
+        try:
+            # Fetch Fragella + Basenotes + Parfumo only
+            sources = {}
+            fe = _fetch_fragella(brand, name)
+            sources["fragella"] = _normalize_fragella(fe) if fe else {}
+            sources["basenotes"] = _scrape_basenotes(brand, name)
+            sources["parfumo"]   = _scrape_parfumo(brand, name)
+
+            merged, _ = _merge_sources([
+                sources["fragella"],
+                {},  # fragrantica slot empty
+                sources["basenotes"],
+                sources["parfumo"],
+            ])
+
+            # Perfumer fallback to Fragrantica if still missing
+            if "perfumer" in missing and not merged.get("perfumer"):
+                ft_perfumer = _fetch_perfumer_fragrantica(brand, name, frag.get("fragrantica_url"))
+                if ft_perfumer:
+                    merged["perfumer"] = ft_perfumer
+
+            # Only apply fields that were missing
+            to_apply = {k: v for k, v in merged.items() if k in missing and v is not None}
+            if not to_apply:
+                results.append({"id": frag["id"], "name": frag["name"], "status": "no_data", "updated": []})
+                continue
+
+            # Build DB update
+            updates = {}
+            for field, value in to_apply.items():
+                if isinstance(value, list):
+                    updates[field] = json.dumps(value)
+                else:
+                    updates[field] = value
+
+            updates["enrichment_status"] = "success"
+            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            db.execute(
+                f"UPDATE fragrances SET {set_clause} WHERE id = ?",
+                list(updates.values()) + [frag["id"]]
+            )
+
+            # Rebuild fragrance_notes for note fields
+            note_fields = {"top_notes", "middle_notes", "base_notes", "main_accords"}
+            updated_note_fields = note_fields & set(to_apply.keys())
+            if updated_note_fields:
+                current = row_to_dict(db.execute("SELECT * FROM fragrances WHERE id = ?", (frag["id"],)).fetchone())
+                class _NoteData:
+                    pass
+                nd = _NoteData()
+                nd.top_notes    = to_apply.get("top_notes",    [n["note_name"] for n in db.execute("SELECT note_name FROM fragrance_notes WHERE fragrance_id=? AND note_position='top'", (frag["id"],)).fetchall()])
+                nd.middle_notes = to_apply.get("middle_notes", [n["note_name"] for n in db.execute("SELECT note_name FROM fragrance_notes WHERE fragrance_id=? AND note_position='middle'", (frag["id"],)).fetchall()])
+                nd.base_notes   = to_apply.get("base_notes",   [n["note_name"] for n in db.execute("SELECT note_name FROM fragrance_notes WHERE fragrance_id=? AND note_position='base'", (frag["id"],)).fetchall()])
+                nd.main_accords = to_apply.get("main_accords", [n["note_name"] for n in db.execute("SELECT note_name FROM fragrance_notes WHERE fragrance_id=? AND note_position='accord'", (frag["id"],)).fetchall()])
+                _rebuild_notes(db, frag["id"], nd)
+
+            db.commit()
+            results.append({"id": frag["id"], "name": f"{brand} {name}", "status": "updated", "updated": list(to_apply.keys())})
+
+        except Exception as e:
+            results.append({"id": frag["id"], "name": f"{brand} {name}", "status": "error", "error": str(e)})
+
+    summary = {
+        "total":    len(results),
+        "updated":  sum(1 for r in results if r["status"] == "updated"),
+        "complete": sum(1 for r in results if r["status"] == "complete"),
+        "no_data":  sum(1 for r in results if r["status"] == "no_data"),
+        "errors":   sum(1 for r in results if r["status"] == "error"),
+    }
+    return {"summary": summary, "results": results}
+
+
+def _get_missing_fields_no_image(frag: dict) -> list[str]:
+    """Like _get_missing_fields but excludes image."""
+    missing = []
+    if not frag.get("year_released"):        missing.append("year_released")
+    if not frag.get("gender_class"):         missing.append("gender_class")
+    if not frag.get("concentration"):        missing.append("concentration")
+    if not frag.get("perfumer"):             missing.append("perfumer")
+    if not frag.get("top_notes"):            missing.append("top_notes")
+    if not frag.get("middle_notes"):         missing.append("middle_notes")
+    if not frag.get("base_notes"):           missing.append("base_notes")
+    if not frag.get("main_accords"):         missing.append("main_accords")
+    if not frag.get("fragrantica_rating"):   missing.append("fragrantica_rating")
+    if not frag.get("longevity_rating"):     missing.append("longevity_rating")
+    if not frag.get("sillage_rating"):       missing.append("sillage_rating")
+    return missing
 
 
 # ── STATS SUMMARY ─────────────────────────────────────────────

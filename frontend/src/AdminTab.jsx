@@ -1,5 +1,6 @@
 // AdminTab.jsx — drop into frontend/src/
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import React from "react";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -89,6 +90,22 @@ const css = `
     animation: toastIn 0.2s ease;
   }
   .empty-section { padding: 30px; text-align: center; color: var(--text3); font-size: 13px; }
+
+  /* BATCH ENRICH */
+  .batch-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .batch-progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .batch-progress-fill { height: 100%; background: var(--gold); transition: width 0.3s; border-radius: 3px; }
+  .batch-log { max-height: 260px; overflow-y: auto; font-size: 12px; font-family: monospace; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 3px; }
+  .batch-log-row { display: flex; gap: 8px; align-items: baseline; }
+  .batch-log-row.updated  { color: var(--green); }
+  .batch-log-row.complete { color: var(--text3); }
+  .batch-log-row.no_data  { color: var(--text3); opacity: 0.6; }
+  .batch-log-row.error    { color: var(--red); }
+  .batch-log-row.running  { color: var(--gold); }
+  .batch-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; }
+  .batch-stat { display: flex; gap: 4px; }
+  .batch-stat-label { color: var(--text3); }
+  .batch-stat-val { color: var(--text); font-weight: 500; }
 `;
 
 function AddInviteModal({ onClose, onAdd, toast }) {
@@ -174,6 +191,87 @@ function AddInviteModal({ onClose, onAdd, toast }) {
     </div>
   );
 }
+
+// ── BATCH ENRICH COMPONENT ───────────────────────────────────
+function BatchEnrich({ toast }) {
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const logRef = useRef(null);
+
+  async function startBatch() {
+    setRunning(true);
+    setResults([{ status: "running", name: "Starting batch enrich — this may take several minutes…" }]);
+    setSummary(null);
+    setProgress(0);
+    try {
+      const res = await fetch(`${API}/fragrances/enrich/batch`, { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSummary(data.summary);
+      setResults(data.results);
+      setProgress(100);
+      toast?.(`Batch complete: ${data.summary.updated} updated, ${data.summary.errors} errors`);
+    } catch (e) {
+      setResults([{ status: "error", name: "Batch failed: " + e.message }]);
+      toast?.("Batch enrich failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  // Auto-scroll log
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [results]);
+
+  const statusIcon = { updated: "✓", complete: "·", no_data: "–", error: "✗", running: "⟳" };
+
+  return (
+    <div>
+      <div className="batch-controls">
+        <button className="btn btn-primary" onClick={startBatch} disabled={running}>
+          {running ? "⟳ Running…" : "▶ Start Batch Enrich"}
+        </button>
+        {summary && (
+          <div className="batch-summary">
+            <div className="batch-stat"><span className="batch-stat-label">Total:</span><span className="batch-stat-val">{summary.total}</span></div>
+            <div className="batch-stat"><span className="batch-stat-label">Updated:</span><span className="batch-stat-val" style={{color:"var(--green)"}}>{summary.updated}</span></div>
+            <div className="batch-stat"><span className="batch-stat-label">Already complete:</span><span className="batch-stat-val">{summary.complete}</span></div>
+            <div className="batch-stat"><span className="batch-stat-label">No data found:</span><span className="batch-stat-val">{summary.no_data}</span></div>
+            <div className="batch-stat"><span className="batch-stat-label">Errors:</span><span className="batch-stat-val" style={{color:summary.errors>0?"var(--red)":"inherit"}}>{summary.errors}</span></div>
+          </div>
+        )}
+      </div>
+      {running && (
+        <div className="batch-progress-bar">
+          <div className="batch-progress-fill" style={{width:`${progress}%`}} />
+        </div>
+      )}
+      {results.length > 0 && (
+        <div className="batch-log" ref={logRef}>
+          {results.map((r, i) => (
+            <div key={i} className={`batch-log-row ${r.status}`}>
+              <span style={{opacity:0.5}}>{statusIcon[r.status] || "·"}</span>
+              <span>{r.name}</span>
+              {r.updated?.length > 0 && (
+                <span style={{opacity:0.6, fontSize:11}}>→ {r.updated.join(", ")}</span>
+              )}
+              {r.error && <span style={{opacity:0.7}}>{r.error}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {!running && results.length === 0 && (
+        <div style={{color:"var(--text3)",fontSize:13}}>
+          Searches Fragella, Basenotes, and Parfumo for missing fields only. Requires 2 matching sources to update (except perfumer — first match wins). Images are never touched. Locked fragrances are skipped.
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function AdminTab({ toast }) {
   const [invites,  setInvites]  = useState([]);
@@ -348,6 +446,17 @@ export default function AdminTab({ toast }) {
                 );
               })
             )}
+          </div>
+        </div>
+
+        {/* ── BATCH ENRICH ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🔬 Batch Enrich Missing Data</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Fragella · Basenotes · Parfumo — skips images, skips locked</span>
+          </div>
+          <div className="admin-section-body">
+            <BatchEnrich toast={toast} />
           </div>
         </div>
 
