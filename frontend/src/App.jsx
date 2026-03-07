@@ -1204,7 +1204,7 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
             </div>
           )}
 
-          {tab === "wear" && (
+          {tab === "wear" && isAdminUser && (
             <>
               <div className="section-title">Log a Wear</div>
               <div style={{display:"flex",gap:8,marginBottom:20}}>
