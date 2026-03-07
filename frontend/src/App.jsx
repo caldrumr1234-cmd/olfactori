@@ -8,6 +8,7 @@ import WardrobeTab from "./WardrobeTab.jsx";
 import { EnrichPanel } from "./EnrichPanel.jsx";
 import ShelvesTab from "./ShelvesTab.jsx";
 import UsedToHaveTab from "./UsedToHaveTab.jsx";
+import NotesTab from "./NotesTab.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -775,6 +776,7 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
           {frag.is_limited_edition === 1 && <span className="flag limited">LE</span>}
           {frag.is_exclusive       === 1 && <span className="flag exclusive">Excl.</span>}
           {frag.concentration && <span className="flag" style={{background:"var(--bg3)",color:"var(--text3)",border:"1px solid var(--border)"}}>{frag.concentration}</span>}
+          {frag.size_ml && <span className="flag" style={{background:"var(--bg3)",color:"var(--text3)",border:"1px solid var(--border)"}}>{frag.size_ml}ml</span>}
         </div>
       </div>
     </div>
@@ -1522,6 +1524,7 @@ export default function Olfactori() {
     { id:"wishlist",    label:"Wishlist"    },
     { id:"wardrobe",    label:"Wardrobe"    },
     { id:"shelves",     label:"Shelves"     },
+    { id:"notes",       label:"Notes"       },
     { id:"usedtohave",  label:"Used to Have"},
     { id:"admin",       label:"Admin"       },
   ];
@@ -1832,6 +1835,9 @@ export default function Olfactori() {
             />
           )}
 
+          {tab === "notes" && (
+            <NotesTab onOpenFrag={(frag) => { setActiveFrag(frag); setTab("collection"); }} />
+          )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
           {tab === "admin" && <AdminTab toast={showToast} />}
