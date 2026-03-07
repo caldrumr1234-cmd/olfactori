@@ -1450,6 +1450,7 @@ export default function Olfactori() {
   const [shelfSelected, setShelfSelected] = useState(new Set());
   const [shelfSelectCallback, setShelfSelectCallback] = useState(null);
   const [activeFrag, setActiveFrag] = useState(null);
+  const [noteSearch, setNoteSearch] = useState("");
   const [showAdd, setShowAdd]  = useState(false);
   const [toast, setToastMsg]   = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -1535,15 +1536,42 @@ export default function Olfactori() {
   };
 
   const handleNoteFilter = (note) => {
-    setSearch(note);
-    setFilters({});
-    setTab("collection");
-    loadFragrances(note, {});
+    setNoteSearch(note);
+    setTab("notes");
   };
 
   const handleOpenFrag = (frag) => {
     setActiveFrag(frag);
     // don't switch tab — drawer renders on top of current tab
+  };
+
+  const handleHouseFilter = (brand) => {
+    setSearch("");
+    setFilters({ brand });
+    setTab("collection");
+    loadFragrances("", { brand });
+  };
+
+  const markAsGone = async (frag, reason) => {
+    try {
+      await fetch(`${API}/used_to_have`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand: frag.brand, name: frag.name,
+          concentration: frag.concentration || null,
+          year_released: frag.year_released || null,
+          reason_gone: reason,
+          custom_image_url: frag.custom_image_url || frag.fragella_image_url || null,
+        }),
+      });
+      await fetch(`${API}/fragrances/${frag.id}`, { method: "DELETE" });
+      deleteFrag(frag.id);
+      setActiveFrag(null);
+      showToast(`${frag.name} moved to Used to Have`);
+    } catch (e) {
+      showToast("Error moving fragrance");
+    }
   };
 
   // Alphabet jump
@@ -1858,7 +1886,7 @@ export default function Olfactori() {
           )}
 
           {tab === "insights" && <InsightsTab />}
-          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onOpenFrag={handleOpenFrag} />}
+          {tab === "explore"  && <ExploreTab onNoteFilter={handleNoteFilter} onHouseFilter={handleHouseFilter} onOpenFrag={handleOpenFrag} />}
           {tab === "wishlist" && <WishlistTab toast={showToast} />}
 
           {tab === "wardrobe" && <WardrobeTab onOpenFrag={handleOpenFrag} />}
@@ -1876,7 +1904,7 @@ export default function Olfactori() {
           )}
 
           {tab === "notes" && (
-            <NotesTab onOpenFrag={handleOpenFrag} />
+            <NotesTab onOpenFrag={handleOpenFrag} initialNote={noteSearch} />
           )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 

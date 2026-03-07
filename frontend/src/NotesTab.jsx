@@ -8,6 +8,7 @@ const css = `
 
   .notes-panel {
     width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;
+    position: sticky; top: 0;
   }
   .notes-search-input {
     width: 100%; box-sizing: border-box;
@@ -26,7 +27,7 @@ const css = `
   }
   .notes-tier-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .notes-cloud-wrap {
-    background: var(--bg2);
+    max-height: calc(100vh - 160px); overflow-y: auto; background: var(--bg2);
     border: 1px solid var(--border); border-radius: var(--radius);
     padding: 16px; display: flex; flex-wrap: wrap;
     gap: 8px; align-content: flex-start;
@@ -98,7 +99,7 @@ const css = `
   @media (max-width: 700px) {
     .notes-tab { flex-direction: column; }
     .notes-panel { width: 100%; }
-
+    .notes-cloud-wrap { max-height: 220px; }
   }
 `;
 
@@ -114,12 +115,18 @@ function parseArr(val) {
   try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch { return []; }
 }
 
-export default function NotesTab({ onOpenFrag }) {
+export default function NotesTab({ onOpenFrag, initialNote }) {
   const [frags, setFrags]           = useState([]);
   const [loading, setLoading]       = useState(true);
   const [tier, setTier]             = useState("All");
   const [noteSearch, setNoteSearch] = useState("");
   const [activeNotes, setActiveNotes] = useState(new Set()); // multi-select
+
+  // Jump to a note passed in from Explore tab
+  useEffect(() => {
+    if (!initialNote) return;
+    setActiveNotes(new Set([initialNote.toLowerCase()]));
+  }, [initialNote]);
 
   useEffect(() => {
     // Fetch full collection — API returns { items: [] }

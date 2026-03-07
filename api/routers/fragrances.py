@@ -1263,13 +1263,30 @@ def get_stats(db = Depends(get_db)):
         WHERE gender_class IS NOT NULL GROUP BY gender_class
     """).fetchall()
 
+    exclusive= db.execute("SELECT COUNT(*) FROM fragrances WHERE is_exclusive=1").fetchone()[0]
+    by_size  = db.execute("""
+        SELECT
+          CASE
+            WHEN size_ml IS NULL THEN 'Unknown'
+            WHEN size_ml <= 30   THEN 'Travel (≤30ml)'
+            WHEN size_ml <= 75   THEN 'Standard (31–75ml)'
+            WHEN size_ml <= 100  THEN 'Large (76–100ml)'
+            ELSE 'XL (>100ml)'
+          END as bucket,
+          COUNT(*) as cnt
+        FROM fragrances
+        GROUP BY bucket ORDER BY cnt DESC
+    """).fetchall()
+
     return {
         "total": total, "enriched": enriched, "brands": brands,
         "testers": testers, "discontinued": disc, "limited": limited,
+        "exclusive": exclusive,
         "top_accords":      [{k: r[k] for k in r.keys()} for r in accords],
         "by_concentration": [{k: r[k] for k in r.keys()} for r in by_conc],
         "by_decade":        [{k: r[k] for k in r.keys()} for r in by_decade],
         "by_gender":        [{k: r[k] for k in r.keys()} for r in by_gender],
+        "by_size":          [{k: r[k] for k in r.keys()} for r in by_size],
     }
 
 

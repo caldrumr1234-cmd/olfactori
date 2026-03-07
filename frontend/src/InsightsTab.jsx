@@ -1,4 +1,4 @@
-// InsightsTab.jsx — drop into frontend/src/
+// InsightsTab.jsx
 import { useState, useEffect } from "react";
 
 const API = "https://olfactori-production.up.railway.app/api";
@@ -33,16 +33,6 @@ const css = `
                   color: var(--gold); font-weight: 300; }
   .ins-hero-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase;
                   letter-spacing: 0.08em; margin-top: 2px; }
-  .gap-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
-  }
-  .gap-item:last-child { border-bottom: none; }
-  .gap-name { font-size: 13px; color: var(--text2); text-transform: capitalize; }
-  .gap-zero { font-size: 11px; color: var(--red); background: rgba(224,85,85,0.1);
-              padding: 2px 7px; border-radius: 10px; }
-  .gap-few { font-size: 11px; color: var(--gold); background: var(--gold-dim);
-             padding: 2px 7px; border-radius: 10px; }
   .season-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
   .season-item { background: var(--bg3); border-radius: 8px; padding: 12px; }
   .season-name { font-size: 11px; color: var(--text3); text-transform: uppercase;
@@ -51,33 +41,25 @@ const css = `
   .season-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
   .season-pct { font-size: 20px; font-family: 'Cormorant Garamond', serif;
                 color: var(--text); font-weight: 300; margin-top: 6px; }
-  .timeline-wrap { overflow-x: auto; padding-bottom: 8px; }
-  .timeline-track { display: flex; gap: 4px; min-width: max-content; align-items: flex-end; padding: 8px 0; }
-  .timeline-decade { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .timeline-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; height: 80px; }
-  .timeline-bar {
-    width: 40px; background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 4px 4px 0 0; min-height: 4px;
-    transition: background 0.15s; cursor: default;
+  .ins-flag-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .ins-flag-item {
+    background: var(--bg3); border-radius: 8px; padding: 14px;
+    display: flex; flex-direction: column; gap: 4px;
   }
-  .timeline-bar:hover { background: var(--gold); }
-  .timeline-label { font-size: 10px; color: var(--text3); }
-  .timeline-cnt { font-size: 11px; color: var(--text2); }
-  .redundant-group { margin-bottom: 14px; }
-  .redundant-accords { font-size: 11px; color: var(--gold); margin-bottom: 6px;
-                       text-transform: capitalize; }
-  .redundant-frags { display: flex; flex-direction: column; gap: 4px; }
-  .redundant-frag { font-size: 12px; color: var(--text2); padding: 4px 8px;
-                    background: var(--bg3); border-radius: 6px; }
+  .ins-flag-num { font-family: 'Cormorant Garamond', serif; font-size: 28px;
+                  font-weight: 300; line-height: 1; }
+  .ins-flag-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .ins-flag-pct { font-size: 11px; color: var(--text3); }
   .ins-loading { display: flex; align-items: center; gap: 8px; color: var(--text3);
                  font-size: 13px; padding: 40px 0; justify-content: center; }
 `;
 
 const SEASON_COLORS = {
-  Spring: "#7bc67e",
-  Summer: "#f0c040",
-  Fall:   "#e08050",
-  Winter: "#6ab0d4",
+  Spring: "#7bc67e", Summer: "#f0c040", Fall: "#e08050", Winter: "#6ab0d4",
+};
+const SIZE_COLORS = {
+  "Travel (≤30ml)": "#6ab0d4", "Standard (31–75ml)": "var(--gold)",
+  "Large (76–100ml)": "#7bc67e", "XL (>100ml)": "#e08050", "Unknown": "var(--text3)",
 };
 
 function BarRow({ label, value, max, color }) {
@@ -93,32 +75,32 @@ function BarRow({ label, value, max, color }) {
 }
 
 export default function InsightsTab() {
-  const [dna,        setDna]        = useState(null);
-  const [seasons,    setSeasons]    = useState(null);
-  const [stats,      setStats]      = useState(null);
+  const [dna,     setDna]     = useState(null);
+  const [seasons, setSeasons] = useState(null);
+  const [stats,   setStats]   = useState(null);
 
   useEffect(() => {
     const safe = (url) => fetch(url)
-      .then(r => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.json(); })
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
       .catch(e => { console.error(e); return null; });
     Promise.all([
       safe(`${API}/insights/dna`),
       safe(`${API}/insights/seasonal_balance`),
       safe(`${API}/insights/stats`),
-    ]).then(([d,s,st]) => {
+    ]).then(([d, s, st]) => {
       setDna(d || {}); setSeasons(s || {}); setStats(st || {});
     });
   }, []);
 
   if (!dna && !stats) return (
-    <div className="ins-loading">
-      <div className="spinner" /> Loading insights...
-    </div>
+    <div className="ins-loading"><div className="spinner" /> Loading insights...</div>
   );
 
-  const maxAccord = Math.max(...(dna.top_accords||[]).map(a=>a.cnt), 1);
-  const maxBrand  = Math.max(...(dna.top_brands||[]).map(b=>b.cnt), 1);
-  const maxNote   = Math.max(...(dna.top_notes||[]).map(n=>n.cnt), 1);
+  const maxAccord = Math.max(...(dna?.top_accords||[]).map(a=>a.cnt), 1);
+  const maxBrand  = Math.max(...(dna?.top_brands||[]).map(b=>b.cnt), 1);
+  const maxNote   = Math.max(...(dna?.top_notes||[]).map(n=>n.cnt), 1);
+  const maxSize   = Math.max(...(stats?.by_size||[]).map(s=>s.cnt), 1);
+  const total     = stats?.total || 1;
 
   return (
     <>
@@ -127,9 +109,10 @@ export default function InsightsTab() {
       {/* HERO STATS */}
       <div className="ins-hero-grid" style={{marginBottom:24}}>
         {[
-          [stats?.total,        "Bottles"],
-          [stats?.brands,       "Houses"],
+          [stats?.total,   "Bottles"],
+          [stats?.brands,  "Houses"],
           [dna?.top_accords?.[0]?.note_name || "—", "Top Accord"],
+          [stats?.discontinued, "Discontinued"],
         ].map(([val, lbl], i) => (
           <div key={i} className="ins-hero-item">
             <div className="ins-hero-num">{val ?? "—"}</div>
@@ -140,26 +123,26 @@ export default function InsightsTab() {
 
       <div className="ins-grid">
 
-        {/* TOP ACCORDS */}
+        {/* SIGNATURE ACCORDS */}
         <div className="ins-card">
           <div className="ins-card-title"><span>🎯</span> Signature Accords</div>
-          {(dna.top_accords || []).map(a => (
+          {(dna?.top_accords || []).map(a => (
             <BarRow key={a.note_name} label={a.note_name} value={a.cnt} max={maxAccord} />
           ))}
         </div>
 
-        {/* TOP HOUSES */}
+        {/* FAVOURITE HOUSES */}
         <div className="ins-card">
           <div className="ins-card-title"><span>🏛️</span> Favourite Houses</div>
-          {(dna.top_brands || []).map(b => (
+          {(dna?.top_brands || []).map(b => (
             <BarRow key={b.brand} label={b.brand} value={b.cnt} max={maxBrand} color="var(--blue)" />
           ))}
         </div>
 
-        {/* TOP NOTES */}
+        {/* MOST COMMON NOTES */}
         <div className="ins-card">
           <div className="ins-card-title"><span>🌿</span> Most Common Notes</div>
-          {(dna.top_notes || []).slice(0, 10).map(n => (
+          {(dna?.top_notes || []).slice(0, 10).map(n => (
             <BarRow key={n.note_name} label={n.note_name} value={n.cnt} max={maxNote} color="var(--green)" />
           ))}
         </div>
@@ -172,8 +155,7 @@ export default function InsightsTab() {
               <div key={s} className="season-item">
                 <div className="season-name">{s}</div>
                 <div className="season-bar-bg">
-                  <div className="season-bar-fill"
-                    style={{ width: `${data.pct}%`, background: SEASON_COLORS[s] || "var(--gold)" }} />
+                  <div className="season-bar-fill" style={{ width: `${data.pct}%`, background: SEASON_COLORS[s] || "var(--gold)" }} />
                 </div>
                 <div className="season-pct">{data.pct}%</div>
               </div>
@@ -193,6 +175,41 @@ export default function InsightsTab() {
               color="var(--text2)"
             />
           ))}
+        </div>
+
+        {/* BOTTLE SIZE */}
+        <div className="ins-card">
+          <div className="ins-card-title"><span>📏</span> Bottle Size</div>
+          {(stats?.by_size || []).map(s => (
+            <BarRow
+              key={s.bucket}
+              label={s.bucket}
+              value={s.cnt}
+              max={maxSize}
+              color={SIZE_COLORS[s.bucket] || "var(--gold)"}
+            />
+          ))}
+        </div>
+
+        {/* SPECIAL FLAGS */}
+        <div className="ins-card">
+          <div className="ins-card-title"><span>🏷️</span> Special Flags</div>
+          <div className="ins-flag-grid">
+            {[
+              { label: "Discontinued", value: stats?.discontinued, color: "var(--red)" },
+              { label: "Tester",       value: stats?.testers,      color: "var(--gold)" },
+              { label: "Limited Ed.",  value: stats?.limited,      color: "#a78bfa" },
+              { label: "Exclusive",    value: stats?.exclusive,    color: "var(--blue)" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="ins-flag-item">
+                <div className="ins-flag-num" style={{ color }}>{value ?? "—"}</div>
+                <div className="ins-flag-lbl">{label}</div>
+                {value != null && total > 0 && (
+                  <div className="ins-flag-pct">{Math.round((value/total)*100)}% of collection</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>

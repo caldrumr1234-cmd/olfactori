@@ -1,4 +1,4 @@
-// ExploreTab.jsx — Explore tab with Spin the Bottle, Note Cloud, Scent Timeline
+// ExploreTab.jsx
 import { useState, useEffect } from "react";
 
 const API = "https://olfactori-production.up.railway.app/api";
@@ -106,14 +106,33 @@ const css = `
     color: var(--gold) !important;
     transform: scale(1.05);
   }
-  .note-cloud-tag.active {
-    border-color: var(--gold);
-    background: var(--gold-dim) !important;
-    color: var(--gold) !important;
-  }
   .note-cloud-hint {
     font-size: 12px; color: var(--text3); margin-top: 12px;
     font-style: italic;
+  }
+
+  /* HOUSE CLOUD */
+  .house-cloud {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center; padding: 8px 0;
+  }
+  .house-tag {
+    cursor: pointer; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    transition: all 0.15s; white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .house-tag:hover {
+    border-color: var(--gold);
+    background: var(--gold-dim) !important;
+    color: var(--gold) !important;
+    transform: scale(1.04);
+  }
+  .house-tag-cnt {
+    font-size: 10px; opacity: 0.6;
   }
 
   /* TIMELINE */
@@ -149,42 +168,31 @@ const css = `
     color: var(--text3); font-size: 13px;
     padding: 60px 0; justify-content: center;
   }
-
 `;
 
-// ── PERFUME BOTTLE SVG ────────────────────────────────────────
 function PerfumeBottle({ className }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120" width="90" height="120">
-      {/* Pump stem */}
       <rect x="36" y="4" width="4" height="14" rx="2" fill="#c9a84c"/>
-      {/* Pump head */}
       <rect x="26" y="2" width="24" height="6" rx="3" fill="#c9a84c"/>
-      {/* Spray nozzle */}
       <rect x="50" y="3" width="10" height="3" rx="1.5" fill="#c9a84c"/>
-      {/* Spray dots */}
       <circle cx="64" cy="3" r="1.2" fill="rgba(201,168,76,0.5)"/>
       <circle cx="68" cy="2" r="0.9" fill="rgba(201,168,76,0.35)"/>
       <circle cx="66" cy="6" r="0.8" fill="rgba(201,168,76,0.3)"/>
-      {/* Neck */}
       <rect x="32" y="16" width="12" height="8" rx="2" fill="#c9a84c"/>
-      {/* Shoulder */}
       <path d="M24 30 Q24 24 32 24 L44 24 Q52 24 52 30 Z" fill="#e8c96a"/>
-      {/* Bottle body */}
       <rect x="18" y="30" width="40" height="68" rx="8" fill="#e8c96a"/>
-      {/* Shine */}
       <rect x="22" y="35" width="8" height="40" rx="4" fill="rgba(255,255,255,0.18)"/>
-      {/* Label */}
       <rect x="22" y="52" width="32" height="28" rx="4" fill="rgba(201,168,76,0.35)" stroke="rgba(201,168,76,0.5)" strokeWidth="0.5"/>
-      {/* Label lines */}
       <rect x="26" y="59" width="22" height="2" rx="1" fill="rgba(12,12,15,0.4)"/>
       <rect x="28" y="64" width="18" height="1.5" rx="0.75" fill="rgba(12,12,15,0.3)"/>
       <rect x="30" y="69" width="14" height="1.5" rx="0.75" fill="rgba(12,12,15,0.25)"/>
-      {/* Bottom highlight */}
       <rect x="22" y="90" width="32" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
     </svg>
   );
 }
+
+// ── NOTE CLOUD ─────────────────────────────────────────────────
 function NoteCloud({ onNoteClick }) {
   const [notes, setNotes] = useState([]);
   const [active, setActive] = useState(null);
@@ -193,11 +201,7 @@ function NoteCloud({ onNoteClick }) {
   useEffect(() => {
     fetch(`${API}/insights/dna`)
       .then(r => r.json())
-      .then(d => {
-        const all = (d.top_notes || []).slice(0, 60);
-        setNotes(all);
-        setLoading(false);
-      })
+      .then(d => { setNotes((d.top_notes || []).slice(0, 60)); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -205,24 +209,14 @@ function NoteCloud({ onNoteClick }) {
 
   const max = Math.max(...notes.map(n => n.cnt), 1);
   const min = Math.min(...notes.map(n => n.cnt), 1);
-
-  const getSize = (cnt) => {
-    const pct = (cnt - min) / (max - min || 1);
-    return Math.round(10 + pct * 16); // 10px to 26px
-  };
-
-  const getOpacity = (cnt) => {
-    const pct = (cnt - min) / (max - min || 1);
-    return (0.45 + pct * 0.55).toFixed(2);
-  };
+  const getSize = (cnt) => Math.round(10 + ((cnt - min) / (max - min || 1)) * 16);
+  const getOpacity = (cnt) => (0.45 + ((cnt - min) / (max - min || 1)) * 0.55).toFixed(2);
+  const shuffled = [...notes].sort(() => Math.random() - 0.5);
 
   const handleClick = (note) => {
     setActive(note.note_name);
     onNoteClick(note.note_name);
   };
-
-  // Shuffle so it looks more cloud-like
-  const shuffled = [...notes].sort(() => Math.random() - 0.5);
 
   return (
     <>
@@ -244,9 +238,46 @@ function NoteCloud({ onNoteClick }) {
           </span>
         ))}
       </div>
-      <div className="note-cloud-hint">
-        Click any note to filter your collection by it
+      <div className="note-cloud-hint">Click any note to search it in the Notes tab</div>
+    </>
+  );
+}
+
+// ── TOP HOUSES ─────────────────────────────────────────────────
+function TopHouses({ onHouseFilter }) {
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/insights/dna`)
+      .then(r => r.json())
+      .then(d => { setBrands((d.top_brands || []).slice(0, 30)); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{color:"var(--text3)",fontSize:13}}>Loading houses...</div>;
+
+  const max = Math.max(...brands.map(b => b.cnt), 1);
+  const min = Math.min(...brands.map(b => b.cnt), 1);
+  const getSize = (cnt) => Math.round(11 + ((cnt - min) / (max - min || 1)) * 10);
+
+  return (
+    <>
+      <div className="house-cloud">
+        {brands.map(b => (
+          <span
+            key={b.brand}
+            className="house-tag"
+            style={{ fontSize: `${getSize(b.cnt)}px`, padding: `6px 14px` }}
+            onClick={() => onHouseFilter(b.brand)}
+            title={`${b.brand} — ${b.cnt} bottles`}
+          >
+            {b.brand}
+            <span className="house-tag-cnt">{b.cnt}</span>
+          </span>
+        ))}
       </div>
+      <div className="note-cloud-hint">Click any house to filter your collection by it</div>
     </>
   );
 }
@@ -266,10 +297,7 @@ function ScentTimeline() {
           const dec = Math.floor(f.year_released / 10) * 10;
           map[dec] = (map[dec] || 0) + 1;
         });
-        const sorted = Object.entries(map)
-          .sort(([a],[b]) => a - b)
-          .map(([decade, cnt]) => ({ decade: parseInt(decade), cnt }));
-        setDecades(sorted);
+        setDecades(Object.entries(map).sort(([a],[b]) => a - b).map(([decade, cnt]) => ({ decade: parseInt(decade), cnt })));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -287,10 +315,7 @@ function ScentTimeline() {
           <div key={decade} className="timeline-col">
             <div className="timeline-cnt">{cnt}</div>
             <div className="timeline-bar-wrap">
-              <div
-                className="timeline-bar"
-                style={{ height: `${Math.max(6, Math.round((cnt / maxCnt) * 92))}px` }}
-              >
+              <div className="timeline-bar" style={{ height: `${Math.max(6, Math.round((cnt / maxCnt) * 92))}px` }}>
                 <div className="timeline-bar-tooltip">{decade}s · {cnt} fragrance{cnt !== 1 ? "s" : ""}</div>
               </div>
             </div>
@@ -319,10 +344,8 @@ function SpinTheBottle({ onOpenFrag }) {
     if (spinning || !frags.length) return;
     setSpinning(true);
     setResult(null);
-
     setTimeout(() => {
-      const pick = frags[Math.floor(Math.random() * frags.length)];
-      setResult(pick);
+      setResult(frags[Math.floor(Math.random() * frags.length)]);
       setSpinning(false);
     }, 850);
   };
@@ -332,26 +355,17 @@ function SpinTheBottle({ onOpenFrag }) {
   return (
     <div className="spin-center">
       <div className="spin-bottle-wrap">
-        <PerfumeBottle
-          className={`spin-bottle-icon ${spinning ? "spinning" : ""}`}
-          key={spinning ? "spin" : "idle"}
-        />
+        <PerfumeBottle className={`spin-bottle-icon ${spinning ? "spinning" : ""}`} key={spinning ? "spin" : "idle"} />
       </div>
-
       <button className="spin-btn" onClick={spin} disabled={spinning}>
         {spinning ? "Spinning..." : result ? "Spin Again" : "Spin the Bottle"}
       </button>
-
       {result && !spinning && (
         <div className="spin-result" onClick={() => onOpenFrag(result)}>
           <div className="spin-result-row">
             {imgSrc && (
-              <img
-                src={imgSrc}
-                alt={result.name}
-                className="spin-result-img"
-                onError={e => { e.target.style.display = "none"; }}
-              />
+              <img src={imgSrc} alt={result.name} className="spin-result-img"
+                onError={e => { e.target.style.display = "none"; }} />
             )}
             <div className="spin-result-info">
               <div className="spin-result-brand">{result.brand}</div>
@@ -370,9 +384,8 @@ function SpinTheBottle({ onOpenFrag }) {
   );
 }
 
-
 // ── MAIN EXPLORE TAB ───────────────────────────────────────────
-export default function ExploreTab({ onNoteFilter, onOpenFrag }) {
+export default function ExploreTab({ onNoteFilter, onHouseFilter, onOpenFrag }) {
   return (
     <>
       <style>{css}</style>
@@ -380,25 +393,25 @@ export default function ExploreTab({ onNoteFilter, onOpenFrag }) {
 
         {/* SPIN THE BOTTLE */}
         <div className="explore-card">
-          <div className="explore-card-title">
-            <span>🧴</span> Spin the Bottle
-          </div>
+          <div className="explore-card-title"><span>🧴</span> Spin the Bottle</div>
           <SpinTheBottle onOpenFrag={onOpenFrag} />
         </div>
 
         {/* NOTE CLOUD */}
         <div className="explore-card" style={{gridColumn: "span 2"}}>
-          <div className="explore-card-title">
-            <span>🌿</span> Note Cloud
-          </div>
+          <div className="explore-card-title"><span>🌿</span> Note Cloud</div>
           <NoteCloud onNoteClick={onNoteFilter} />
+        </div>
+
+        {/* TOP HOUSES */}
+        <div className="explore-card wide">
+          <div className="explore-card-title"><span>🏛️</span> Top Houses</div>
+          <TopHouses onHouseFilter={onHouseFilter} />
         </div>
 
         {/* SCENT TIMELINE */}
         <div className="explore-card wide">
-          <div className="explore-card-title">
-            <span>📅</span> Scent Timeline
-          </div>
+          <div className="explore-card-title"><span>📅</span> Scent Timeline</div>
           <ScentTimeline />
         </div>
 
