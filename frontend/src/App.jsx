@@ -57,6 +57,11 @@ const css = `
     background: rgba(12,12,15,0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
+    border-top: 1px solid transparent;
+    background-image: linear-gradient(rgba(12,12,15,0.95), rgba(12,12,15,0.95)),
+                      linear-gradient(90deg, transparent 0%, rgba(201,168,76,0.5) 50%, transparent 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
     position: sticky; top: 0; z-index: 100;
     padding: 0 24px;
     display: flex; align-items: center; gap: 0;
@@ -230,7 +235,7 @@ const css = `
   }
   .card-img-inner {
     width: 75%; height: 75%;
-    background: #ffffff;
+    background: radial-gradient(ellipse at center, #1e1e2a 0%, var(--bg3) 100%);
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; overflow: hidden; flex-shrink: 0;
   }
@@ -278,6 +283,10 @@ const css = `
     font-size: 16px; font-weight: 400; color: var(--text);
     line-height: 1.25; flex: 1; min-height: 0;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+    transition: font-style 0.2s, color 0.2s;
+  }
+  .card:hover .card-name {
+    font-style: italic; color: var(--gold2);
   }
   .card-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
   .pill {
@@ -308,10 +317,13 @@ const css = `
     font-size: 9px; padding: 2px 6px; border-radius: 4px;
     font-weight: 500; letter-spacing: 0.04em;
   }
-  .flag.tester    { background: rgba(91,141,238,0.15); color: var(--blue); border: 1px solid rgba(91,141,238,0.3); }
-  .flag.disc      { background: rgba(224,85,85,0.15);  color: var(--red);  border: 1px solid rgba(224,85,85,0.3); }
-  .flag.limited   { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
-  .flag.exclusive { background: rgba(76,174,122,0.15); color: var(--green);border: 1px solid rgba(76,174,122,0.3); }
+  .flag.tester    { background: rgba(91,141,238,0.18); color: #7ba8f5; border: 1px solid rgba(91,141,238,0.4); }
+  .flag.disc      { background: rgba(224,85,85,0.2);   color: #f07070; border: 1px solid rgba(224,85,85,0.45); }
+  .flag.limited   {
+    background: linear-gradient(135deg, rgba(180,130,255,0.2), rgba(201,168,76,0.2));
+    color: #c9a0ff; border: 1px solid rgba(180,130,255,0.45);
+  }
+  .flag.exclusive { background: rgba(76,174,122,0.2);  color: #5dcc92; border: 1px solid rgba(76,174,122,0.45); }
   .card-check {
     position: absolute; top: 8px; left: 8px;
     width: 22px; height: 22px; border-radius: 50%;
@@ -400,6 +412,11 @@ const css = `
     background: var(--bg3);
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
+  }
+  .drawer-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 70% at 50% 60%, rgba(201,168,76,0.12) 0%, transparent 70%);
+    pointer-events: none;
   }
   .drawer-hero img {
     height: 85%; width: auto; max-width: 80%;
@@ -653,6 +670,24 @@ const css = `
   .drawer-tab:hover { color: var(--text2); background: var(--bg3); }
   .drawer-tab.active { color: var(--gold); background: var(--gold-dim); }
 
+  /* SCROLL TO TOP */
+  .scroll-top-btn {
+    position: fixed; bottom: 28px; right: 28px; z-index: 120;
+    width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(17,17,22,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(201,168,76,0.35);
+    box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 8px 24px rgba(0,0,0,0.5);
+    color: var(--gold); font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s, border-color 0.15s;
+  }
+  .scroll-top-btn.visible { opacity: 1; pointer-events: auto; }
+  .scroll-top-btn:hover { transform: translateY(-2px); border-color: rgba(201,168,76,0.7); }
+
   /* RESPONSIVE */
   @media (max-width: 640px) {
     .nav-tabs { display: none; }
@@ -778,7 +813,15 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
               onError={e => e.target.style.display="none"}
             />
           ) : (
-            <span className="card-img-placeholder">🧴</span>
+            <svg className="card-img-placeholder" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120" width="52" height="72" style={{opacity:0.15}}>
+            <rect x="36" y="4" width="4" height="14" rx="2" fill="#c9a84c"/>
+            <rect x="26" y="2" width="24" height="6" rx="3" fill="#c9a84c"/>
+            <rect x="32" y="16" width="12" height="8" rx="2" fill="#c9a84c"/>
+            <path d="M24 30 Q24 24 32 24 L44 24 Q52 24 52 30 Z" fill="#c9a84c"/>
+            <rect x="18" y="30" width="40" height="68" rx="8" fill="#c9a84c"/>
+            <rect x="22" y="35" width="8" height="40" rx="4" fill="rgba(255,255,255,0.15)"/>
+            <rect x="22" y="52" width="32" height="28" rx="4" fill="rgba(0,0,0,0.2)"/>
+          </svg>
           )}
         </div>
         {(frag.want_to_trade === 1 || frag.want_to_sell === 1 || frag.want_to_give_away === 1) && (
@@ -1452,6 +1495,7 @@ export default function Olfactori() {
   const [shelfSelectCallback, setShelfSelectCallback] = useState(null);
   const [activeFrag, setActiveFrag] = useState(null);
   const [noteSearch, setNoteSearch] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [showAdd, setShowAdd]  = useState(false);
   const [toast, setToastMsg]   = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -1487,6 +1531,12 @@ export default function Olfactori() {
   }, [search, filters]);
 
   useEffect(() => { loadFragrances(); }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     fetch(`${API}/friends/requests/pending_count`)
@@ -1931,6 +1981,13 @@ export default function Olfactori() {
         {showAdd && (
           <AddModal onClose={() => setShowAdd(false)} onAdd={addFrag} toast={showToast} />
         )}
+
+        {/* SCROLL TO TOP */}
+        <button
+          className={`scroll-top-btn ${showScrollTop ? "visible" : ""}`}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          title="Back to top"
+        >↑</button>
 
         {/* SAMPLE CART BAR */}
         {selectMode && selected.size > 0 && (
