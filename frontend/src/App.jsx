@@ -140,6 +140,35 @@ const css = `
     outline: none; transition: border-color 0.15s;
   }
   .filter-select:focus { border-color: var(--border2); }
+  .filter-panel {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: flex-end;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 130px; }
+  .filter-group label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .filter-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--gold); color: #0c0c0f; border-radius: 50%;
+    width: 16px; height: 16px; font-size: 10px; font-weight: 700;
+    margin-left: 4px; flex-shrink: 0;
+  }
+  .filter-clear { font-size: 11px; color: var(--text3); background: none; border: none;
+    cursor: pointer; padding: 0; font-family: "DM Sans",sans-serif; text-decoration: underline; }
+  .filter-clear:hover { color: var(--text); }
+  .decade-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .decade-pill {
+    font-size: 11px; padding: 4px 10px; border-radius: 10px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text3); cursor: pointer; transition: all 0.15s;
+    font-family: "DM Sans",sans-serif;
+  }
+  .decade-pill.active { background: var(--gold-dim); border-color: rgba(201,168,76,0.4); color: var(--gold); }
+  .rating-stars { display: flex; gap: 4px; }
+  .rating-star { font-size: 16px; cursor: pointer; transition: transform 0.1s; opacity: 0.3; }
+  .rating-star.active { opacity: 1; }
+  .rating-star:hover { transform: scale(1.15); }
   .view-toggle {
     display: flex; gap: 2px; background: var(--bg2);
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -1351,6 +1380,7 @@ export default function Olfactori() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState("");
   const [filters, setFilters] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   const [view, setView]       = useState("grid");
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
@@ -1378,6 +1408,10 @@ export default function Olfactori() {
     if (f.accord) params.set("accord", f.accord);
     if (f.discontinued) params.set("discontinued", "true");
     if (f.tester) params.set("tester", "true");
+    if (f.decade != null) params.set("decade", f.decade);
+    if (f.perfumer) params.set("perfumer", f.perfumer);
+    if (f.min_rating != null) params.set("min_rating", f.min_rating);
+    if (f.size_bucket) params.set("size_bucket", f.size_bucket);
     const res = await fetch(`${API}/fragrances?${params}`);
     const data = await res.json();
     setFrags(data.items || []);
@@ -1511,21 +1545,11 @@ export default function Olfactori() {
                   </svg>
                   <input
                     className="search-input"
-                    placeholder="Search brand, name, notes, accords..."
+                    placeholder="Search brand or name..."
                     value={search}
                     onChange={e => handleSearch(e.target.value)}
                   />
                 </div>
-
-                <select className="filter-select" onChange={e => handleFilter("gender", e.target.value)}>
-                  <option value="">All Genders</option>
-                  {["Male","Female","Unisex"].map(g=><option key={g}>{g}</option>)}
-                </select>
-
-                <select className="filter-select" onChange={e => handleFilter("concentration", e.target.value)}>
-                  <option value="">All Types</option>
-                  {["EdP","EdT","EdC","Extrait","Parfum"].map(c=><option key={c}>{c}</option>)}
-                </select>
 
                 <select className="filter-select" onChange={e => handleFilter("accord", e.target.value)}>
                   <option value="">All Accords</option>
@@ -1536,6 +1560,26 @@ export default function Olfactori() {
                   <option value="">All Status</option>
                   <option value="true">Discontinued</option>
                 </select>
+
+                {/* Filters toggle button */}
+                {(() => {
+                  const advancedCount = [
+                    filters.gender, filters.concentration, filters.decade != null ? "x" : null,
+                    filters.perfumer, filters.min_rating != null ? "x" : null, filters.size_bucket
+                  ].filter(Boolean).length;
+                  return (
+                    <button
+                      className="filter-select"
+                      style={{cursor:"pointer", display:"flex", alignItems:"center", gap:4,
+                        borderColor: showFilters || advancedCount > 0 ? "rgba(201,168,76,0.4)" : undefined,
+                        color: showFilters || advancedCount > 0 ? "var(--gold)" : undefined }}
+                      onClick={() => setShowFilters(v => !v)}
+                    >
+                      Filters {showFilters ? "▲" : "▼"}
+                      {advancedCount > 0 && <span className="filter-badge">{advancedCount}</span>}
+                    </button>
+                  );
+                })()}
 
                 <div className="view-toggle">
                   <button className={`view-btn ${view==="grid"?"active":""}`} onClick={() => setView("grid")}>⊞</button>
@@ -1558,6 +1602,95 @@ export default function Olfactori() {
 
                 <span className="count-badge">{frags.length} / {total}</span>
               </div>
+
+              {/* FILTER PANEL */}
+              {showFilters && (
+                <div className="filter-panel">
+                  {/* Gender */}
+                  <div className="filter-group">
+                    <label>Gender</label>
+                    <select className="filter-select" value={filters.gender||""} onChange={e => handleFilter("gender", e.target.value)}>
+                      <option value="">All</option>
+                      {["Male","Female","Unisex"].map(g=><option key={g}>{g}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Concentration */}
+                  <div className="filter-group">
+                    <label>Type</label>
+                    <select className="filter-select" value={filters.concentration||""} onChange={e => handleFilter("concentration", e.target.value)}>
+                      <option value="">All</option>
+                      {["EdP","EdT","EdC","Extrait","Parfum"].map(c=><option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Size */}
+                  <div className="filter-group">
+                    <label>Size</label>
+                    <select className="filter-select" value={filters.size_bucket||""} onChange={e => handleFilter("size_bucket", e.target.value)}>
+                      <option value="">All</option>
+                      <option value="travel">Travel (≤30ml)</option>
+                      <option value="small">Small (31–75ml)</option>
+                      <option value="medium">Medium (76–100ml)</option>
+                      <option value="large">Large (100ml+)</option>
+                    </select>
+                  </div>
+
+                  {/* Decade */}
+                  <div className="filter-group">
+                    <label>Decade</label>
+                    <div className="decade-pills">
+                      {[1960,1970,1980,1990,2000,2010,2020].map(d => (
+                        <button key={d}
+                          className={`decade-pill ${filters.decade===d?"active":""}`}
+                          onClick={() => handleFilter("decade", filters.decade===d ? null : d)}>
+                          {d}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Perfumer */}
+                  <div className="filter-group">
+                    <label>Perfumer</label>
+                    <input className="filter-select" style={{minWidth:140}}
+                      placeholder="e.g. Roja Dove"
+                      value={filters.perfumer||""}
+                      onChange={e => {
+                        clearTimeout(window._perfumerTimer);
+                        const val = e.target.value;
+                        setFilters(f => ({...f, perfumer: val||undefined}));
+                        window._perfumerTimer = setTimeout(() => {
+                          const nf = {...filters, perfumer: val||undefined};
+                          loadFragrances(search, nf);
+                        }, 400);
+                      }}
+                    />
+                  </div>
+
+                  {/* Personal Rating */}
+                  <div className="filter-group">
+                    <label>Min Rating</label>
+                    <div className="rating-stars">
+                      {[1,2,3,4,5].map(s => (
+                        <span key={s}
+                          className={`rating-star ${filters.min_rating >= s ? "active" : ""}`}
+                          onClick={() => handleFilter("min_rating", filters.min_rating===s ? null : s)}>
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clear all */}
+                  <div className="filter-group" style={{justifyContent:"flex-end"}}>
+                    <button className="filter-clear" onClick={() => {
+                      setFilters({});
+                      loadFragrances(search, {});
+                    }}>Clear all filters</button>
+                  </div>
+                </div>
+              )}
 
               {/* SHELF SELECT ACTION BAR */}
               {shelfSelectMode && (

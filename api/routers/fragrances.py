@@ -84,6 +84,10 @@ def list_fragrances(
     discontinued: Optional[bool] = Query(None),
     tester:       Optional[bool] = Query(None),
     limited:      Optional[bool] = Query(None),
+    decade:       Optional[int]  = Query(None),
+    perfumer:     Optional[str]  = Query(None),
+    min_rating:   Optional[float]= Query(None),
+    size_bucket:  Optional[str]  = Query(None),
     sort:         str            = Query("brand_name"),
     limit:        int            = Query(500),
     offset:       int            = Query(0),
@@ -114,6 +118,20 @@ def list_fragrances(
     if limited is not None:
         q += " AND is_limited_edition = ?"
         params.append(1 if limited else 0)
+    if decade is not None:
+        q += " AND year_released >= ? AND year_released < ?"
+        params += [decade, decade + 10]
+    if perfumer:
+        q += " AND perfumer LIKE ?"
+        params.append(f"%{perfumer}%")
+    if min_rating is not None:
+        q += " AND personal_rating >= ?"
+        params.append(min_rating)
+    if size_bucket:
+        if size_bucket == "travel":   q += " AND size_ml <= 30"
+        elif size_bucket == "small":  q += " AND size_ml > 30 AND size_ml <= 75"
+        elif size_bucket == "medium": q += " AND size_ml > 75 AND size_ml <= 100"
+        elif size_bucket == "large":  q += " AND size_ml > 100"
 
     if note:
         q += """ AND id IN (
@@ -1237,4 +1255,131 @@ def get_stats(db = Depends(get_db)):
         "by_concentration": [{k: r[k] for k in r.keys()} for r in by_conc],
         "by_decade":        [{k: r[k] for k in r.keys()} for r in by_decade],
         "by_gender":        [{k: r[k] for k in r.keys()} for r in by_gender],
+    }
+
+
+# ── DB BACKUP DOWNLOAD ────────────────────────────────────────
+import os
+from fastapi.responses import FileResponse
+
+@router.get("/meta/backup")
+def download_backup():
+    """Stream the SQLite database file as a download."""
+    db_path = os.environ.get("DB_PATH", "/data/sillage.db")
+    if not os.path.exists(db_path):
+        raise HTTPException(404, "Database file not found")
+    return FileResponse(
+        path=db_path,
+        media_type="application/octet-stream",
+        filename="sillage_backup.db",
+        headers={"Content-Disposition": "attachment; filename=sillage_backup.db"}
+    )
+
+
+# ── DISCONTINUED SCRAPE ───────────────────────────────────────
+@router.post("/meta/discontinued_check/{frag_id}")
+def check_discontinued(frag_id: int, db = Depends(get_db)):
+    """
+    Check a single fragrance for discontinued status across
+    Fragella, Basenotes, and Parfumo. Returns findings for user review.
+    Never writes to the database.
+    """
+    from bs4 import BeautifulSoup
+    row = db.execute("SELECT * FROM fragrances WHERE id = ?", (frag_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Not found")
+    frag = row_to_dict(row)
+    brand, name = frag["brand"], frag["name"]
+    target = f"{brand} {name}".lower()
+
+    findings = []
+
+    # ── Fragella ──
+    try:
+        fe = _fetch_fragella(brand, name)
+        if fe:
+            norm = _normalize_fragella(fe)
+            # Fragella doesn't have a discontinued field but check status/availability
+            raw_str = str(fe).lower()
+            if "discontinued" in raw_str or "unavailable" in raw_str:
+                findings.append({"source": "Fragella", "confidence": "verified", "detail": "Marked discontinued in Fragella data"})
+    except Exception:
+        pass
+
+    # ── Basenotes ──
+    try:
+        query = f"{brand} {name}".replace(" ", "+")
+        with httpx.Client() as client:
+            resp = _fetch(client, f"https://basenotes.com/search/?q={query}")
+            if resp:
+                soup = BeautifulSoup(resp.text, "lxml")
+                best_url, best_score = None, 0
+                for a in soup.select("a[href*='/fragrances/']"):
+                    text = a.get_text(strip=True).lower()
+                    score = fuzz.token_set_ratio(target, text)
+                    if score > best_score:
+                        best_score = score
+                        href = a.get("href", "")
+                        best_url = href if href.startswith("http") else "https://basenotes.com" + href
+                if best_score >= 55 and best_url:
+                    resp2 = _fetch(client, best_url)
+                    if resp2:
+                        soup2 = BeautifulSoup(resp2.text, "lxml")
+                        page_text = soup2.get_text().lower()
+                        disc_mentions = page_text.count("discontinued")
+                        if disc_mentions >= 3:
+                            findings.append({"source": "Basenotes", "confidence": "community", "detail": f"'{name}' mentioned as discontinued {disc_mentions} times in community posts"})
+                        elif disc_mentions > 0:
+                            findings.append({"source": "Basenotes", "confidence": "possible", "detail": f"'discontinued' mentioned {disc_mentions} time(s) on page"})
+    except Exception:
+        pass
+
+    # ── Parfumo ──
+    try:
+        query = f"{brand} {name}".replace(" ", "+")
+        with httpx.Client() as client:
+            resp = _fetch(client, f"https://www.parfumo.com/search?q={query}")
+            if resp:
+                soup = BeautifulSoup(resp.text, "lxml")
+                best_url, best_score = None, 0
+                for a in soup.select("a[href*='/Perfumes/']"):
+                    text = a.get_text(strip=True).lower()
+                    score = fuzz.token_set_ratio(target, text)
+                    if score > best_score:
+                        best_score = score
+                        href = a.get("href", "")
+                        best_url = href if href.startswith("http") else "https://www.parfumo.com" + href
+                if best_score >= 55 and best_url:
+                    resp2 = _fetch(client, best_url)
+                    if resp2:
+                        soup2 = BeautifulSoup(resp2.text, "lxml")
+                        page_text = soup2.get_text().lower()
+                        # Parfumo sometimes has explicit discontinued badge
+                        disc_badge = soup2.select_one(".discontinued, [class*='discontinued'], .status-discontinued")
+                        if disc_badge:
+                            findings.append({"source": "Parfumo", "confidence": "verified", "detail": "Marked discontinued on Parfumo product page"})
+                        elif page_text.count("discontinued") >= 2:
+                            findings.append({"source": "Parfumo", "confidence": "community", "detail": f"'discontinued' mentioned multiple times"})
+    except Exception:
+        pass
+
+    # Determine overall confidence
+    verified = [f for f in findings if f["confidence"] == "verified"]
+    community = [f for f in findings if f["confidence"] in ("community", "possible")]
+    if verified:
+        overall = "verified"
+    elif len(community) >= 2:
+        overall = "likely"
+    elif community:
+        overall = "possible"
+    else:
+        overall = "not_found"
+
+    return {
+        "id": frag_id,
+        "brand": brand,
+        "name": name,
+        "already_marked": bool(frag.get("is_discontinued")),
+        "overall": overall,
+        "findings": findings,
     }

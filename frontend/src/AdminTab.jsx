@@ -1,6 +1,5 @@
 // AdminTab.jsx — drop into frontend/src/
 import { useState, useEffect, useRef } from "react";
-import React from "react";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -90,6 +89,22 @@ const css = `
     animation: toastIn 0.2s ease;
   }
   .empty-section { padding: 30px; text-align: center; color: var(--text3); font-size: 13px; }
+
+  /* DISCONTINUED SCRAPE */
+  .disc-result { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .disc-result:last-child { border-bottom:none; }
+  .disc-badge { font-size:10px; padding:2px 7px; border-radius:4px; font-weight:600; white-space:nowrap; flex-shrink:0; }
+  .disc-badge.verified  { background:rgba(224,85,85,0.15); color:var(--red); border:1px solid rgba(224,85,85,0.3); }
+  .disc-badge.likely    { background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
+  .disc-badge.possible  { background:rgba(91,141,238,0.1); color:var(--blue); border:1px solid rgba(91,141,238,0.2); }
+  .disc-badge.not_found { background:var(--bg3); color:var(--text3); border:1px solid var(--border); }
+  .disc-badge.already   { background:rgba(76,174,122,0.1); color:var(--green); border:1px solid rgba(76,174,122,0.2); }
+  .disc-name { flex:1; font-size:13px; color:var(--text); min-width:0; }
+  .disc-detail { font-size:11px; color:var(--text3); }
+  .disc-check { width:16px; height:16px; cursor:pointer; accent-color:var(--gold); flex-shrink:0; }
+  .disc-progress { font-size:12px; color:var(--text3); margin-bottom:10px; }
+  .disc-progress-bar { height:4px; background:var(--bg3); border-radius:2px; overflow:hidden; margin-bottom:12px; }
+  .disc-progress-fill { height:100%; background:var(--gold); transition:width 0.3s; border-radius:2px; }
 
   /* BATCH ENRICH */
   .batch-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
@@ -358,6 +373,149 @@ function BatchEnrich({ toast }) {
 }
 
 
+// ── DISCONTINUED SCRAPE COMPONENT ────────────────────────────
+function DiscontinuedScrape({ toast }) {
+  const [running, setRunning]   = useState(false);
+  const [results, setResults]   = useState([]);
+  const [checked, setChecked]   = useState(new Set());
+  const [progress, setProgress] = useState(0);
+  const [current, setCurrent]   = useState("");
+  const [applying, setApplying] = useState(false);
+  const stopRef = useRef(false);
+
+  async function startScrape() {
+    setRunning(true);
+    setResults([]);
+    setChecked(new Set());
+    setProgress(0);
+    setCurrent("");
+    stopRef.current = false;
+
+    let frags = [];
+    try {
+      const res = await fetch(`${API}/fragrances?limit=500`);
+      const data = await res.json();
+      // Only check ones not already marked
+      frags = (data.items || []).filter(f => !f.is_discontinued);
+    } catch (e) {
+      toast?.("Failed to load fragrances");
+      setRunning(false);
+      return;
+    }
+
+    const found = [];
+    for (let i = 0; i < frags.length; i++) {
+      if (stopRef.current) break;
+      const f = frags[i];
+      setCurrent(`${f.brand} ${f.name}`);
+      setProgress(Math.round((i / frags.length) * 100));
+      try {
+        const res = await fetch(`${API}/fragrances/meta/discontinued_check/${f.id}`, { method: "POST" });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.overall !== "not_found") {
+          found.push(data);
+          setResults([...found]);
+        }
+      } catch (e) {}
+    }
+    setProgress(100);
+    setCurrent("");
+    setRunning(false);
+    if (found.length === 0) toast?.("No discontinued fragrances found");
+    else toast?.(`Found ${found.length} possible discontinued fragrances`);
+  }
+
+  async function applyMarked() {
+    if (checked.size === 0) return;
+    setApplying(true);
+    let done = 0;
+    for (const id of checked) {
+      try {
+        await fetch(`${API}/fragrances/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_discontinued: true }),
+        });
+        done++;
+      } catch (e) {}
+    }
+    setChecked(new Set());
+    setResults(prev => prev.filter(r => ![...checked].includes(r.id)));
+    setApplying(false);
+    toast?.(`Marked ${done} fragrance${done !== 1 ? "s" : ""} as discontinued`);
+  }
+
+  const toggleCheck = (id) => {
+    setChecked(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const badgeLabel = { verified: "Verified", likely: "Likely", possible: "Possible", not_found: "Not Found" };
+
+  return (
+    <div>
+      <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:12,flexWrap:"wrap"}}>
+        {!running ? (
+          <button className="btn btn-primary" onClick={startScrape}>
+            ▶ Start Scan
+          </button>
+        ) : (
+          <button className="btn btn-danger" onClick={() => stopRef.current = true}>
+            ⏹ Stop
+          </button>
+        )}
+        {checked.size > 0 && (
+          <button className="btn btn-primary" onClick={applyMarked} disabled={applying}>
+            {applying ? "Applying…" : `✓ Mark ${checked.size} as Discontinued`}
+          </button>
+        )}
+        {results.length > 0 && !running && (
+          <span style={{fontSize:12,color:"var(--text3)"}}>{results.length} found — check boxes to mark discontinued</span>
+        )}
+      </div>
+
+      {(running || progress > 0 && progress < 100) && (
+        <div>
+          <div className="disc-progress-bar">
+            <div className="disc-progress-fill" style={{width:`${progress}%`}} />
+          </div>
+          {current && <div className="disc-progress">⟳ {current}</div>}
+        </div>
+      )}
+
+      {results.length > 0 && (
+        <div style={{maxHeight:340,overflowY:"auto"}}>
+          {results.map(r => (
+            <div key={r.id} className="disc-result">
+              <input type="checkbox" className="disc-check"
+                checked={checked.has(r.id)}
+                onChange={() => toggleCheck(r.id)} />
+              <span className={`disc-badge ${r.overall}`}>{badgeLabel[r.overall]}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div className="disc-name">{r.brand} {r.name}</div>
+                {r.findings.map((f,i) => (
+                  <div key={i} className="disc-detail">{f.source}: {f.detail}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!running && results.length === 0 && progress === 0 && (
+        <div style={{color:"var(--text3)",fontSize:13}}>
+          Scans Fragella, Basenotes, and Parfumo for each non-discontinued fragrance. Shows results for review — nothing is marked automatically. Already-discontinued fragrances are skipped.
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function AdminTab({ toast }) {
   const [invites,  setInvites]  = useState([]);
   const [requests, setRequests] = useState([]);
@@ -542,6 +700,37 @@ export default function AdminTab({ toast }) {
           </div>
           <div className="admin-section-body">
             <BatchEnrich toast={toast} />
+          </div>
+        </div>
+
+        {/* ── DB BACKUP ── */}
+        <div className="admin-section">
+          <div className="admin-section-header">
+            <span className="admin-section-title">💾 Database Backup</span>
+          </div>
+          <div className="admin-section-body">
+            <p style={{fontSize:13,color:"var(--text3)",marginBottom:14}}>
+              Download a full backup of your Olfactori database. Keep this safe — it contains all your fragrances, wear logs, wishlists, and shelves.
+            </p>
+            <a
+              href={`${API}/fragrances/meta/backup`}
+              download="sillage_backup.db"
+              className="btn btn-primary"
+              style={{display:"inline-block",textDecoration:"none"}}
+            >
+              ⬇ Download sillage.db
+            </a>
+          </div>
+        </div>
+
+        {/* ── DISCONTINUED SCRAPE ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🔍 Discontinued Scanner</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Basenotes · Parfumo · Fragella — read only, you choose what to mark</span>
+          </div>
+          <div className="admin-section-body">
+            <DiscontinuedScrape toast={toast} />
           </div>
         </div>
 
