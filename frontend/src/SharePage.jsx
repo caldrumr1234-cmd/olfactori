@@ -237,6 +237,7 @@ function TradeForm({ frag, onClose }) {
 
 function Drawer({ frag, profile, onClose }) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [showTrade, setShowTrade] = useState(false);
   const img = imgSrc(frag);
   const top    = frag.top_notes    ? frag.top_notes.split(",").map(n=>n.trim()).filter(Boolean) : [];
@@ -250,8 +251,8 @@ function Drawer({ frag, profile, onClose }) {
       <div className="sp-overlay" onClick={onClose} />
       <div className="sp-drawer">
         <div className="sp-drawer-hero">
-          {img
-            ? <img src={img} alt={frag.name} className={imgLoaded ? "loaded" : ""} onLoad={() => setImgLoaded(true)} onError={e => e.target.style.display="none"} />
+          {img && !imgError
+            ? <img src={img} alt={frag.name} className={imgLoaded ? "loaded" : ""} onLoad={() => setImgLoaded(true)} onError={() => setImgError(true)} />
             : null}
           <div className="sp-drawer-hero-overlay" />
           <button className="sp-drawer-close" onClick={onClose}>✕</button>
@@ -396,13 +397,7 @@ export default function SharePage({ username }) {
                   <div className="sp-card-img">
                     {imgSrc(f)
                       ? <img src={imgSrc(f)} alt={f.name} loading="lazy" />
-                      : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120" width="55" height="80" style={{opacity:0.1}}>
-                          <rect x="36" y="4" width="4" height="14" rx="2" fill="#c9a84c"/>
-                          <rect x="26" y="2" width="24" height="6" rx="3" fill="#c9a84c"/>
-                          <rect x="32" y="16" width="12" height="8" rx="2" fill="#c9a84c"/>
-                          <path d="M24 30 Q24 24 32 24 L44 24 Q52 24 52 30 Z" fill="#c9a84c"/>
-                          <rect x="18" y="30" width="40" height="68" rx="8" fill="#c9a84c"/>
-                        </svg>
+                      : <div style={{width:40,height:60,borderRadius:6,background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.15)"}} />
                     }
                   </div>
                   {f.want_to_trade && <div className="sp-trade-badge">Trade</div>}
