@@ -3,6 +3,9 @@ from api.database import get_db
 
 router = APIRouter()
 
+def row_to_dict(row):
+    return {k: row[k] for k in row.keys()}
+
 @router.get("/{username}")
 def get_share_profile(username: str, db=Depends(get_db)):
     profile = db.execute(
@@ -10,7 +13,8 @@ def get_share_profile(username: str, db=Depends(get_db)):
     ).fetchone()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    if not profile["enabled"]:
+    p = row_to_dict(profile)
+    if not p.get("enabled"):
         raise HTTPException(status_code=404, detail="Profile not found")
 
     fragrances = db.execute("""
@@ -25,13 +29,13 @@ def get_share_profile(username: str, db=Depends(get_db)):
     """).fetchall()
 
     return {
-        "username": profile["username"],
-        "display_name": profile["display_name"],
-        "bio": profile["bio"],
-        "show_notes": profile["show_notes"],
-        "show_concentration": profile["show_concentration"],
-        "show_size": profile["show_size"],
-        "fragrances": [{k: row[k] for k in row.keys()} for row in fragrances],
+        "username": p["username"],
+        "display_name": p.get("display_name") or p["username"],
+        "bio": p.get("bio") or "",
+        "show_notes": p.get("show_notes", 1),
+        "show_concentration": p.get("show_concentration", 1),
+        "show_size": p.get("show_size", 1),
+        "fragrances": [row_to_dict(r) for r in fragrances],
     }
 
 @router.get("/{username}/profile")
@@ -41,7 +45,7 @@ def get_profile_settings(username: str, db=Depends(get_db)):
     ).fetchone()
     if not row:
         return {"exists": False}
-    return {k: row[k] for k in row.keys()}
+    return row_to_dict(row)
 
 @router.post("/{username}/profile")
 def upsert_profile(username: str, body: dict, db=Depends(get_db)):
