@@ -326,24 +326,6 @@ const css = `
     font-size: 13px; line-height: 1;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
   }
-  .card-frag-link {
-    position: absolute; bottom: 6px; left: 6px; z-index: 3;
-    width: 22px; height: 22px; border-radius: 50%;
-    background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; cursor: pointer; transition: all 0.15s;
-    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
-    text-decoration: none; color: inherit;
-  }
-  .card-frag-link:hover { background: rgba(201,168,76,0.4); border-color: var(--gold); }
-  .card-frag-link-tip {
-    position: absolute; bottom: 34px; left: 6px; z-index: 10;
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 6px; padding: 7px 10px; font-size: 11px;
-    color: var(--text2); white-space: nowrap; pointer-events: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    animation: fadeIn 0.15s ease;
-  }
   .card-select-overlay {
     position: absolute; inset: 0;
     border: 2px solid var(--gold); border-radius: var(--radius);
@@ -749,7 +731,6 @@ function Stars({ value, onChange }) {
 function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
   const img = imgSrc(frag);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [showLinkTip, setShowLinkTip] = useState(false);
 
   return (
     <div
@@ -783,26 +764,6 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
             {frag.want_to_trade    === 1 && <span className="card-corner-icon" title="Want to Trade">🤝</span>}
             {frag.want_to_sell     === 1 && <span className="card-corner-icon" title="Want to Sell">💰</span>}
             {frag.want_to_give_away=== 1 && <span className="card-corner-icon" title="Want to Give Away">🎁</span>}
-          </div>
-        )}
-        {/* Fragrantica link icon — bottom left of image */}
-        {frag.fragrantica_url ? (
-          <a className="card-frag-link" href={frag.fragrantica_url}
-            target="_blank" rel="noreferrer"
-            title="View on Fragrantica"
-            onClick={e => e.stopPropagation()}>
-            𝓕
-          </a>
-        ) : (
-          <span className="card-frag-link"
-            onClick={e => { e.stopPropagation(); setShowLinkTip(t => !t); }}
-            title="No Fragrantica link">
-            𝓕
-          </span>
-        )}
-        {showLinkTip && !frag.fragrantica_url && (
-          <div className="card-frag-link-tip">
-            No Fragrantica link — add one in Edit ✏️
           </div>
         )}
       </div>
@@ -1542,7 +1503,7 @@ export default function Olfactori() {
 
   const handleOpenFrag = (frag) => {
     setActiveFrag(frag);
-    setTab("collection");
+    // don't switch tab — drawer renders on top of current tab
   };
 
   // Alphabet jump
@@ -1875,7 +1836,7 @@ export default function Olfactori() {
           )}
 
           {tab === "notes" && (
-            <NotesTab onOpenFrag={(frag) => { setActiveFrag(frag); setTab("collection"); }} />
+            <NotesTab onOpenFrag={handleOpenFrag} />
           )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
@@ -1889,6 +1850,7 @@ export default function Olfactori() {
             onClose={() => setActiveFrag(null)}
             onUpdate={updateFrag}
             onDelete={deleteFrag}
+            onMarkGone={markAsGone}
             onWear={updateLastWorn}
             toast={showToast}
           />
