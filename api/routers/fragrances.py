@@ -873,10 +873,6 @@ def enrich_smart(frag_id: int, db = Depends(get_db)):
         if image_result["url"]:
             merged["fragella_image_url"] = image_result["url"]
 
-    # Save fragrantica_url if we found one
-    if sources.get("fragrantica_url") and not frag.get("fragrantica_url"):
-        merged["fragrantica_url"] = sources["fragrantica_url"]
-
     return {
         "status": "ok",
         "missing_fields": missing,
@@ -914,9 +910,6 @@ def enrich_rescrape(frag_id: int, db = Depends(get_db)):
     image_result = _fetch_best_image(brand, name, sources.get("fragrantica_url"))
     if image_result["url"]:
         merged["fragella_image_url"] = image_result["url"]
-
-    if sources.get("fragrantica_url"):
-        merged["fragrantica_url"] = sources["fragrantica_url"]
 
     return {
         "status": "ok",
