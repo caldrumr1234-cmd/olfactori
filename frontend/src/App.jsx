@@ -955,7 +955,7 @@ function GoneModal({ frag, onConfirm, onClose }) {
   );
 }
 
-function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser }) {
+function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, isAdminUser }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
