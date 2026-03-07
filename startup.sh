@@ -21,6 +21,17 @@ migrations = [
     'ALTER TABLE fragrances ADD COLUMN want_to_sell INTEGER DEFAULT 0',
     'ALTER TABLE fragrances ADD COLUMN want_to_give_away INTEGER DEFAULT 0',
     'ALTER TABLE wishlist ADD COLUMN custom_image_url TEXT',
+    '''CREATE TABLE IF NOT EXISTS decants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL DEFAULT \'decant\',
+        brand TEXT NOT NULL,
+        name TEXT NOT NULL,
+        concentration TEXT,
+        size_ml REAL,
+        quantity INTEGER DEFAULT 1,
+        notes TEXT,
+        created_at TEXT DEFAULT (date(\'now\'))
+    )''',
 ]
 for m in migrations:
     try:

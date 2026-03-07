@@ -140,22 +140,41 @@ def most_neglected(db = Depends(get_db)):
 
 @router.get("/stats")
 def get_stats(db = Depends(get_db)):
-    total    = db.execute("SELECT COUNT(*) FROM fragrances").fetchone()[0]
-    enriched = db.execute("SELECT COUNT(*) FROM fragrances WHERE enrichment_status='success'").fetchone()[0]
-    brands   = db.execute("SELECT COUNT(DISTINCT brand) FROM fragrances").fetchone()[0]
-    by_conc  = db.execute("""
+    total      = db.execute("SELECT COUNT(*) FROM fragrances").fetchone()[0]
+    enriched   = db.execute("SELECT COUNT(*) FROM fragrances WHERE enrichment_status='success'").fetchone()[0]
+    brands     = db.execute("SELECT COUNT(DISTINCT brand) FROM fragrances").fetchone()[0]
+    disc       = db.execute("SELECT COUNT(*) FROM fragrances WHERE is_discontinued=1").fetchone()[0]
+    testers    = db.execute("SELECT COUNT(*) FROM fragrances WHERE is_tester=1").fetchone()[0]
+    limited    = db.execute("SELECT COUNT(*) FROM fragrances WHERE is_limited_edition=1").fetchone()[0]
+    exclusive  = db.execute("SELECT COUNT(*) FROM fragrances WHERE is_exclusive=1").fetchone()[0]
+    by_conc    = db.execute("""
         SELECT concentration, COUNT(*) as cnt FROM fragrances
         WHERE concentration IS NOT NULL GROUP BY concentration ORDER BY cnt DESC
     """).fetchall()
-    by_decade = db.execute("""
+    by_decade  = db.execute("""
         SELECT (year_released/10)*10 as decade, COUNT(*) as cnt
         FROM fragrances WHERE year_released IS NOT NULL
         GROUP BY decade ORDER BY decade
     """).fetchall()
+    by_size    = db.execute("""
+        SELECT
+          CASE
+            WHEN size_ml IS NULL THEN 'Unknown'
+            WHEN size_ml <= 30   THEN 'Travel (<=30ml)'
+            WHEN size_ml <= 75   THEN 'Standard (31-75ml)'
+            WHEN size_ml <= 100  THEN 'Large (76-100ml)'
+            ELSE 'XL (>100ml)'
+          END as bucket,
+          COUNT(*) as cnt
+        FROM fragrances GROUP BY bucket ORDER BY cnt DESC
+    """).fetchall()
     return {
         "total": total, "enriched": enriched, "brands": brands,
-        "by_concentration": [dict(r) for r in by_conc],
-        "by_decade": [dict(r) for r in by_decade],
+        "discontinued": disc, "testers": testers,
+        "limited": limited, "exclusive": exclusive,
+        "by_concentration": [{k: r[k] for k in r.keys()} for r in by_conc],
+        "by_decade":        [{k: r[k] for k in r.keys()} for r in by_decade],
+        "by_size":          [{k: r[k] for k in r.keys()} for r in by_size],
     }
 
 @router.get("/seasonal_balance")

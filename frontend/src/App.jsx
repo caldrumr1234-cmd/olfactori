@@ -9,6 +9,7 @@ import { EnrichPanel } from "./EnrichPanel.jsx";
 import ShelvesTab from "./ShelvesTab.jsx";
 import UsedToHaveTab from "./UsedToHaveTab.jsx";
 import NotesTab from "./NotesTab.jsx";
+import DecantsTab from "./DecantsTab.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -1594,6 +1595,7 @@ export default function Olfactori() {
     { id:"shelves",     label:"Shelves"     },
     { id:"notes",       label:"Notes"       },
     { id:"usedtohave",  label:"Used to Have"},
+    { id:"decants",     label:"Decants & Samples"},
     { id:"admin",       label:"Admin"       },
   ];
 
@@ -1908,6 +1910,7 @@ export default function Olfactori() {
           )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
+          {tab === "decants" && <DecantsTab onOpenFrag={handleOpenFrag} />}
           {tab === "admin" && <AdminTab toast={showToast} />}
         </main>
 

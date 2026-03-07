@@ -4,7 +4,7 @@ Run: uvicorn api.main:app --reload --port 8000
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have
+from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have, decants
 
 app = FastAPI(title="Olfactori API", version="1.0.0")
 
@@ -26,6 +26,7 @@ app.include_router(export.router,     prefix="/api/export",         tags=["expor
 app.include_router(settings.router,   prefix="/api/settings",       tags=["settings"])
 app.include_router(shelves.router,    prefix="/api/shelves",        tags=["shelves"])
 app.include_router(used_to_have.router, prefix="/api/used_to_have", tags=["used_to_have"])
+app.include_router(decants.router,      prefix="/api/decants",      tags=["decants"])
 
 @app.get("/api/health")
 def health():
