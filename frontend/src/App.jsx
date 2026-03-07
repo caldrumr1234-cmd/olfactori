@@ -1542,10 +1542,38 @@ function AddModal({ onClose, onAdd, toast }) {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────
+// ── ACCESS RESTRICTED PAGE ────────────────────────────────────
+function AccessRestricted() {
+  return (
+    <div style={{
+      minHeight:"100vh", background:"var(--bg)", display:"flex",
+      alignItems:"center", justifyContent:"center", flexDirection:"column",
+      gap:20, padding:40, textAlign:"center",
+      fontFamily:"'DM Sans', sans-serif",
+    }}>
+      <div style={{fontFamily:"'Cormorant Garamond', serif", fontSize:64, color:"var(--gold)", opacity:0.3}}>⊘</div>
+      <div style={{fontFamily:"'Cormorant Garamond', serif", fontSize:32, fontWeight:300, color:"var(--text)"}}>
+        Access Restricted
+      </div>
+      <div style={{fontSize:14, color:"var(--text3)", maxWidth:340, lineHeight:1.7}}>
+        This collection is private. If you were invited, make sure you're signing in
+        with the correct Google account.
+      </div>
+      <div style={{fontSize:12, color:"var(--text3)"}}>
+        — Olfactori
+      </div>
+    </div>
+  );
+}
+
 export default function Olfactori() {
   // Handle /share/:username route
   const pathMatch = window.location.pathname.match(/^\/share\/([^/]+)/);
   if (pathMatch) return <SharePage username={pathMatch[1]} />;
+
+  // Handle auth_error=restricted in URL
+  const _urlParams = new URLSearchParams(window.location.search);
+  if (_urlParams.get("auth_error") === "restricted") return <AccessRestricted />;
 
   const [tab, setTab]         = useState("collection");
   // ── AUTH ──────────────────────────────────────────────────

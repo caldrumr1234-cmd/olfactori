@@ -4,6 +4,7 @@ api/routers/auth.py — Google OAuth + JWT session management
 import os, time, json, hashlib, hmac
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
+from api.database import get_db
 import httpx
 
 router = APIRouter()
@@ -111,9 +112,22 @@ async def callback(code: str, request: Request):
     if not email:
         raise HTTPException(400, "Could not retrieve email from Google")
 
-    if email.lower() != ADMIN_EMAIL.lower():
-        # Not admin — redirect with error
-        return RedirectResponse(f"{FRONTEND_URL}?auth_error=unauthorized")
+    is_admin = email.lower() == ADMIN_EMAIL.lower()
+
+    if not is_admin:
+        # Check if email is in the friends/invites table
+        from api.database import get_db
+        import sqlite3
+        DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
+        con = sqlite3.connect(DB_PATH, check_same_thread=False)
+        con.row_factory = sqlite3.Row
+        row = con.execute(
+            "SELECT id, revoked FROM friends WHERE LOWER(email) = LOWER(?)", (email,)
+        ).fetchone()
+        con.close()
+
+        if not row or row["revoked"]:
+            return RedirectResponse(f"{FRONTEND_URL}?auth_error=restricted")
 
     jwt = issue_token(email)
     return RedirectResponse(f"{FRONTEND_URL}?token={jwt}")
