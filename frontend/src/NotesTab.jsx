@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 const API = "https://olfactori-production.up.railway.app/api";
 
 const css = `
-  .notes-tab { display: flex; gap: 24px; height: calc(100vh - 120px); min-height: 0; }
+  .notes-tab { display: flex; gap: 24px; align-items: flex-start; }
 
   .notes-panel {
     width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;
@@ -26,7 +26,7 @@ const css = `
   }
   .notes-tier-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .notes-cloud-wrap {
-    flex: 1; overflow-y: auto; background: var(--bg2);
+    background: var(--bg2);
     border: 1px solid var(--border); border-radius: var(--radius);
     padding: 16px; display: flex; flex-wrap: wrap;
     gap: 8px; align-content: flex-start;
@@ -48,7 +48,7 @@ const css = `
   .notes-clear-btn:hover { color: var(--gold); }
 
   .notes-results {
-    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+    flex: 1; min-width: 0;
   }
   .notes-results-header {
     display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; flex-wrap: wrap;
@@ -68,10 +68,9 @@ const css = `
   .notes-active-pill-x:hover { opacity: 1; }
   .notes-results-subtitle { font-size: 12px; color: var(--text3); }
   .notes-results-grid {
-    flex: 1; overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-    gap: 12px; align-content: flex-start;
+    gap: 12px; margin-top: 14px;
   }
   .notes-frag-card {
     background: var(--bg2); border: 1px solid var(--border);
@@ -92,14 +91,14 @@ const css = `
   .notes-frag-tier { font-size: 9px; color: var(--text3); margin-top: 3px; }
 
   .notes-empty {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; color: var(--text3); gap: 10px;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 80px 24px; color: var(--text3); gap: 10px;
   }
 
   @media (max-width: 700px) {
-    .notes-tab { flex-direction: column; height: auto; }
+    .notes-tab { flex-direction: column; }
     .notes-panel { width: 100%; }
-    .notes-cloud-wrap { max-height: 220px; }
+
   }
 `;
 
