@@ -10,6 +10,7 @@ import ShelvesTab from "./ShelvesTab.jsx";
 import UsedToHaveTab from "./UsedToHaveTab.jsx";
 import NotesTab from "./NotesTab.jsx";
 import DecantsTab from "./DecantsTab.jsx";
+import SharePage from "./SharePage.jsx";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -1542,6 +1543,10 @@ function AddModal({ onClose, onAdd, toast }) {
 
 // ── MAIN APP ──────────────────────────────────────────────────
 export default function Olfactori() {
+  // Handle /share/:username route
+  const pathMatch = window.location.pathname.match(/^\/share\/([^/]+)/);
+  if (pathMatch) return <SharePage username={pathMatch[1]} />;
+
   const [tab, setTab]         = useState("collection");
   // ── AUTH ──────────────────────────────────────────────────
   const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);

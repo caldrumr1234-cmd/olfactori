@@ -22,6 +22,28 @@ migrations = [
     'ALTER TABLE fragrances ADD COLUMN want_to_give_away INTEGER DEFAULT 0',
     'ALTER TABLE wishlist ADD COLUMN custom_image_url TEXT',
     'CREATE TABLE IF NOT EXISTS security_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, label TEXT, grp TEXT, public INTEGER DEFAULT 0)',
+    '''CREATE TABLE IF NOT EXISTS share_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        display_name TEXT,
+        bio TEXT,
+        enabled INTEGER DEFAULT 1,
+        show_notes INTEGER DEFAULT 1,
+        show_concentration INTEGER DEFAULT 1,
+        show_size INTEGER DEFAULT 1
+    )''',
+    '''CREATE TABLE IF NOT EXISTS trade_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fragrance_id INTEGER,
+        fragrance_name TEXT,
+        fragrance_brand TEXT,
+        requester_name TEXT NOT NULL,
+        requester_email TEXT NOT NULL,
+        offering TEXT,
+        message TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT (date('now'))
+    )''',
     '''CREATE TABLE IF NOT EXISTS decants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL DEFAULT \'decant\',

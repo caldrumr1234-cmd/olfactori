@@ -615,6 +615,146 @@ function SecurityPanel({ toast }) {
   );
 }
 
+
+// ── SHARE SETTINGS PANEL ──────────────────────────────────────
+function SharePanel({ toast }) {
+  const API = "https://olfactori-production.up.railway.app/api";
+  const USERNAME = "adam";
+  const [profile, setProfile] = useState({ display_name: "", bio: "", enabled: true, show_notes: true, show_concentration: true, show_size: true });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/share/${USERNAME}/profile`)
+      .then(r => r.json())
+      .then(d => { if (d.exists !== false) setProfile(p => ({...p, ...d})); })
+      .catch(() => {});
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await fetch(`${API}/share/${USERNAME}/profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+      toast("Share settings saved");
+    } catch { toast("Error saving"); }
+    finally { setSaving(false); }
+  };
+
+  const url = `https://www.olfactori.vip/share/${USERNAME}`;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--bg3)",borderRadius:8,border:"1px solid var(--border)"}}>
+        <span style={{fontSize:12,color:"var(--text3)",flex:1,wordBreak:"break-all"}}>{url}</span>
+        <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",flexShrink:0}}
+          onClick={() => { navigator.clipboard.writeText(url); toast("Link copied!"); }}>
+          Copy
+        </button>
+        <a href={url} target="_blank" rel="noreferrer"
+          className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",flexShrink:0,textDecoration:"none"}}>
+          View
+        </a>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div>
+          <div style={{fontSize:11,color:"var(--text3)",marginBottom:5}}>Display Name</div>
+          <input className="form-input" value={profile.display_name} placeholder="Your name"
+            onChange={e => setProfile(p => ({...p, display_name: e.target.value}))} />
+        </div>
+        <div>
+          <div style={{fontSize:11,color:"var(--text3)",marginBottom:5}}>Bio (optional)</div>
+          <input className="form-input" value={profile.bio} placeholder="A short bio"
+            onChange={e => setProfile(p => ({...p, bio: e.target.value}))} />
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+        {[
+          ["enabled", "Public page on"],
+          ["show_notes", "Show notes"],
+          ["show_concentration", "Show concentration"],
+          ["show_size", "Show size"],
+        ].map(([key, label]) => (
+          <label key={key} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:13,color:"var(--text2)"}}>
+            <input type="checkbox" checked={!!profile[key]} onChange={e => setProfile(p => ({...p, [key]: e.target.checked}))}
+              style={{accentColor:"var(--gold)",width:14,height:14}} />
+            {label}
+          </label>
+        ))}
+      </div>
+
+      <button className="btn btn-primary" style={{alignSelf:"flex-start"}} onClick={save} disabled={saving}>
+        {saving ? "Saving…" : "Save Settings"}
+      </button>
+    </div>
+  );
+}
+
+// ── TRADE REQUESTS PANEL ─────────────────────────────────────
+function TradeRequestsPanel({ toast }) {
+  const API = "https://olfactori-production.up.railway.app/api";
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/trade-requests`)
+      .then(r => r.json())
+      .then(d => { setRequests(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const update = async (id, status) => {
+    await fetch(`${API}/trade-requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    setRequests(rs => rs.map(r => r.id === id ? {...r, status} : r));
+    toast(`Request ${status}`);
+  };
+
+  const remove = async (id) => {
+    await fetch(`${API}/trade-requests/${id}`, { method: "DELETE" });
+    setRequests(rs => rs.filter(r => r.id !== id));
+    toast("Request deleted");
+  };
+
+  const STATUS_COLOR = { pending: "var(--gold)", accepted: "#4ade80", declined: "#f87171" };
+
+  if (loading) return <div style={{color:"var(--text3)",fontSize:13}}>Loading…</div>;
+  if (!requests.length) return <div style={{color:"var(--text3)",fontSize:13,padding:"20px 0",textAlign:"center"}}>No trade requests yet.</div>;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {requests.map(r => (
+        <div key={r.id} style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:8,padding:"14px 16px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:8}}>
+            <div>
+              <div style={{fontSize:13,color:"var(--text)",fontWeight:500}}>{r.fragrance_brand} – {r.fragrance_name}</div>
+              <div style={{fontSize:12,color:"var(--text3)",marginTop:2}}>{r.requester_name} · {r.requester_email} · {r.created_at}</div>
+            </div>
+            <span style={{fontSize:11,color:STATUS_COLOR[r.status]||"var(--text3)",background:"rgba(0,0,0,0.3)",padding:"2px 8px",borderRadius:4,flexShrink:0}}>
+              {r.status}
+            </span>
+          </div>
+          {r.offering && <div style={{fontSize:12,color:"var(--text2)",marginBottom:4}}>📦 Offering: {r.offering}</div>}
+          {r.message  && <div style={{fontSize:12,color:"var(--text2)",marginBottom:8,fontStyle:"italic"}}>"{r.message}"</div>}
+          <div style={{display:"flex",gap:6}}>
+            {r.status !== "accepted"  && <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px"}} onClick={() => update(r.id,"accepted")}>Accept</button>}
+            {r.status !== "declined"  && <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px"}} onClick={() => update(r.id,"declined")}>Decline</button>}
+            {r.status === "pending"   && <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px"}} onClick={() => update(r.id,"pending")}>Reset</button>}
+            <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 10px",marginLeft:"auto",color:"var(--text3)"}} onClick={() => remove(r.id)}>Delete</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminTab({ toast }) {
   const [invites,  setInvites]  = useState([]);
   const [requests, setRequests] = useState([]);
@@ -830,6 +970,28 @@ export default function AdminTab({ toast }) {
           </div>
           <div className="admin-section-body">
             <DiscontinuedScrape toast={toast} />
+          </div>
+        </div>
+
+        {/* ── SHARE PAGE ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🔗 Share Page</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Public collection page settings</span>
+          </div>
+          <div className="admin-section-body">
+            <SharePanel toast={toast} />
+          </div>
+        </div>
+
+        {/* ── TRADE REQUESTS ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🔄 Trade Requests</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Incoming trade requests from your public page</span>
+          </div>
+          <div className="admin-section-body">
+            <TradeRequestsPanel toast={toast} />
           </div>
         </div>
 
