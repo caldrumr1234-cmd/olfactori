@@ -408,22 +408,23 @@ const css = `
   @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
   .drawer-hero {
-    position: relative; height: 240px;
+    position: relative; height: 320px;
     background: var(--bg3);
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
   }
   .drawer-hero::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 70% at 50% 60%, rgba(201,168,76,0.12) 0%, transparent 70%);
+    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.14) 0%, transparent 70%);
     pointer-events: none;
   }
   .drawer-hero img {
-    height: 85%; width: auto; max-width: 80%;
+    height: 92%; width: auto; max-width: 88%;
     object-fit: contain; opacity: 0; transition: opacity 0.4s;
+    position: relative; z-index: 1;
   }
   .drawer-hero img.loaded { opacity: 1; }
-  .drawer-hero-placeholder { font-size: 72px; opacity: 0.1; }
+  .drawer-hero-placeholder { opacity: 0.12; position: relative; z-index: 1; }
   .drawer-hero-overlay {
     position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
     background: linear-gradient(transparent, var(--bg2));
@@ -914,6 +915,46 @@ function TableView({ frags, selected, selectMode, onSelect, onClick }) {
 }
 
 // ── DETAIL DRAWER ─────────────────────────────────────────────
+// ── GONE MODAL ────────────────────────────────────────────────
+function GoneModal({ frag, onConfirm, onClose }) {
+  const [reason, setReason] = useState("Sold");
+  const REASONS = ["Sold", "Used Up", "Gifted", "Lost", "Returned", "Other"];
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth:400}}>
+        <div className="modal-header">
+          <span className="modal-title">Mark as Gone</span>
+          <button className="drawer-close" style={{position:"static"}} onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{fontSize:13,color:"var(--text3)",marginBottom:16}}>
+            Why are you parting with <strong style={{color:"var(--text)"}}>{frag.name}</strong>?
+            It will be moved to Used to Have.
+          </p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {REASONS.map(r => (
+              <button key={r} onClick={() => setReason(r)}
+                className="btn"
+                style={{
+                  background: reason === r ? "var(--gold-dim)" : "var(--bg3)",
+                  border: `1px solid ${reason === r ? "var(--gold)" : "var(--border)"}`,
+                  color: reason === r ? "var(--gold)" : "var(--text2)",
+                  padding: "10px", borderRadius: 8, fontSize: 13,
+                }}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(reason)}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
@@ -923,10 +964,12 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser 
   const [wearLog, setWearLog] = useState([]);
   const [saving, setSaving] = useState(false);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [heroError, setHeroError]   = useState(false);
   const [showGone, setShowGone] = useState(false);
 
   useEffect(() => {
     setHeroLoaded(false);
+    setHeroError(false);
     setForm({
       brand: frag.brand, name: frag.name,
       concentration: frag.concentration || "",
@@ -1019,12 +1062,20 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser 
       <div className="drawer-overlay" onClick={onClose} />
       <div className="drawer">
         <div className="drawer-hero">
-          {img
+          {img && !heroError
             ? <img src={img} alt={frag.name}
                 className={heroLoaded ? "loaded" : ""}
                 onLoad={() => setHeroLoaded(true)}
-                onError={e => e.target.style.display="none"} />
-            : <span className="drawer-hero-placeholder">🧴</span>
+                onError={() => setHeroError(true)} />
+            : <svg className="drawer-hero-placeholder" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120" width="90" height="130">
+                <rect x="36" y="4" width="4" height="14" rx="2" fill="#c9a84c"/>
+                <rect x="26" y="2" width="24" height="6" rx="3" fill="#c9a84c"/>
+                <rect x="32" y="16" width="12" height="8" rx="2" fill="#c9a84c"/>
+                <path d="M24 30 Q24 24 32 24 L44 24 Q52 24 52 30 Z" fill="#c9a84c"/>
+                <rect x="18" y="30" width="40" height="68" rx="8" fill="#c9a84c"/>
+                <rect x="22" y="35" width="8" height="40" rx="4" fill="rgba(255,255,255,0.15)"/>
+                <rect x="22" y="52" width="32" height="28" rx="4" fill="rgba(0,0,0,0.2)"/>
+              </svg>
           }
           <div className="drawer-hero-overlay" />
           <button className="drawer-close" onClick={onClose}>✕</button>
@@ -1303,6 +1354,13 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, toast, isAdminUser 
           }
         </div>
       </div>
+      {showGone && (
+        <GoneModal
+          frag={frag}
+          onClose={() => setShowGone(false)}
+          onConfirm={(reason) => { setShowGone(false); onMarkGone(frag, reason); }}
+        />
+      )}
     </>
   );
 }
