@@ -240,11 +240,16 @@ function Drawer({ frag, profile, onClose }) {
   const [imgError, setImgError] = useState(false);
   const [showTrade, setShowTrade] = useState(false);
   const img = imgSrc(frag);
-  const top    = frag.top_notes    ? frag.top_notes.split(",").map(n=>n.trim()).filter(Boolean) : [];
-  const middle = frag.middle_notes ? frag.middle_notes.split(",").map(n=>n.trim()).filter(Boolean) : [];
-  const base   = frag.base_notes   ? frag.base_notes.split(",").map(n=>n.trim()).filter(Boolean) : [];
+  const parseNotes = (v) => {
+    if (!v) return [];
+    try { const p = JSON.parse(v); if (Array.isArray(p)) return p.map(n=>n.trim()).filter(Boolean); } catch(e) {}
+    return v.split(",").map(n=>n.trim()).filter(Boolean);
+  };
+  const top    = parseNotes(frag.top_notes);
+  const middle = parseNotes(frag.middle_notes);
+  const base   = parseNotes(frag.base_notes);
   const hasNotes = top.length || middle.length || base.length;
-  const isTrade = frag.want_to_trade;
+  const isTrade = !!frag.want_to_trade;
 
   return (
     <>
@@ -393,14 +398,14 @@ export default function SharePage({ username }) {
           ? <div className="sp-empty">No fragrances match your search.</div>
           : <div className="sp-grid">
               {filtered.map(f => (
-                <div key={f.id} className={`sp-card${f.want_to_trade?" trade":""}`} onClick={() => setActive(f)}>
+                <div key={f.id} className={`sp-card${f.want_to_trade===1?" trade":""}`} onClick={() => setActive(f)}>
                   <div className="sp-card-img">
                     {imgSrc(f)
                       ? <img src={imgSrc(f)} alt={f.name} loading="lazy" />
                       : <div style={{width:40,height:60,borderRadius:6,background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.15)"}} />
                     }
                   </div>
-                  {f.want_to_trade && <div className="sp-trade-badge">Trade</div>}
+                  {!!f.want_to_trade && <div className="sp-trade-badge">Trade</div>}
                   <div className="sp-card-body">
                     <div className="sp-card-brand">{f.brand}</div>
                     <div className="sp-card-name">{f.name}</div>
