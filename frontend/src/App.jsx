@@ -236,15 +236,16 @@ const css = `
   .skeleton-line.long { width: 90%; }
   .skeleton-line.med { width: 75%; }
 
-  .card-body { padding: 12px; }
+  .card-body { padding: 10px 12px; height: 104px; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
   .card-brand {
     font-size: 10px; color: var(--text3); letter-spacing: 0.1em;
-    text-transform: uppercase; margin-bottom: 2px;
+    text-transform: uppercase; margin-bottom: 2px; flex-shrink: 0;
   }
   .card-name {
     font-family: 'Cormorant Garamond', serif;
     font-size: 16px; font-weight: 400; color: var(--text);
-    line-height: 1.3; margin-bottom: 8px;
+    line-height: 1.25; flex: 1; min-height: 0;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   }
   .card-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
   .pill {
@@ -270,7 +271,7 @@ const css = `
     color: var(--gold); transition: transform 0.15s;
   }
   .accord-tag:hover { transform: scale(1.05); }
-  .card-flags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .card-meta { display: flex; flex-wrap: nowrap; gap: 4px; align-items: center; overflow: hidden; flex-shrink: 0; padding-top: 5px; height: 20px; }
   .flag {
     font-size: 9px; padding: 2px 6px; border-radius: 4px;
     font-weight: 500; letter-spacing: 0.04em;
@@ -279,9 +280,6 @@ const css = `
   .flag.disc      { background: rgba(224,85,85,0.15);  color: var(--red);  border: 1px solid rgba(224,85,85,0.3); }
   .flag.limited   { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
   .flag.exclusive { background: rgba(76,174,122,0.15); color: var(--green);border: 1px solid rgba(76,174,122,0.3); }
-  .card-conc {
-    font-size: 10px; color: var(--text3); margin-top: 6px;
-  }
   .card-check {
     position: absolute; top: 8px; left: 8px;
     width: 22px; height: 22px; border-radius: 50%;
