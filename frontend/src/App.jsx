@@ -326,6 +326,26 @@ const css = `
     font-size: 13px; line-height: 1;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
   }
+  .card-frag-link {
+    position: absolute; bottom: 6px; left: 6px; z-index: 3;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-style: italic; font-weight: 700;
+    font-family: 'Cormorant Garamond', serif;
+    cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.6);
+    text-decoration: none; line-height: 1;
+  }
+  .card-frag-link:hover { background: rgba(201,168,76,0.5); border-color: var(--gold); color: var(--gold); }
+  .card-frag-link.has-link { color: rgba(201,168,76,0.8); border-color: rgba(201,168,76,0.3); }
+  .card-frag-link-tip {
+    position: absolute; bottom: 32px; left: 6px; z-index: 10;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 6px 10px; font-size: 11px;
+    color: var(--text2); white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
   .card-select-overlay {
     position: absolute; inset: 0;
     border: 2px solid var(--gold); border-radius: var(--radius);
@@ -731,6 +751,7 @@ function Stars({ value, onChange }) {
 function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
   const img = imgSrc(frag);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [showLinkTip, setShowLinkTip] = useState(false);
 
   return (
     <div
@@ -765,6 +786,25 @@ function FragCard({ frag, selected, selectMode, onSelect, onClick }) {
             {frag.want_to_sell     === 1 && <span className="card-corner-icon" title="Want to Sell">💰</span>}
             {frag.want_to_give_away=== 1 && <span className="card-corner-icon" title="Want to Give Away">🎁</span>}
           </div>
+        )}
+        {frag.fragrantica_url ? (
+          <a className="card-frag-link has-link"
+            href={frag.fragrantica_url} target="_blank" rel="noreferrer"
+            title="View on Fragrantica"
+            onClick={e => e.stopPropagation()}>
+            F
+          </a>
+        ) : (
+          <>
+            <span className="card-frag-link"
+              title="No Fragrantica link"
+              onClick={e => { e.stopPropagation(); setShowLinkTip(v => !v); }}>
+              F
+            </span>
+            {showLinkTip && (
+              <div className="card-frag-link-tip">No Fragrantica link — add one in Edit ✏️</div>
+            )}
+          </>
         )}
       </div>
       <div className="card-body">

@@ -149,6 +149,52 @@ const css = `
     color: var(--text3); font-size: 13px;
     padding: 60px 0; justify-content: center;
   }
+
+  /* NEW RELEASE RADAR */
+  .radar-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .radar-year-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text3); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .radar-year-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .radar-count { font-size: 12px; color: var(--text3); margin-left: auto; }
+  .radar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .radar-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    transition: all 0.2s;
+  }
+  .radar-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .radar-card-img {
+    width: 100%; aspect-ratio: 1; background: var(--bg2);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .radar-card-img img { width: 70%; height: 70%; object-fit: contain; }
+  .radar-card-img-placeholder { font-size: 28px; opacity: 0.15; }
+  .radar-card-body { padding: 8px 10px; }
+  .radar-card-brand { font-size: 9px; font-weight: 700; color: var(--gold); opacity: 0.8;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .radar-card-name { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--text);
+    line-height: 1.2; overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .radar-card-year { font-size: 10px; color: var(--text3); margin-top: 3px; }
+  .radar-card-link {
+    display: block; font-size: 10px; color: var(--blue);
+    padding: 0 10px 8px; text-decoration: none;
+  }
+  .radar-card-link:hover { text-decoration: underline; }
+  .radar-owned-badge {
+    font-size: 9px; background: var(--gold-dim); color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.3); border-radius: 4px;
+    padding: 1px 5px; margin-top: 3px; display: inline-block;
+  }
+  .radar-empty { color: var(--text3); font-size: 13px; padding: 32px 0; text-align: center; }
 `;
 
 // ── PERFUME BOTTLE SVG ────────────────────────────────────────
@@ -369,6 +415,121 @@ function SpinTheBottle({ onOpenFrag }) {
   );
 }
 
+// ── NEW RELEASE RADAR ─────────────────────────────────────────
+const FRAGELLA_API = "https://api.fragella.com";
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
+
+function NewReleaseRadar() {
+  const [releases, setReleases]   = useState([]);
+  const [owned, setOwned]         = useState(new Set()); // "brand||name" keys we own
+  const [ownedBrands, setOwnedBrands] = useState(new Set());
+  const [year, setYear]           = useState(CURRENT_YEAR);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+
+  // Load collection brands once
+  useEffect(() => {
+    fetch(`${API}/fragrances?limit=500`)
+      .then(r => r.json())
+      .then(d => {
+        const items = d.items || [];
+        const brands = new Set(items.map(f => (f.brand || "").toLowerCase().trim()));
+        const keys   = new Set(items.map(f =>
+          `${(f.brand||"").toLowerCase().trim()}||${(f.name||"").toLowerCase().trim()}`
+        ));
+        setOwnedBrands(brands);
+        setOwned(keys);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Load releases from Fragella when year changes
+  useEffect(() => {
+    if (ownedBrands.size === 0) return;
+    setLoading(true);
+    setError(null);
+
+    fetch(`${FRAGELLA_API}/fragrances?year=${year}&limit=200`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(d => {
+        const items = Array.isArray(d) ? d : d.items || d.fragrances || d.data || [];
+        // Filter to brands we own
+        const filtered = items.filter(f => {
+          const brand = (f.Brand || f.brand || "").toLowerCase().trim();
+          return ownedBrands.has(brand);
+        });
+        setReleases(filtered);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError("Could not load releases from Fragella.");
+        setLoading(false);
+      });
+  }, [year, ownedBrands]);
+
+  const getKey = (f) =>
+    `${(f.Brand||f.brand||"").toLowerCase().trim()}||${(f.Name||f.name||"").toLowerCase().trim()}`;
+
+  const filtered = releases;
+
+  return (
+    <div>
+      <div className="radar-toolbar">
+        {YEARS.map(y => (
+          <button key={y} className={`radar-year-btn ${year===y?"active":""}`}
+            onClick={() => setYear(y)}>{y}</button>
+        ))}
+        {!loading && !error && (
+          <span className="radar-count">
+            {filtered.length} release{filtered.length !== 1 ? "s" : ""} from brands you own
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="radar-empty">Loading releases…</div>
+      ) : error ? (
+        <div className="radar-empty">{error}</div>
+      ) : filtered.length === 0 ? (
+        <div className="radar-empty">No new releases found from your brands for {year}.</div>
+      ) : (
+        <div className="radar-grid">
+          {filtered.map((f, i) => {
+            const brand  = f.Brand  || f.brand  || "";
+            const name   = f.Name   || f.name   || "";
+            const img    = f["Image URL"] || f.image_url || f.ImageUrl || null;
+            const url    = f["Fragrantica URL"] || f.fragrantica_url || null;
+            const yr     = f["Year Released"] || f.year_released || f.year || year;
+            const isOwned = owned.has(getKey(f));
+            return (
+              <div key={i} className="radar-card">
+                <div className="radar-card-img">
+                  {img
+                    ? <img src={img} alt={name} onError={e => e.target.style.display="none"} />
+                    : <span className="radar-card-img-placeholder">🆕</span>
+                  }
+                </div>
+                <div className="radar-card-body">
+                  <div className="radar-card-brand">{brand}</div>
+                  <div className="radar-card-name">{name}</div>
+                  <div className="radar-card-year">{yr}</div>
+                  {isOwned && <span className="radar-owned-badge">✓ In Collection</span>}
+                </div>
+                {url && (
+                  <a className="radar-card-link" href={url} target="_blank" rel="noreferrer">
+                    View on Fragrantica ↗
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MAIN EXPLORE TAB ───────────────────────────────────────────
 export default function ExploreTab({ onNoteFilter, onOpenFrag }) {
   return (
@@ -398,6 +559,14 @@ export default function ExploreTab({ onNoteFilter, onOpenFrag }) {
             <span>📅</span> Scent Timeline
           </div>
           <ScentTimeline />
+        </div>
+
+        {/* NEW RELEASE RADAR */}
+        <div className="explore-card wide">
+          <div className="explore-card-title">
+            <span>📡</span> New Release Radar
+          </div>
+          <NewReleaseRadar />
         </div>
 
       </div>
