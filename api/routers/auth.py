@@ -115,22 +115,50 @@ async def callback(code: str, request: Request):
     is_admin = email.lower() == ADMIN_EMAIL.lower()
 
     if not is_admin:
-        # Check if email is in the friends/invites table
-        from api.database import get_db
+        # Check if email is in the friend_invites table
         import sqlite3
         DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
         con = sqlite3.connect(DB_PATH, check_same_thread=False)
         con.row_factory = sqlite3.Row
         row = con.execute(
-            "SELECT id, revoked FROM friends WHERE LOWER(email) = LOWER(?)", (email,)
+            "SELECT id, is_active FROM friend_invites WHERE LOWER(email) = LOWER(?)", (email,)
         ).fetchone()
         con.close()
 
-        if not row or row["revoked"]:
+        if not row or not row["is_active"]:
             return RedirectResponse(f"{FRONTEND_URL}?auth_error=restricted")
 
     jwt = issue_token(email)
+
+    # Log the login (non-admin users only)
+    if not is_admin:
+        try:
+            import sqlite3 as _sq
+            _DB = os.environ.get("DB_PATH", "/data/sillage.db")
+            _con = _sq.connect(_DB, check_same_thread=False)
+            _con.execute(
+                "INSERT INTO login_history (email, logged_in_at) VALUES (?, datetime('now'))",
+                (email,)
+            )
+            _con.commit()
+            _con.close()
+        except Exception:
+            pass  # Never block login due to logging failure
+
     return RedirectResponse(f"{FRONTEND_URL}?token={jwt}")
+
+@router.get("/history")
+def login_history(request: Request):
+    """Return login history for admin."""
+    import sqlite3 as _sq
+    DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
+    con = _sq.connect(DB_PATH, check_same_thread=False)
+    con.row_factory = _sq.Row
+    rows = con.execute(
+        "SELECT email, logged_in_at FROM login_history ORDER BY logged_in_at DESC LIMIT 200"
+    ).fetchall()
+    con.close()
+    return [{"email": r["email"], "logged_in_at": r["logged_in_at"]} for r in rows]
 
 @router.get("/me")
 def me(request: Request):
