@@ -13,16 +13,16 @@ const css = `
   /* LOCATION */
   .wardrobe-location { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
   .wardrobe-location-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; flex-shrink: 0; }
-  .wardrobe-location-input { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 7px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; width: 220px; }
+  .wardrobe-location-input { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 7px 12px; font-size: 13px; font-family: var(--sans); outline: none; transition: border-color 0.15s; width: 220px; }
   .wardrobe-location-input:focus { border-color: var(--gold); }
-  .wardrobe-location-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .wardrobe-location-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
   .wardrobe-location-btn:hover { border-color: var(--border2); color: var(--text); }
 
   /* WEATHER */
   .weather-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
   .weather-icon { font-size: 48px; line-height: 1; }
   .weather-info { flex: 1; }
-  .weather-temp { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); line-height: 1; }
+  .weather-temp { font-family: var(--serif); font-size: 42px; font-weight: 300; color: var(--text); line-height: 1; }
   .weather-desc { font-size: 13px; color: var(--text2); margin-top: 4px; }
   .weather-season { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
   .weather-loading { font-size: 13px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
@@ -32,13 +32,13 @@ const css = `
 
   /* OCCASION */
   .occasion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
-  .occasion-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; color: var(--text2); font-size: 13px; font-family: 'DM Sans', sans-serif; }
+  .occasion-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; color: var(--text2); font-size: 13px; font-family: var(--sans); }
   .occasion-btn:hover { border-color: var(--border2); color: var(--text); transform: translateY(-1px); }
   .occasion-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .occasion-icon { font-size: 24px; display: block; margin-bottom: 6px; }
 
   /* SUGGEST BUTTON */
-  .wardrobe-suggest-btn { width: 100%; background: var(--gold); color: #0c0c0f; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; font-family: 'DM Sans', sans-serif; margin-bottom: 28px; }
+  .wardrobe-suggest-btn { width: 100%; background: var(--gold); color: var(--bg); border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; font-family: var(--sans); margin-bottom: 28px; }
   .wardrobe-suggest-btn:hover { background: var(--gold2); transform: translateY(-1px); }
   .wardrobe-suggest-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
 
@@ -55,20 +55,20 @@ const css = `
   .wardrobe-result-info { flex: 1; min-width: 0; }
   .wardrobe-result-rank { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
   .wardrobe-result-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
-  .wardrobe-result-name { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+  .wardrobe-result-name { font-family: var(--serif); font-size: 20px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
   .wardrobe-result-accords { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
   .wardrobe-result-reason { font-size: 12px; color: var(--text3); font-style: italic; line-height: 1.4; }
-  .wardrobe-reset { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; margin-top: 16px; font-family: 'DM Sans', sans-serif; padding: 4px 0; transition: color 0.15s; }
+  .wardrobe-reset { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; margin-top: 16px; font-family: var(--sans); padding: 4px 0; transition: color 0.15s; }
   .wardrobe-reset:hover { color: var(--text2); }
 
   /* TRENDS */
   .trends-year-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .trends-year-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .trends-year-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
   .trends-year-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .trends-year-btn:hover { border-color: var(--border2); color: var(--text); }
-  .trends-year-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 5px 10px; font-size: 12px; width: 70px; outline: none; font-family: 'DM Sans', sans-serif; transition: border-color 0.15s; }
+  .trends-year-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 5px 10px; font-size: 12px; width: 70px; outline: none; font-family: var(--sans); transition: border-color 0.15s; }
   .trends-year-input:focus { border-color: var(--gold); }
-  .trends-year-go { background: var(--gold); border: none; border-radius: 6px; color: #0c0c0f; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+  .trends-year-go { background: var(--gold); border: none; border-radius: 6px; color: var(--bg); padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); font-weight: 600; }
   .trends-total { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
   .trends-empty { font-size: 13px; color: var(--text3); padding: 24px 0; }
   .trends-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
@@ -88,9 +88,9 @@ const css = `
   .worn-img img { width: 90%; height: 90%; object-fit: contain; }
   .worn-info { flex: 1; min-width: 0; }
   .worn-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .worn-name { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--text); }
+  .worn-name { font-family: var(--serif); font-size: 16px; color: var(--text); }
   .worn-date { font-size: 11px; color: var(--text3); margin-left: auto; flex-shrink: 0; }
-  .view-log-btn { width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 10px; font-size: 12px; cursor: pointer; margin-top: 12px; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .view-log-btn { width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 10px; font-size: 12px; cursor: pointer; margin-top: 12px; font-family: var(--sans); transition: all 0.15s; }
   .view-log-btn:hover { border-color: var(--border2); color: var(--text2); }
 
   /* FULL LOG */
@@ -100,7 +100,7 @@ const css = `
   .log-date-badge { font-size: 11px; color: var(--text3); width: 80px; flex-shrink: 0; }
   .log-name { font-size: 13px; color: var(--text2); flex: 1; transition: color 0.15s; }
   .log-brand { font-size: 11px; color: var(--text3); }
-  .load-more-btn { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 10px; font-size: 12px; cursor: pointer; margin-top: 12px; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .load-more-btn { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 10px; font-size: 12px; cursor: pointer; margin-top: 12px; font-family: var(--sans); transition: all 0.15s; }
   .load-more-btn:hover { border-color: var(--border2); color: var(--text2); }
 `;
 

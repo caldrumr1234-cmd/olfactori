@@ -8,8 +8,8 @@ const EMOJIS = ["🗄️","🌊","🌿","🔥","❄️","🌸","🍂","🌙","�
 const css = `
   .shelves-wrap { max-width: 860px; margin: 0 auto; }
   .shelves-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
-  .shelves-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--text); flex: 1; }
-  .shelf-create-btn { background: var(--gold); border: none; border-radius: 8px; color: #0c0c0f; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .shelves-title { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--text); flex: 1; }
+  .shelf-create-btn { background: var(--gold); border: none; border-radius: 8px; color: var(--bg); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
   .shelf-create-btn:hover { background: var(--gold2); transform: translateY(-1px); }
 
   /* SHELF LIST */
@@ -17,7 +17,7 @@ const css = `
   .shelf-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all 0.15s; }
   .shelf-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
   .shelf-card-emoji { font-size: 32px; margin-bottom: 10px; }
-  .shelf-card-name { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--text); margin-bottom: 4px; }
+  .shelf-card-name { font-family: var(--serif); font-size: 20px; color: var(--text); margin-bottom: 4px; }
   .shelf-card-desc { font-size: 12px; color: var(--text3); margin-bottom: 10px; min-height: 16px; }
   .shelf-card-count { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .shelf-empty { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
@@ -25,15 +25,15 @@ const css = `
 
   /* SHELF DETAIL */
   .shelf-detail-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
-  .shelf-back-btn { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 4px 0; transition: color 0.15s; }
+  .shelf-back-btn { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; font-family: var(--sans); padding: 4px 0; transition: color 0.15s; }
   .shelf-back-btn:hover { color: var(--text2); }
   .shelf-detail-emoji { font-size: 36px; }
-  .shelf-detail-name { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--text); }
+  .shelf-detail-name { font-family: var(--serif); font-size: 26px; font-weight: 300; color: var(--text); }
   .shelf-detail-desc { font-size: 13px; color: var(--text3); margin-top: 2px; }
   .shelf-detail-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .shelf-action-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .shelf-action-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
   .shelf-action-btn:hover { border-color: var(--border2); color: var(--text); }
-  .shelf-action-btn.primary { background: var(--gold); border-color: var(--gold); color: #0c0c0f; font-weight: 600; }
+  .shelf-action-btn.primary { background: var(--gold); border-color: var(--gold); color: var(--bg); font-weight: 600; }
   .shelf-action-btn.primary:hover { background: var(--gold2); }
   .shelf-action-btn.danger { color: #c94040; }
   .shelf-action-btn.danger:hover { border-color: #c94040; }
@@ -43,7 +43,7 @@ const css = `
   .shelf-item-img { width: 100%; aspect-ratio: 1; background: #ffffff; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; }
   .shelf-item-img img { width: 85%; height: 85%; object-fit: contain; }
   .shelf-item-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .shelf-item-name { font-family: 'Cormorant Garamond', serif; font-size: 15px; color: var(--text); line-height: 1.2; }
+  .shelf-item-name { font-family: var(--serif); font-size: 15px; color: var(--text); line-height: 1.2; }
   .shelf-item-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.5); border: none; border-radius: 50%; color: var(--text3); width: 22px; height: 22px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; }
   .shelf-item-card:hover .shelf-item-remove { opacity: 1; }
   .shelf-item-remove:hover { color: #c94040; }
@@ -52,18 +52,18 @@ const css = `
   /* MODAL */
   .shelf-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .shelf-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 440px; }
-  .shelf-modal-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--text); margin-bottom: 20px; }
+  .shelf-modal-title { font-family: var(--serif); font-size: 22px; color: var(--text); margin-bottom: 20px; }
   .shelf-modal-field { margin-bottom: 16px; }
   .shelf-modal-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
-  .shelf-modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
+  .shelf-modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 13px; font-family: var(--sans); outline: none; transition: border-color 0.15s; box-sizing: border-box; }
   .shelf-modal-input:focus { border-color: var(--gold); }
   .shelf-emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .shelf-emoji-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 18px; cursor: pointer; transition: all 0.1s; }
   .shelf-emoji-btn.active { border-color: var(--gold); background: var(--gold-dim); }
   .shelf-emoji-btn:hover { border-color: var(--border2); }
   .shelf-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-  .shelf-modal-cancel { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .shelf-modal-save { background: var(--gold); border: none; border-radius: 8px; color: #0c0c0f; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .shelf-modal-cancel { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: var(--sans); }
+  .shelf-modal-save { background: var(--gold); border: none; border-radius: 8px; color: var(--bg); padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
 `;
 
 function parseArr(val) {

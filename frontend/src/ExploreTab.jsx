@@ -43,7 +43,7 @@ const css = `
     100% { transform: rotate(360deg) scale(1); }
   }
   .spin-btn {
-    background: var(--gold); color: #0c0c0f;
+    background: var(--gold); color: var(--bg);
     border: none; border-radius: 10px;
     padding: 12px 32px; font-size: 14px; font-weight: 600;
     cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em;
@@ -67,7 +67,7 @@ const css = `
     letter-spacing: 0.1em; margin-bottom: 4px;
   }
   .spin-result-name {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     font-size: 22px; font-weight: 300; color: var(--text);
     line-height: 1.2; margin-bottom: 8px;
   }
@@ -97,7 +97,7 @@ const css = `
     cursor: pointer; border-radius: 20px;
     border: 1px solid transparent;
     transition: all 0.15s; white-space: nowrap;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--sans);
     line-height: 1;
   }
   .note-cloud-tag:hover {

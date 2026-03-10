@@ -14,7 +14,7 @@ const css = `
     border-radius: var(--radius); overflow: hidden;
     transition: all 0.2s; cursor: pointer;
   }
-  .wl-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .wl-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
   .wl-card-img {
     width: 100%; aspect-ratio: 1; background: var(--bg3);
     display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -23,7 +23,7 @@ const css = `
   .wl-card-img-placeholder { font-size: 40px; opacity: 0.2; }
   .wl-card-body { padding: 12px; }
   .wl-brand { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2px; }
-  .wl-name { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 300; color: var(--text); line-height: 1.3; margin-bottom: 6px; }
+  .wl-name { font-family: var(--serif); font-size: 17px; font-weight: 300; color: var(--text); line-height: 1.3; margin-bottom: 6px; }
   .wl-meta { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
   .wl-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--border); background: var(--bg3); }
   .wl-priority { display: flex; gap: 3px; }
@@ -41,7 +41,7 @@ const css = `
   .priority-btn {
     background: none; border: 1px solid var(--border); border-radius: 6px;
     color: var(--text3); padding: 5px 10px; font-size: 12px;
-    cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.15s; font-family: var(--sans);
   }
   .priority-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
 
@@ -77,14 +77,14 @@ const css = `
   .wl-drawer-close:hover { border-color: var(--border2); color: var(--text); }
   .wl-drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
   .wl-drawer-brand { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-  .wl-drawer-name { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 12px; }
+  .wl-drawer-name { font-family: var(--serif); font-size: 26px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 12px; }
   .wl-drawer-section { margin-bottom: 16px; }
   .wl-drawer-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
   .wl-drawer-value { font-size: 13px; color: var(--text2); }
   .wl-drawer-notes { font-size: 13px; color: var(--text2); font-style: italic; line-height: 1.5; }
   .wl-drawer-actions { display: flex; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
   .wl-img-row { display: flex; gap: 8px; align-items: center; }
-  .wl-img-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 10px; font-size: 12px; font-family: "DM Sans",sans-serif; outline: none; transition: border-color 0.15s; }
+  .wl-img-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 10px; font-size: 12px; font-family: var(--sans); outline: none; transition: border-color 0.15s; }
   .wl-img-input:focus { border-color: var(--gold); }
 `;
 

@@ -14,13 +14,13 @@ const css = `
     width: 100%; box-sizing: border-box;
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text);
-    padding: 8px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    padding: 8px 12px; font-size: 13px; font-family: var(--sans);
     outline: none; transition: border-color 0.15s;
   }
   .notes-search-input:focus { border-color: var(--gold); }
   .notes-tier-tabs { display: flex; gap: 6px; }
   .notes-tier-btn {
-    flex: 1; padding: 5px 0; font-size: 11px; font-family: 'DM Sans', sans-serif;
+    flex: 1; padding: 5px 0; font-size: 11px; font-family: var(--sans);
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text3); cursor: pointer;
     transition: all 0.15s; text-align: center;
@@ -35,7 +35,7 @@ const css = `
   .note-cloud-pill {
     padding: 4px 10px; border-radius: 20px;
     background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    color: var(--text2); cursor: pointer; font-family: var(--sans);
     transition: all 0.15s; white-space: nowrap; line-height: 1; user-select: none;
   }
   .note-cloud-pill:hover { border-color: var(--gold); color: var(--gold); }
@@ -43,7 +43,7 @@ const css = `
   .note-count { font-size: 10px; opacity: 0.6; margin-left: 4px; }
   .notes-clear-btn {
     font-size: 11px; color: var(--text3); background: none; border: none;
-    cursor: pointer; padding: 0; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; padding: 0; font-family: var(--sans);
     transition: color 0.15s;
   }
   .notes-clear-btn:hover { color: var(--gold); }
@@ -55,14 +55,14 @@ const css = `
     display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; flex-wrap: wrap;
   }
   .notes-results-title {
-    font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; color: var(--text);
+    font-family: var(--serif); font-size: 24px; font-weight: 300; color: var(--text);
     line-height: 1.2;
   }
   .notes-active-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .notes-active-pill {
     padding: 3px 8px; border-radius: 20px;
     background: var(--gold-dim); border: 1px solid var(--gold);
-    color: var(--gold); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--gold); font-size: 12px; font-family: var(--sans);
     display: flex; align-items: center; gap: 5px;
   }
   .notes-active-pill-x { cursor: pointer; opacity: 0.7; font-size: 10px; }
@@ -87,7 +87,7 @@ const css = `
   .notes-frag-img-placeholder { font-size: 28px; opacity: 0.2; }
   .notes-frag-body { padding: 8px 10px; }
   .notes-frag-brand { font-size: 9px; font-weight: 700; color: var(--gold); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
-  .notes-frag-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--text); line-height: 1.2;
+  .notes-frag-name { font-family: var(--serif); font-size: 14px; color: var(--text); line-height: 1.2;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .notes-frag-tier { font-size: 9px; color: var(--text3); margin-top: 3px; }
 

@@ -16,7 +16,7 @@ const css = `
     display: flex; align-items: center; justify-content: space-between;
   }
   .admin-section-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     font-size: 18px; font-weight: 300; color: var(--text);
     display: flex; align-items: center; gap: 8px;
   }
@@ -41,7 +41,7 @@ const css = `
     font-size: 11px; color: var(--blue); background: rgba(91,141,238,0.1);
     border: 1px solid rgba(91,141,238,0.2); border-radius: 6px;
     padding: 4px 8px; cursor: pointer; white-space: nowrap;
-    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; font-family: var(--sans);
   }
   .invite-link:hover { background: rgba(91,141,238,0.2); }
   .invite-active { width: 8px; height: 8px; border-radius: 50%;
@@ -65,7 +65,7 @@ const css = `
   .request-message { font-size: 12px; color: var(--text3); font-style: italic; margin-bottom: 10px; }
   .request-actions { display: flex; gap: 6px; }
   .status-badge {
-    font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+    font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 500;
     letter-spacing: 0.04em; text-transform: uppercase;
   }
   .status-badge.pending  { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
@@ -76,7 +76,7 @@ const css = `
   .filter-tab {
     background: none; border: 1px solid var(--border); border-radius: 6px;
     color: var(--text3); padding: 5px 12px; font-size: 12px;
-    cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.15s; font-family: var(--sans);
   }
   .filter-tab:hover { color: var(--text2); }
   .filter-tab.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
@@ -95,7 +95,7 @@ const css = `
   .disc-result:last-child { border-bottom:none; }
   .disc-badge { font-size:10px; padding:2px 7px; border-radius:4px; font-weight:600; white-space:nowrap; flex-shrink:0; }
   .disc-badge.verified  { background:rgba(224,85,85,0.15); color:var(--red); border:1px solid rgba(224,85,85,0.3); }
-  .disc-badge.likely    { background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
+  .disc-badge.likely    { background:rgba(201,168,76,0.08); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
   .disc-badge.possible  { background:rgba(91,141,238,0.1); color:var(--blue); border:1px solid rgba(91,141,238,0.2); }
   .disc-badge.not_found { background:var(--bg3); color:var(--text3); border:1px solid var(--border); }
   .disc-badge.already   { background:rgba(76,174,122,0.1); color:var(--green); border:1px solid rgba(76,174,122,0.2); }

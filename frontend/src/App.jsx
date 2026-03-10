@@ -16,25 +16,30 @@ const API = "https://olfactori-production.up.railway.app/api";
 
 // ── DESIGN TOKENS ─────────────────────────────────────────────
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
 
   :root {
-    --bg:        #0c0c0f;
-    --bg2:       #111116;
-    --bg3:       #17171e;
-    --border:    #2a2a35;
-    --border2:   #3a3a48;
+    --bg:        #111118;
+    --bg2:       #16161e;
+    --bg3:       #1c1c26;
+    --bg4:       #21212d;
+    --border:    #26263a;
+    --border2:   #30304a;
+    --text:      #e8e6f0;
+    --text2:     #9896b0;
+    --text3:     #5c5a72;
     --gold:      #c9a84c;
-    --gold2:     #e8c96a;
-    --gold-dim:  rgba(201,168,76,0.15);
-    --text:      #e8e0d5;
-    --text2:     #9990a8;
-    --text3:     #5a546a;
+    --gold2:     #d9b85c;
+    --gold-dim:  rgba(201,168,76,0.08);
     --red:       #e05555;
     --green:     #4cae7a;
     --blue:      #5b8dee;
-    --radius:    10px;
-    --shadow:    0 8px 32px rgba(0,0,0,0.5);
+    --radius:    12px;
+    --shadow:    0 2px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4);
+    --serif:     'Cormorant Garamond', Georgia, serif;
+    --sans:      'Inter', system-ui, sans-serif;
+    --ease:      cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +47,7 @@ const css = `
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--sans);
     font-size: 14px;
     min-height: 100vh;
   }
@@ -55,43 +60,43 @@ const css = `
 
   /* NAV */
   .nav {
-    background: rgba(12,12,15,0.95);
-    backdrop-filter: blur(12px);
+    background: rgba(17,17,24,0.96);
+    backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
-    border-top: 1px solid transparent;
-    background-image: linear-gradient(rgba(12,12,15,0.95), rgba(12,12,15,0.95)),
-                      linear-gradient(90deg, transparent 0%, rgba(201,168,76,0.5) 50%, transparent 100%);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
     position: sticky; top: 0; z-index: 100;
-    padding: 0 24px;
+    padding: 0 28px;
     display: flex; align-items: center; gap: 0;
     height: 56px;
   }
   .nav-logo {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 300;
-    color: var(--gold); text-transform: uppercase;
-    margin-right: 32px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 8px;
+    margin-right: 28px; flex-shrink: 0;
   }
-  .nav-logo span { font-style: italic; }
-  .nav-logo-icon { width: 28px; height: 28px; flex-shrink: 0; }
+  .nav-logo-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 13px; font-style: italic;
+    color: var(--gold); font-weight: 300; flex-shrink: 0;
+  }
+  .nav-logo-name {
+    font-family: var(--serif); font-size: 17px;
+    font-weight: 300; font-style: italic;
+    color: var(--text); letter-spacing: 0.04em;
+  }
+  .nav-logo-icon { display: none; }
   .nav-tabs { display: flex; gap: 2px; flex: 1; position: relative; }
   .nav-tab {
-    background: none; border: none; color: var(--text2);
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    padding: 8px 14px; border-radius: 6px; cursor: pointer;
-    transition: color 0.15s; white-space: nowrap;
-    letter-spacing: 0.03em; position: relative;
+    background: none; border: none; color: var(--text3);
+    font-family: var(--sans); font-size: 12px; font-weight: 400;
+    padding: 7px 13px; border-radius: 7px; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+    letter-spacing: 0.01em;
   }
-  .nav-tab:hover { color: var(--text); }
-  .nav-tab.active { color: var(--gold); }
-  .nav-tab.active::after {
-    content: ''; position: absolute; bottom: -9px; left: 14px; right: 14px;
-    height: 2px; background: var(--gold); border-radius: 1px;
-    animation: slideUnderline 0.2s ease;
-  }
+  .nav-tab:hover { color: var(--text2); background: var(--bg3); }
+  .nav-tab.active { color: var(--text); background: var(--bg3); }
+  .nav-tab.active::after { display: none; }
   @keyframes slideUnderline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .nav-right { display: flex; gap: 8px; align-items: center; margin-left: auto; }
   .suggest-btn {
@@ -134,7 +139,7 @@ const css = `
     width: 100%; background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text);
     padding: 9px 12px 9px 38px; font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--sans);
     transition: border-color 0.15s;
     outline: none;
   }
@@ -144,7 +149,7 @@ const css = `
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text2);
     padding: 9px 12px; font-size: 13px;
-    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    font-family: var(--sans); cursor: pointer;
     outline: none; transition: border-color 0.15s;
   }
   .filter-select:focus { border-color: var(--border2); }
@@ -201,7 +206,7 @@ const css = `
   }
   .alpha-btn {
     background: none; border: none; color: var(--text3);
-    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-family: var(--sans);
     width: 24px; height: 24px; border-radius: 4px;
     cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center;
@@ -216,17 +221,18 @@ const css = `
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    gap: 20px;
   }
   .card {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); overflow: hidden;
     cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     position: relative;
+    box-shadow: var(--shadow);
   }
   .card:hover {
     border-color: var(--border2); transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    box-shadow: var(--shadow-hover);
   }
   .card-img {
     width: 100%; aspect-ratio: 1;
@@ -275,20 +281,17 @@ const css = `
 
   .card-body { padding: 10px 12px; height: 120px; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
   .card-brand {
-    font-size: 10px; font-weight: 700; color: var(--gold);
+    font-size: 10px; font-weight: 500; color: var(--text3);
     letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; flex-shrink: 0;
-    opacity: 0.85;
   }
   .card-name {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     font-size: 16px; font-weight: 400; color: var(--text);
     line-height: 1.25; flex: 1; min-height: 0;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
     transition: font-style 0.2s, color 0.2s;
   }
-  .card:hover .card-name {
-    font-style: italic; color: var(--gold2);
-  }
+  .card:hover .card-name { color: var(--gold2); }
   .card-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
   .pill {
     font-size: 10px; padding: 2px 7px; border-radius: 12px;
@@ -346,7 +349,7 @@ const css = `
     background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.12);
     display: flex; align-items: center; justify-content: center;
     font-size: 10px; font-style: italic; font-weight: 700;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.6);
     text-decoration: none; line-height: 1;
   }
@@ -416,7 +419,7 @@ const css = `
   }
   .drawer-hero::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.14) 0%, transparent 70%);
+    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.08) 0%, transparent 70%);
     pointer-events: none;
   }
   .drawer-hero img {
@@ -432,19 +435,19 @@ const css = `
   }
   .drawer-close {
     position: absolute; top: 12px; right: 12px;
-    background: rgba(0,0,0,0.5); border: none; border-radius: 50%;
-    width: 32px; height: 32px; color: var(--text2); font-size: 18px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--border2); border-radius: 8px;
+    width: 30px; height: 30px; color: var(--text2); font-size: 14px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: color 0.15s;
+    transition: all 0.15s;
   }
-  .drawer-close:hover { color: var(--text); }
+  .drawer-close:hover { color: var(--text); border-color: var(--border2); background: var(--bg4); }
   .drawer-body { padding: 20px 24px; flex: 1; }
   .drawer-brand {
     font-size: 11px; color: var(--text3); letter-spacing: 0.1em;
     text-transform: uppercase; margin-bottom: 4px;
   }
   .drawer-name {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     font-size: 28px; font-weight: 300; color: var(--text);
     line-height: 1.2; margin-bottom: 12px;
   }
@@ -492,7 +495,7 @@ const css = `
   .btn {
     border-radius: 8px; font-size: 13px; font-weight: 500;
     padding: 9px 16px; cursor: pointer; border: none;
-    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; font-family: var(--sans);
   }
   .btn-primary { background: var(--gold); color: #0c0c0f; }
   .btn-primary:hover { background: var(--gold2); }
@@ -512,7 +515,7 @@ const css = `
   .form-input, .form-select, .form-textarea {
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: 8px; color: var(--text); padding: 9px 12px;
-    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-family: var(--sans);
     outline: none; transition: border-color 0.15s; width: 100%;
   }
   .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
@@ -530,7 +533,7 @@ const css = `
   }
   .modal {
     background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 16px; width: 100%; max-width: 480px;
+    border-radius: 14px; width: 100%; max-width: 480px;
     box-shadow: var(--shadow);
     animation: modalEnter 0.25s cubic-bezier(0.16,1,0.3,1);
     overflow: hidden;
@@ -545,7 +548,7 @@ const css = `
     display: flex; align-items: center; justify-content: space-between;
   }
   .modal-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--serif);
     font-size: 22px; font-weight: 300; color: var(--text);
   }
   .modal-body { padding: 20px 24px; }
@@ -570,7 +573,7 @@ const css = `
   .suggest-card-img img { width: 90%; height: 90%; object-fit: contain; }
   .suggest-info { flex: 1; min-width: 0; }
   .suggest-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
-  .suggest-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--text); }
+  .suggest-name { font-family: var(--serif); font-size: 18px; color: var(--text); }
   .suggest-accords { font-size: 12px; color: var(--text2); margin-top: 4px; }
   .weather-chip {
     background: var(--bg3); border: 1px solid var(--border);
@@ -585,7 +588,7 @@ const css = `
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: 8px; padding: 10px; text-align: center;
     cursor: pointer; transition: all 0.15s; color: var(--text2);
-    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-family: var(--sans);
   }
   .occasion-btn:hover, .occasion-btn.active {
     border-color: var(--gold); color: var(--gold); background: var(--gold-dim);
@@ -617,7 +620,7 @@ const css = `
     text-align: center; gap: 12px;
   }
   .empty-icon { font-size: 48px; opacity: 0.3; }
-  .empty-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--text2); }
+  .empty-text { font-family: var(--serif); font-size: 20px; color: var(--text2); }
   .empty-sub { font-size: 13px; max-width: 300px; line-height: 1.5; }
 
   /* LOADING */
@@ -637,7 +640,7 @@ const css = `
     position: fixed; bottom: 24px; right: 24px;
     background: var(--bg3); border: 1px solid var(--border2);
     border-radius: 10px; padding: 10px 18px; font-size: 13px;
-    color: var(--text); z-index: 500; box-shadow: var(--shadow);
+    color: var(--text); z-index: 500; box-shadow: var(--shadow-hover);
     animation: toastSlide 0.25s cubic-bezier(0.16,1,0.3,1); pointer-events: none;
   }
   @keyframes toastSlide {
@@ -666,7 +669,7 @@ const css = `
   .drawer-tab {
     background: none; border: none; color: var(--text3);
     padding: 6px 12px; border-radius: 6px; cursor: pointer;
-    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-family: var(--sans);
     transition: all 0.15s; letter-spacing: 0.03em;
   }
   .drawer-tab:hover { color: var(--text2); background: var(--bg3); }
@@ -1551,8 +1554,8 @@ function AccessRestricted() {
       gap:20, padding:40, textAlign:"center",
       fontFamily:"'DM Sans', sans-serif",
     }}>
-      <div style={{fontFamily:"'Cormorant Garamond', serif", fontSize:64, color:"var(--gold)", opacity:0.3}}>⊘</div>
-      <div style={{fontFamily:"'Cormorant Garamond', serif", fontSize:32, fontWeight:300, color:"var(--text)"}}>
+      <div style={{fontFamily:"var(--serif)", fontSize:64, color:"var(--gold)", opacity:0.3}}>⊘</div>
+      <div style={{fontFamily:"var(--serif)", fontSize:32, fontWeight:300, color:"var(--text)"}}>
         Access Restricted
       </div>
       <div style={{fontSize:14, color:"var(--text3)", maxWidth:340, lineHeight:1.7}}>
@@ -1813,7 +1816,8 @@ export default function Olfactori() {
         {/* NAV */}
         <nav className="nav">
           <div className="nav-logo">
-            <LogoIcon /><span style={{letterSpacing:"0.04em"}}>Olf<i>actori</i></span>
+            <div className="nav-logo-mark">O</div>
+            <span className="nav-logo-name">Olfactori</span>
           </div>
           <div className="nav-tabs">
             {tabs.map(t => (

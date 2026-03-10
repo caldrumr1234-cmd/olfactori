@@ -10,8 +10,8 @@ const css = `
     border-radius: var(--radius); padding: 20px;
   }
   .ins-card-title {
-    font-size: 11px; color: var(--text3); letter-spacing: 0.1em;
-    text-transform: uppercase; margin-bottom: 14px;
+    font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
   .ins-card-title span { font-size: 16px; }
@@ -24,12 +24,12 @@ const css = `
                 border-radius: 3px; overflow: hidden; flex-shrink: 0; }
   .ins-bar-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.6s ease; }
   .ins-bar-val { font-size: 12px; color: var(--text3); width: 24px; text-align: right; flex-shrink: 0; }
-  .ins-big-num { font-family: 'Cormorant Garamond', serif; font-size: 48px;
+  .ins-big-num { font-family: var(--serif); font-size: 48px;
                  font-weight: 300; color: var(--gold); line-height: 1; }
   .ins-big-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
   .ins-hero-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
   .ins-hero-item { background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; }
-  .ins-hero-num { font-family: 'Cormorant Garamond', serif; font-size: 32px;
+  .ins-hero-num { font-family: var(--serif); font-size: 32px;
                   color: var(--gold); font-weight: 300; }
   .ins-hero-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase;
                   letter-spacing: 0.08em; margin-top: 2px; }
@@ -39,14 +39,14 @@ const css = `
                  letter-spacing: 0.08em; margin-bottom: 6px; }
   .season-bar-bg { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
   .season-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .season-pct { font-size: 20px; font-family: 'Cormorant Garamond', serif;
+  .season-pct { font-size: 20px; font-family: var(--serif);
                 color: var(--text); font-weight: 300; margin-top: 6px; }
   .ins-flag-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
   .ins-flag-item {
     background: var(--bg3); border-radius: 8px; padding: 14px;
     display: flex; flex-direction: column; gap: 4px;
   }
-  .ins-flag-num { font-family: 'Cormorant Garamond', serif; font-size: 28px;
+  .ins-flag-num { font-family: var(--serif); font-size: 28px;
                   font-weight: 300; line-height: 1; }
   .ins-flag-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .ins-flag-pct { font-size: 11px; color: var(--text3); }

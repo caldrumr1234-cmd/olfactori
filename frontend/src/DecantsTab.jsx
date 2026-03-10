@@ -19,7 +19,7 @@ const css = `
     cursor: pointer; transition: all 0.15s;
   }
   .dec-toggle-btn.active {
-    background: var(--gold); color: #0c0c0f;
+    background: var(--gold); color: var(--bg);
   }
   .dec-search {
     flex: 1; min-width: 180px;
@@ -29,7 +29,7 @@ const css = `
   }
   .dec-search:focus { outline: none; border-color: var(--gold); }
   .dec-add-btn {
-    background: var(--gold); color: #0c0c0f;
+    background: var(--gold); color: var(--bg);
     border: none; border-radius: 10px;
     padding: 8px 18px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all 0.15s; white-space: nowrap;
@@ -59,7 +59,7 @@ const css = `
   .dec-name  { color: var(--text); font-weight: 500; }
   .dec-in-coll {
     display: inline-block;
-    font-size: 10px; background: rgba(201,168,76,0.15);
+    font-size: 10px; background: rgba(201,168,76,0.08);
     color: var(--gold); border: 1px solid rgba(201,168,76,0.3);
     border-radius: 6px; padding: 1px 6px; margin-left: 6px;
     cursor: pointer; transition: background 0.15s;

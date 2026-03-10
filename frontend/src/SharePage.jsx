@@ -22,7 +22,7 @@ const css = `
     --radius:  10px;
   }
 
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
 
   .sp-wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
 
@@ -35,8 +35,8 @@ const css = `
     flex-wrap: wrap;
   }
   .sp-header-left { display: flex; flex-direction: column; gap: 8px; }
-  .sp-logo { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; }
-  .sp-name { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--text); line-height: 1; }
+  .sp-logo { font-family: var(--serif); font-size: 13px; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; }
+  .sp-name { font-family: var(--serif); font-size: 42px; font-weight: 300; color: var(--text); line-height: 1; }
   .sp-bio { font-size: 13px; color: var(--text3); margin-top: 4px; }
   .sp-meta { font-size: 12px; color: var(--text3); }
   .sp-meta span { color: var(--gold); font-weight: 500; }
@@ -47,14 +47,14 @@ const css = `
   }
   .sp-filter-btn {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
-    color: var(--text2); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--text2); font-size: 12px; font-family: var(--sans);
     padding: 6px 14px; cursor: pointer; transition: all 0.15s;
   }
   .sp-filter-btn:hover { border-color: var(--border2); color: var(--text); }
   .sp-filter-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
   .sp-search {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
-    color: var(--text); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); font-size: 12px; font-family: var(--sans);
     padding: 6px 14px; outline: none; transition: border-color 0.15s; min-width: 200px;
   }
   .sp-search:focus { border-color: var(--gold); }
@@ -85,11 +85,11 @@ const css = `
   .sp-card-img img { width: 75%; height: 75%; object-fit: contain; }
   .sp-card-body { padding: 10px 12px; }
   .sp-card-brand { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sp-card-name { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sp-card-name { font-family: var(--serif); font-size: 15px; font-weight: 300; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .sp-card-meta { font-size: 10px; color: var(--text3); margin-top: 5px; }
   .sp-trade-badge {
     position: absolute; top: 8px; right: 8px;
-    background: rgba(201,168,76,0.15); border: 1px solid var(--gold);
+    background: rgba(201,168,76,0.08); border: 1px solid var(--gold);
     border-radius: 4px; padding: 2px 6px; font-size: 9px; color: var(--gold);
     text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
   }
@@ -131,7 +131,7 @@ const css = `
 
   .sp-drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
   .sp-drawer-brand { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-  .sp-drawer-name { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 16px; }
+  .sp-drawer-name { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 16px; }
 
   .sp-drawer-section { margin-bottom: 16px; }
   .sp-drawer-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
@@ -149,7 +149,7 @@ const css = `
   .sp-trade-title { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 4px; }
   .sp-trade-input {
     background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-    color: var(--text); font-size: 13px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); font-size: 13px; font-family: var(--sans);
     padding: 9px 12px; outline: none; transition: border-color 0.15s; width: 100%;
   }
   .sp-trade-input:focus { border-color: var(--gold); }
@@ -157,7 +157,7 @@ const css = `
   textarea.sp-trade-input { resize: vertical; min-height: 70px; }
   .sp-btn {
     padding: 10px 18px; border-radius: var(--radius); font-size: 13px;
-    font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; transition: all 0.15s;
+    font-family: var(--sans); cursor: pointer; border: none; transition: all 0.15s;
   }
   .sp-btn-primary { background: var(--gold); color: #0e0e14; font-weight: 500; }
   .sp-btn-primary:hover { background: #d4b460; }
@@ -175,7 +175,7 @@ const css = `
 
   /* 404 */
   .sp-404 { text-align: center; padding: 120px 20px; }
-  .sp-404-title { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
+  .sp-404-title { font-family: var(--serif); font-size: 48px; font-weight: 300; color: var(--text); margin-bottom: 12px; }
   .sp-404-sub { font-size: 14px; color: var(--text3); }
 `;
 
@@ -402,7 +402,7 @@ export default function SharePage({ username }) {
                   <div className="sp-card-img">
                     {imgSrc(f)
                       ? <img src={imgSrc(f)} alt={f.name} loading="lazy" />
-                      : <div style={{width:40,height:60,borderRadius:6,background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.15)"}} />
+                      : <div style={{width:40,height:60,borderRadius:6,background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.08)"}} />
                     }
                   </div>
                   {!!f.want_to_trade && <div className="sp-trade-badge">Trade</div>}
