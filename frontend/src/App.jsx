@@ -89,7 +89,9 @@ const css = `
   .nav-logo-name {
     font-family: var(--serif); font-size: 17px;
     font-weight: 300; font-style: italic;
-    color: var(--text); letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--violet), var(--rose));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; letter-spacing: 0.04em;
   }
   .nav-logo-icon { display: none; }
   .nav-tabs { display: flex; gap: 2px; flex: 1; position: relative; }
@@ -100,7 +102,7 @@ const css = `
     transition: all 0.15s; white-space: nowrap;
     letter-spacing: 0.01em;
   }
-  .nav-tab:hover { color: var(--text2); background: var(--bg3); }
+  .nav-tab:hover { color: var(--blue); background: rgba(91,141,238,0.08); }
   .nav-tab.active { color: var(--text); background: var(--bg3); }
   .nav-tab.active::after {
     content: '';
@@ -262,7 +264,7 @@ const css = `
     transition: background 0.3s;
   }
   .card:hover .card-img-inner {
-    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, var(--bg3) 80%);
+    background: radial-gradient(ellipse at center, rgba(91,141,238,0.10) 0%, var(--bg3) 80%);
   }
   .card-img-inner img {
     width: 100%; height: 100%; object-fit: contain;
@@ -309,7 +311,7 @@ const css = `
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
     transition: font-style 0.2s, color 0.2s;
   }
-  .card:hover .card-name { color: var(--gold2); }
+  .card:hover .card-name { color: var(--blue); }
   .card-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
   .pill {
     font-size: 10px; padding: 2px 7px; border-radius: 12px;
@@ -528,7 +530,7 @@ const css = `
     background: var(--bg3); color: var(--text3);
     border: 1px solid var(--border);
   }
-  .btn-secondary:hover { color: var(--violet); border-color: var(--violet); background: var(--violet-dim); }
+  .btn-secondary:hover { color: var(--blue); border-color: var(--blue); background: rgba(91,141,238,0.08); }
   .btn-danger { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
   .btn-danger:hover { background: rgba(224,85,85,0.25); box-shadow: 0 0 12px rgba(224,85,85,0.2); border-color: rgba(224,85,85,0.5); }
   .btn-sm { padding: 6px 12px; font-size: 12px; }

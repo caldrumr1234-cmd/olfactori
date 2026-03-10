@@ -44,14 +44,14 @@ def url_to_key(url: str, frag_id: int) -> str:
     return f"fragrances/{frag_id}_{url_hash}{ext}"
 
 async def mirror_url_to_r2(url: str, frag_id: int):
-    """Download image from URL and upload to R2. Returns public URL or None."""
+    """Download image from URL and upload to R2. Returns (public_url_or_None, error_str_or_None)."""
     if not all([R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL]):
-        return None
+        return None, "R2 env vars not configured"
     try:
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
             resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
             if resp.status_code != 200:
-                return None
+                return None, f"source URL returned HTTP {resp.status_code}"
             data = resp.content
             ct = resp.headers.get("content-type", "image/jpeg").split(";")[0]
             if not ct.startswith("image/"):
@@ -65,10 +65,10 @@ async def mirror_url_to_r2(url: str, frag_id: int):
             ContentType=ct,
             CacheControl="public, max-age=31536000",
         )
-        return f"{R2_PUBLIC_URL}/{key}"
+        return f"{R2_PUBLIC_URL}/{key}", None
     except Exception as e:
         print(f"[R2] mirror failed for frag {frag_id}: {e}")
-        return None
+        return None, str(e)
 
 # ── MIRROR SINGLE FRAGRANCE ───────────────────────────────────
 @router.post("/mirror/{frag_id}")
@@ -85,9 +85,9 @@ async def mirror_fragrance(frag_id: int, request: Request):
         source_url = row["custom_image_url"] or row["fragella_image_url"]
         if not source_url:
             return {"ok": False, "reason": "no_source_url"}
-        r2_url = await mirror_url_to_r2(source_url, frag_id)
+        r2_url, err = await mirror_url_to_r2(source_url, frag_id)
         if not r2_url:
-            return {"ok": False, "reason": "upload_failed"}
+            return {"ok": False, "reason": err or "upload_failed"}
         con.execute("UPDATE fragrances SET r2_image_url = ? WHERE id = ?", (r2_url, frag_id))
         con.commit()
         return {"ok": True, "r2_image_url": r2_url}
@@ -108,21 +108,21 @@ async def mirror_all(request: Request):
         ).fetchall()
         results = {"mirrored": 0, "failed": 0, "skipped": 0}
         for row in rows:
-            # Always re-mirror if custom_image_url is set (user may have updated it)
-            # Only skip fragella-sourced ones that are already mirrored
             source_url = row["custom_image_url"] or row["fragella_image_url"]
             if not source_url:
                 continue
+            # Skip fragella-sourced images already mirrored; always re-mirror custom URLs
             if not row["custom_image_url"] and row["r2_image_url"]:
                 results["skipped"] += 1
                 continue
-            r2_url = await mirror_url_to_r2(source_url, row["id"])
+            r2_url, err = await mirror_url_to_r2(source_url, row["id"])
             if r2_url:
                 con.execute("UPDATE fragrances SET r2_image_url = ? WHERE id = ?", (r2_url, row["id"]))
                 con.commit()
                 results["mirrored"] += 1
             else:
                 results["failed"] += 1
+                print(f"[R2] bulk mirror failed frag {row['id']}: {err}")
         return results
     finally:
         con.close()
