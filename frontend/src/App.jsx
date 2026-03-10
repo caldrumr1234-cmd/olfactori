@@ -2175,6 +2175,7 @@ export default function Olfactori() {
 
           {tab === "shelves" && (
             <ShelvesTab
+              token={token}
               toast={showToast}
               onPickFragrances={(cb) => {
                 setShelfSelectCallback(() => cb);
@@ -2190,7 +2191,7 @@ export default function Olfactori() {
           )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
-          {tab === "decants" && <DecantsTab onOpenFrag={handleOpenFrag} />}
+          {tab === "decants" && <DecantsTab token={token} onOpenFrag={handleOpenFrag} />}
           {tab === "admin" && <AdminTab toast={showToast} />}
         </main>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = "https://olfactori-production.up.railway.app/api";
 
 const SHELF_COLORS = [
   "#7aabff", "#a78bfa", "#f472b6", "#34d399", "#fbbf24",

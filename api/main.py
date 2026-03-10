@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have, decants
 from api.routers import auth, security, images
 from api.routers import share, trade_requests
+from api.routers import sent_samples
 
 app = FastAPI(title="Olfactori API", version="1.0.0")
 
@@ -41,6 +42,7 @@ app.include_router(security.router, prefix="/api/security", tags=["security"])
 app.include_router(images.router,        prefix="/api/images",       tags=["images"])
 app.include_router(share.router,         prefix="/api/share",        tags=["share"])
 app.include_router(trade_requests.router,prefix="/api/trade_requests",tags=["trade_requests"])
+app.include_router(sent_samples.router,  prefix="/api/sent-samples",  tags=["sent-samples"])
 
 @app.get("/api/health")
 def health():

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = "https://olfactori-production.up.railway.app/api";
 
 function VolumeBar({ remaining, total }) {
   if (!total) return null;
