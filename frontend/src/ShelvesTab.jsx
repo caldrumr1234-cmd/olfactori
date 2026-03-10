@@ -302,7 +302,8 @@ export default function ShelvesTab({ token }) {
       body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
     });
     if (res.ok) {
-      setShelves(prev => [...prev, await res.json()]);
+      const newShelf = await res.json();
+      setShelves(prev => [...prev, newShelf]);
       setNewName(""); setNewColor(SHELF_COLORS[0]); setNewIcon(SHELF_ICONS[0]);
       setShowNew(false);
     }
