@@ -71,26 +71,27 @@ def require_admin(request: Request):
 
 # ── ROUTES ────────────────────────────────────────────────────
 @router.get("/login")
-def login(request: Request):
+def login(request: Request, invite_token: str = None):
     """Redirect to Google OAuth consent screen."""
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(500, "Google OAuth not configured")
     redirect_uri = f"{BACKEND_URL}/api/auth/callback"
+    state = invite_token or ""
     params = (
         f"client_id={GOOGLE_CLIENT_ID}"
         f"&redirect_uri={redirect_uri}"
         f"&response_type=code"
         f"&scope=openid%20email%20profile"
         f"&access_type=offline"
+        f"&state={state}"
     )
     return RedirectResponse(f"{GOOGLE_AUTH_URL}?{params}")
 
 @router.get("/callback")
-async def callback(code: str, request: Request):
+async def callback(code: str, request: Request, state: str = ""):
     """Handle Google OAuth callback, issue JWT, redirect to frontend."""
     redirect_uri = f"{BACKEND_URL}/api/auth/callback"
     async with httpx.AsyncClient() as client:
-        # Exchange code for tokens
         token_resp = await client.post(GOOGLE_TOKEN_URL, data={
             "code":          code,
             "client_id":     GOOGLE_CLIENT_ID,
@@ -103,7 +104,6 @@ async def callback(code: str, request: Request):
         if not access_token:
             raise HTTPException(400, "Failed to get access token from Google")
 
-        # Get user info
         user_resp = await client.get(GOOGLE_USER_URL,
             headers={"Authorization": f"Bearer {access_token}"})
         user = user_resp.json()
@@ -115,17 +115,35 @@ async def callback(code: str, request: Request):
     is_admin = email.lower() == ADMIN_EMAIL.lower()
 
     if not is_admin:
-        # Check if email is in the friend_invites table
         import sqlite3
         DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
         con = sqlite3.connect(DB_PATH, check_same_thread=False)
         con.row_factory = sqlite3.Row
-        row = con.execute(
-            "SELECT id, is_active FROM friend_invites WHERE LOWER(email) = LOWER(?)", (email,)
-        ).fetchone()
+
+        friend_row = None
+
+        # First: try invite token passed via OAuth state param
+        if state:
+            friend_row = con.execute(
+                "SELECT * FROM friend_invites WHERE token=? AND is_active=1", (state,)
+            ).fetchone()
+            # Store email for future logins if not already set
+            if friend_row and not friend_row["email"]:
+                con.execute(
+                    "UPDATE friend_invites SET email=? WHERE token=?", (email, state)
+                )
+                con.commit()
+
+        # Fallback: match by email for returning friends
+        if not friend_row:
+            friend_row = con.execute(
+                "SELECT * FROM friend_invites WHERE LOWER(email)=LOWER(?) AND is_active=1",
+                (email,)
+            ).fetchone()
+
         con.close()
 
-        if not row or not row["is_active"]:
+        if not friend_row:
             return RedirectResponse(f"{FRONTEND_URL}?auth_error=restricted")
 
     jwt = issue_token(email)

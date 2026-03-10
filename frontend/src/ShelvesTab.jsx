@@ -70,7 +70,8 @@ function ShelfCard({
   const dragItem    = useRef(null);
   const dragOverItem = useRef(null);
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const tok = token || sessionStorage.getItem("olfactori_token");
+  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
 
   const saveEdits = async () => {
     setSaving(true);
@@ -279,18 +280,26 @@ export default function ShelvesTab({ token }) {
   const [newIcon, setNewIcon]       = useState(SHELF_ICONS[0]);
   const [creating, setCreating]     = useState(false);
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const tok = token || sessionStorage.getItem("olfactori_token");
+  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sr, fr] = await Promise.all([
-      fetch(`${API}/shelves`, { headers }),
-      fetch(`${API}/fragrances`, { headers }),
-    ]);
-    if (sr.ok) setShelves(await sr.json());
-    if (fr.ok) setFragrances(await fr.json());
+    try {
+      const [sr, fr] = await Promise.all([
+        fetch(`${API}/shelves`, { headers }),
+        fetch(`${API}/fragrances`, { headers }),
+      ]);
+      if (sr.ok) setShelves(await sr.json());
+      if (fr.ok) {
+        const data = await fr.json();
+        setFragrances(data.items || data);
+      }
+    } catch (e) {
+      console.error("ShelvesTab load error:", e);
+    }
     setLoading(false);
-  }, [token]);
+  }, [tok]);
 
   useEffect(() => { load(); }, [load]);
 

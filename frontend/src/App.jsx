@@ -1694,6 +1694,14 @@ export default function Olfactori() {
 
   // ── AUTH INIT ─────────────────────────────────────────────
   useEffect(() => {
+    // Handle /invite/{token} path — redirect to Google OAuth with invite token as state
+    const inviteMatch = window.location.pathname.match(/^\/invite\/([^/]+)/);
+    if (inviteMatch) {
+      const inviteToken = inviteMatch[1];
+      window.location.href = `${API}/auth/login?invite_token=${inviteToken}`;
+      return;
+    }
+
     // Check for token in URL (after OAuth redirect)
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("token");
@@ -2175,7 +2183,6 @@ export default function Olfactori() {
 
           {tab === "shelves" && (
             <ShelvesTab
-              token={token}
               toast={showToast}
               onPickFragrances={(cb) => {
                 setShelfSelectCallback(() => cb);
@@ -2191,7 +2198,7 @@ export default function Olfactori() {
           )}
           {tab === "usedtohave" && <UsedToHaveTab toast={showToast} />}
 
-          {tab === "decants" && <DecantsTab token={token} onOpenFrag={handleOpenFrag} />}
+          {tab === "decants" && <DecantsTab onOpenFrag={handleOpenFrag} />}
           {tab === "admin" && <AdminTab toast={showToast} />}
         </main>
 

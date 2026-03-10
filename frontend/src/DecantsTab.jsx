@@ -25,7 +25,8 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
   const [sizeInput, setSizeInput] = useState(decant.size_ml ?? "");
   const [saving, setSaving]       = useState(false);
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const tok = token || sessionStorage.getItem("olfactori_token");
+  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
   const imgSrc  = decant.custom_image_url || decant.fragella_image_url;
 
   const save = async () => {
@@ -148,18 +149,26 @@ export default function DecantsTab({ token }) {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const tok = token || sessionStorage.getItem("olfactori_token");
+  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [dr, fr] = await Promise.all([
-      fetch(`${API}/decants`, { headers }),
-      fetch(`${API}/fragrances`, { headers }),
-    ]);
-    if (dr.ok) setDecants(await dr.json());
-    if (fr.ok) setFragrances(await fr.json());
+    try {
+      const [dr, fr] = await Promise.all([
+        fetch(`${API}/decants`, { headers }),
+        fetch(`${API}/fragrances`, { headers }),
+      ]);
+      if (dr.ok) setDecants(await dr.json());
+      if (fr.ok) {
+        const data = await fr.json();
+        setFragrances(data.items || data);
+      }
+    } catch (e) {
+      console.error("DecantsTab load error:", e);
+    }
     setLoading(false);
-  }, [token]);
+  }, [tok]);
 
   useEffect(() => { load(); }, [load]);
 
