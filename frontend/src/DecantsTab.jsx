@@ -19,7 +19,7 @@ const css = `
     cursor: pointer; transition: all 0.15s;
   }
   .dec-toggle-btn.active {
-    background: var(--gold); color: var(--bg);
+    background: linear-gradient(135deg, var(--gold), #e0b84a); color: var(--bg);
   }
   .dec-search {
     flex: 1; min-width: 180px;
@@ -29,12 +29,13 @@ const css = `
   }
   .dec-search:focus { outline: none; border-color: var(--gold); }
   .dec-add-btn {
-    background: var(--gold); color: var(--bg);
+    background: linear-gradient(135deg, var(--gold), #e8b84e); color: var(--bg);
     border: none; border-radius: 10px;
     padding: 8px 18px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(201,168,76,0.2);
   }
-  .dec-add-btn:hover { background: var(--gold2); }
+  .dec-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.35); }
 
   /* TABLE */
   .dec-table-wrap { overflow-x: auto; }
@@ -53,6 +54,7 @@ const css = `
   }
   .dec-table tr:last-child td { border-bottom: none; }
   .dec-table tr:hover td { background: var(--bg3); }
+  .dec-table tr:hover .dec-name { color: var(--violet); }
   .dec-table tr.editing td { background: var(--bg3); }
 
   .dec-brand { font-weight: 600; color: var(--gold); font-size: 12px; }
@@ -64,7 +66,7 @@ const css = `
     border-radius: 6px; padding: 1px 6px; margin-left: 6px;
     cursor: pointer; transition: background 0.15s;
   }
-  .dec-in-coll:hover { background: rgba(201,168,76,0.3); }
+  .dec-in-coll:hover { background: rgba(167,139,250,0.2); border-color: rgba(167,139,250,0.4); color: var(--violet) !important; }
 
   /* INLINE EDIT */
   .dec-input {

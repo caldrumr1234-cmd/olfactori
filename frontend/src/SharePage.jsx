@@ -50,8 +50,8 @@ const css = `
     color: var(--text2); font-size: 12px; font-family: var(--sans);
     padding: 6px 14px; cursor: pointer; transition: all 0.15s;
   }
-  .sp-filter-btn:hover { border-color: var(--border2); color: var(--text); }
-  .sp-filter-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .sp-filter-btn:hover { border-color: var(--violet, #a78bfa); color: var(--violet, #a78bfa); background: rgba(167,139,250,0.08); }
+  .sp-filter-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.2); }
   .sp-search {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
     color: var(--text); font-size: 12px; font-family: var(--sans);
@@ -74,9 +74,9 @@ const css = `
     overflow: hidden; cursor: pointer; transition: transform 0.15s, border-color 0.15s;
     position: relative;
   }
-  .sp-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .sp-card:hover { transform: translateY(-2px); border-color: rgba(167,139,250,0.35); box-shadow: 0 6px 20px rgba(0,0,0,0.3), 0 0 12px rgba(167,139,250,0.06); }
   .sp-card.trade { border-color: var(--gold-dim); }
-  .sp-card.trade:hover { border-color: var(--gold); }
+  .sp-card.trade:hover { border-color: var(--gold); box-shadow: 0 6px 20px rgba(0,0,0,0.3), 0 0 16px rgba(201,168,76,0.1); }
   .sp-card-img {
     width: 100%; aspect-ratio: 1;
     background: radial-gradient(ellipse at center, #1e1e2a 0%, var(--bg3) 100%);
@@ -159,11 +159,11 @@ const css = `
     padding: 10px 18px; border-radius: var(--radius); font-size: 13px;
     font-family: var(--sans); cursor: pointer; border: none; transition: all 0.15s;
   }
-  .sp-btn-primary { background: var(--gold); color: #0e0e14; font-weight: 500; }
-  .sp-btn-primary:hover { background: #d4b460; }
+  .sp-btn-primary { background: linear-gradient(135deg, var(--gold), #e8b84e); color: #0e0e14; font-weight: 500; box-shadow: 0 2px 10px rgba(201,168,76,0.2); }
+  .sp-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.35); }
   .sp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .sp-btn-secondary { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); }
-  .sp-btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+  .sp-btn-secondary:hover { border-color: var(--violet, #a78bfa); color: var(--violet, #a78bfa); background: rgba(167,139,250,0.08); }
 
   .sp-success { text-align: center; padding: 20px 0; }
   .sp-success-icon { font-size: 36px; margin-bottom: 12px; }

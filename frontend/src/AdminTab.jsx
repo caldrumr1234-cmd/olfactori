@@ -43,7 +43,7 @@ const css = `
     padding: 4px 8px; cursor: pointer; white-space: nowrap;
     transition: all 0.15s; font-family: var(--sans);
   }
-  .invite-link:hover { background: rgba(91,141,238,0.2); }
+  .invite-link:hover { background: rgba(45,212,191,0.15); border-color: rgba(45,212,191,0.3); color: var(--teal, #2dd4bf); }
   .invite-active { width: 8px; height: 8px; border-radius: 50%;
                    background: var(--green); flex-shrink: 0; }
   .invite-inactive { width: 8px; height: 8px; border-radius: 50%;
@@ -68,7 +68,7 @@ const css = `
     font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 500;
     letter-spacing: 0.04em; text-transform: uppercase;
   }
-  .status-badge.pending  { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+  .status-badge.pending  { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(201,168,76,0.35); box-shadow: 0 0 6px rgba(201,168,76,0.15); }
   .status-badge.sent     { background: rgba(76,174,122,0.15); color: var(--green); border: 1px solid rgba(76,174,122,0.3); }
   .status-badge.declined { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
 
@@ -79,7 +79,7 @@ const css = `
     cursor: pointer; transition: all 0.15s; font-family: var(--sans);
   }
   .filter-tab:hover { color: var(--text2); }
-  .filter-tab.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .filter-tab.active { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
 
   .copy-toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -116,7 +116,8 @@ const css = `
   .batch-log-row.complete { color: var(--text3); }
   .batch-log-row.no_data  { color: var(--text3); opacity: 0.6; }
   .batch-log-row.error    { color: var(--red); }
-  .batch-log-row.running  { color: var(--gold); }
+  .batch-log-row.running  { color: var(--gold); animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
   .batch-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; }
   .batch-stat { display: flex; gap: 4px; }
   .batch-stat-label { color: var(--text3); }

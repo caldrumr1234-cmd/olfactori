@@ -40,6 +40,12 @@ const css = `
     --serif:     'Cormorant Garamond', Georgia, serif;
     --sans:      'Inter', system-ui, sans-serif;
     --ease:      cubic-bezier(0.22, 1, 0.36, 1);
+    --violet:    #a78bfa;
+    --violet-dim: rgba(167,139,250,0.08);
+    --rose:      #f472b6;
+    --rose-dim:  rgba(244,114,182,0.08);
+    --teal:      #2dd4bf;
+    --teal-dim:  rgba(45,212,191,0.07);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,24 +102,31 @@ const css = `
   }
   .nav-tab:hover { color: var(--text2); background: var(--bg3); }
   .nav-tab.active { color: var(--text); background: var(--bg3); }
-  .nav-tab.active::after { display: none; }
+  .nav-tab.active::after {
+    content: '';
+    display: block; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 2px; background: var(--gold); border-radius: 2px 2px 0 0;
+  }
+  .nav-tab { position: relative; }
   @keyframes slideUnderline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .nav-right { display: flex; gap: 8px; align-items: center; margin-left: auto; }
   .suggest-btn {
-    background: var(--gold); color: #0c0c0f;
+    background: linear-gradient(135deg, var(--gold), #e8b84e);
+    color: #0c0c0f;
     border: none; border-radius: 8px;
     padding: 8px 16px; font-size: 13px; font-weight: 500;
     cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 12px rgba(201,168,76,0.25);
   }
-  .suggest-btn:hover { background: var(--gold2); transform: translateY(-1px); }
+  .suggest-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,168,76,0.4); }
   .icon-btn {
     background: var(--bg3); border: 1px solid var(--border);
     color: var(--text3); border-radius: 8px;
     width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all 0.15s; font-size: 16px;
   }
-  .icon-btn:hover { color: var(--text2); border-color: var(--border2); }
+  .icon-btn:hover { color: var(--teal); border-color: var(--teal); background: var(--teal-dim); }
   .badge {
     background: var(--red); color: white; border-radius: 10px;
     font-size: 10px; padding: 2px 5px; margin-left: -6px; margin-top: -10px;
@@ -163,9 +176,10 @@ const css = `
   .filter-group label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .filter-badge {
     display: inline-flex; align-items: center; justify-content: center;
-    background: var(--gold); color: #0c0c0f; border-radius: 50%;
+    background: var(--rose); color: white; border-radius: 50%;
     width: 16px; height: 16px; font-size: 10px; font-weight: 700;
     margin-left: 4px; flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(244,114,182,0.4);
   }
   .filter-clear { font-size: 11px; color: var(--text3); background: none; border: none;
     cursor: pointer; padding: 0; font-family: "DM Sans",sans-serif; text-decoration: underline; }
@@ -177,7 +191,7 @@ const css = `
     color: var(--text3); cursor: pointer; transition: all 0.15s;
     font-family: "DM Sans",sans-serif;
   }
-  .decade-pill.active { background: var(--gold-dim); border-color: rgba(201,168,76,0.4); color: var(--gold); }
+  .decade-pill.active { background: var(--gold-dim); border-color: rgba(201,168,76,0.5); color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.2); }
   .rating-stars { display: flex; gap: 4px; }
   .rating-star { font-size: 16px; cursor: pointer; transition: transform 0.1s; opacity: 0.3; }
   .rating-star.active { opacity: 1; }
@@ -245,6 +259,10 @@ const css = `
     background: radial-gradient(ellipse at center, #1e1e2a 0%, var(--bg3) 100%);
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; overflow: hidden; flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .card:hover .card-img-inner {
+    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, var(--bg3) 80%);
   }
   .card-img-inner img {
     width: 100%; height: 100%; object-fit: contain;
@@ -299,7 +317,7 @@ const css = `
     color: var(--text3); white-space: nowrap;
     transition: transform 0.15s;
   }
-  .pill:hover { transform: scale(1.05); }
+  .pill:hover { transform: scale(1.05); border-color: var(--border2); color: var(--text2); }
   .pill.accord {
     border-color: rgba(201,168,76,0.3); color: var(--gold);
     background: var(--gold-dim);
@@ -307,15 +325,18 @@ const css = `
   .note-tag {
     font-size: 12px; padding: 3px 9px; border-radius: 12px;
     background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2); transition: transform 0.15s;
+    color: var(--text2); transition: all 0.15s;
   }
-  .note-tag:hover { transform: scale(1.05); }
+  .note-tag:hover { transform: scale(1.05); border-color: var(--border2); color: var(--text); }
+  .note-tag.top    { background: var(--gold-dim);   border-color: rgba(201,168,76,0.3);  color: var(--gold); }
+  .note-tag.heart  { background: var(--rose-dim);   border-color: rgba(244,114,182,0.3); color: var(--rose); }
+  .note-tag.base   { background: var(--violet-dim); border-color: rgba(167,139,250,0.3); color: var(--violet); }
   .accord-tag {
     font-size: 12px; padding: 4px 10px; border-radius: 12px;
     background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3);
     color: var(--gold); transition: transform 0.15s;
   }
-  .accord-tag:hover { transform: scale(1.05); }
+  .accord-tag:hover { transform: scale(1.05); background: rgba(201,168,76,0.18); border-color: rgba(201,168,76,0.5); }
   .card-meta { display: flex; flex-wrap: nowrap; gap: 4px; align-items: center; overflow: hidden; flex-shrink: 0; padding-top: 5px; height: 20px; }
   .flag {
     font-size: 9px; padding: 2px 6px; border-radius: 4px;
@@ -324,8 +345,8 @@ const css = `
   .flag.tester    { background: rgba(91,141,238,0.18); color: #7ba8f5; border: 1px solid rgba(91,141,238,0.4); }
   .flag.disc      { background: rgba(224,85,85,0.2);   color: #f07070; border: 1px solid rgba(224,85,85,0.45); }
   .flag.limited   {
-    background: linear-gradient(135deg, rgba(180,130,255,0.2), rgba(201,168,76,0.2));
-    color: #c9a0ff; border: 1px solid rgba(180,130,255,0.45);
+    background: linear-gradient(135deg, rgba(167,139,250,0.25), rgba(201,168,76,0.2));
+    color: var(--violet); border: 1px solid rgba(167,139,250,0.5);
   }
   .flag.exclusive { background: rgba(76,174,122,0.2);  color: #5dcc92; border: 1px solid rgba(76,174,122,0.45); }
   .card-check {
@@ -419,7 +440,7 @@ const css = `
   }
   .drawer-hero::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.08) 0%, transparent 70%);
+    background: radial-gradient(ellipse 70% 80% at 50% 60%, rgba(201,168,76,0.16) 0%, rgba(167,139,250,0.05) 50%, transparent 70%);
     pointer-events: none;
   }
   .drawer-hero img {
@@ -448,7 +469,10 @@ const css = `
   }
   .drawer-name {
     font-family: var(--serif);
-    font-size: 28px; font-weight: 300; color: var(--text);
+    font-size: 28px; font-weight: 300;
+    background: linear-gradient(135deg, var(--text) 40%, var(--gold2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
     line-height: 1.2; margin-bottom: 12px;
   }
   .drawer-flags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -483,7 +507,8 @@ const css = `
     flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden;
   }
   .rating-bar-fill {
-    height: 100%; background: var(--gold); border-radius: 2px;
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
     transition: width 0.5s ease;
   }
   .rating-val { font-size: 12px; color: var(--text2); width: 30px; text-align: right; }
@@ -503,9 +528,9 @@ const css = `
     background: var(--bg3); color: var(--text3);
     border: 1px solid var(--border);
   }
-  .btn-secondary:hover { color: var(--text2); border-color: var(--border2); }
+  .btn-secondary:hover { color: var(--violet); border-color: var(--violet); background: var(--violet-dim); }
   .btn-danger { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
-  .btn-danger:hover { background: rgba(224,85,85,0.25); }
+  .btn-danger:hover { background: rgba(224,85,85,0.25); box-shadow: 0 0 12px rgba(224,85,85,0.2); border-color: rgba(224,85,85,0.5); }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
 
   /* EDIT FORM */
@@ -590,9 +615,8 @@ const css = `
     cursor: pointer; transition: all 0.15s; color: var(--text2);
     font-size: 12px; font-family: var(--sans);
   }
-  .occasion-btn:hover, .occasion-btn.active {
-    border-color: var(--gold); color: var(--gold); background: var(--gold-dim);
-  }
+  .occasion-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-dim); }
+  .occasion-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
   .occasion-icon { font-size: 20px; display: block; margin-bottom: 4px; }
 
   /* SAMPLE CART */
@@ -652,7 +676,7 @@ const css = `
   .stars { display: flex; gap: 2px; }
   .star { font-size: 16px; cursor: pointer; transition: transform 0.1s; color: var(--text3); }
   .star.filled { color: var(--gold); }
-  .star:hover { transform: scale(1.2); }
+  .star:hover { transform: scale(1.2); color: var(--gold2) !important; filter: drop-shadow(0 0 4px rgba(201,168,76,0.6)); }
 
   /* WEAR LOG */
   .wear-list { display: flex; flex-direction: column; gap: 6px; }
@@ -673,7 +697,7 @@ const css = `
     transition: all 0.15s; letter-spacing: 0.03em;
   }
   .drawer-tab:hover { color: var(--text2); background: var(--bg3); }
-  .drawer-tab.active { color: var(--gold); background: var(--gold-dim); }
+  .drawer-tab.active { color: var(--violet); background: var(--violet-dim); border-radius: 6px; }
 
   /* SCROLL TO TOP */
   .scroll-top-btn {
@@ -1187,14 +1211,14 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
           {tab === "notes" && (
             <div className="notes-pyramid">
               {[
-                ["Top",    top],
-                ["Heart",  middle],
-                ["Base",   base],
-              ].map(([label, notes]) => notes.length > 0 && (
+                ["Top",    top,    "top"],
+                ["Heart",  middle, "heart"],
+                ["Base",   base,   "base"],
+              ].map(([label, notes, tier]) => notes.length > 0 && (
                 <div key={label} className="notes-row">
                   <span className="notes-label">{label}</span>
                   <div className="notes-tags">
-                    {notes.map(n => <span key={n} className="note-tag">{n}</span>)}
+                    {notes.map(n => <span key={n} className={`note-tag ${tier}`}>{n}</span>)}
                   </div>
                 </div>
               ))}

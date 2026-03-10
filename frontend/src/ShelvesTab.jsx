@@ -9,13 +9,13 @@ const css = `
   .shelves-wrap { max-width: 860px; margin: 0 auto; }
   .shelves-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
   .shelves-title { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--text); flex: 1; }
-  .shelf-create-btn { background: var(--gold); border: none; border-radius: 8px; color: var(--bg); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
-  .shelf-create-btn:hover { background: var(--gold2); transform: translateY(-1px); }
+  .shelf-create-btn { background: linear-gradient(135deg, var(--gold), #e8b84e); border: none; border-radius: 8px; color: var(--bg); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all 0.2s; box-shadow: 0 2px 10px rgba(201,168,76,0.2); }
+  .shelf-create-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.35); }
 
   /* SHELF LIST */
   .shelves-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
   .shelf-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: all 0.15s; }
-  .shelf-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .shelf-card:hover { border-color: rgba(167,139,250,0.5); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 16px rgba(167,139,250,0.1); }
   .shelf-card-emoji { font-size: 32px; margin-bottom: 10px; }
   .shelf-card-name { font-family: var(--serif); font-size: 20px; color: var(--text); margin-bottom: 4px; }
   .shelf-card-desc { font-size: 12px; color: var(--text3); margin-bottom: 10px; min-height: 16px; }
@@ -32,11 +32,11 @@ const css = `
   .shelf-detail-desc { font-size: 13px; color: var(--text3); margin-top: 2px; }
   .shelf-detail-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
   .shelf-action-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
-  .shelf-action-btn:hover { border-color: var(--border2); color: var(--text); }
-  .shelf-action-btn.primary { background: var(--gold); border-color: var(--gold); color: var(--bg); font-weight: 600; }
-  .shelf-action-btn.primary:hover { background: var(--gold2); }
-  .shelf-action-btn.danger { color: #c94040; }
-  .shelf-action-btn.danger:hover { border-color: #c94040; }
+  .shelf-action-btn:hover { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
+  .shelf-action-btn.primary { background: linear-gradient(135deg, var(--gold), #e8b84e); border-color: var(--gold); color: var(--bg); font-weight: 600; box-shadow: 0 2px 10px rgba(201,168,76,0.2); }
+  .shelf-action-btn.primary:hover { box-shadow: 0 4px 16px rgba(201,168,76,0.35); transform: translateY(-1px); }
+  .shelf-action-btn.danger { color: var(--red); }
+  .shelf-action-btn.danger:hover { border-color: var(--red); background: rgba(224,85,85,0.08); color: var(--red); box-shadow: 0 0 8px rgba(224,85,85,0.2); }
   .shelf-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
   .shelf-item-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; transition: all 0.15s; }
   .shelf-item-card:hover { border-color: var(--border2); }

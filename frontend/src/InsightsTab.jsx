@@ -8,7 +8,9 @@ const css = `
   .ins-card {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
+  .ins-card:hover { border-color: var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
   .ins-card-title {
     font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1em;
     text-transform: uppercase; margin-bottom: 16px;
@@ -22,13 +24,14 @@ const css = `
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ins-bar-bg { width: 100px; height: 6px; background: var(--bg3);
                 border-radius: 3px; overflow: hidden; flex-shrink: 0; }
-  .ins-bar-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.6s ease; }
+  .ins-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; background: linear-gradient(90deg, var(--gold), var(--gold2)); }
   .ins-bar-val { font-size: 12px; color: var(--text3); width: 24px; text-align: right; flex-shrink: 0; }
   .ins-big-num { font-family: var(--serif); font-size: 48px;
                  font-weight: 300; color: var(--gold); line-height: 1; }
   .ins-big-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
   .ins-hero-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-  .ins-hero-item { background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; }
+  .ins-hero-item { background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border); transition: all 0.2s; cursor: default; }
+  .ins-hero-item:hover { border-color: rgba(201,168,76,0.3); background: var(--bg4); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
   .ins-hero-num { font-family: var(--serif); font-size: 32px;
                   color: var(--gold); font-weight: 300; }
   .ins-hero-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase;
@@ -38,7 +41,7 @@ const css = `
   .season-name { font-size: 11px; color: var(--text3); text-transform: uppercase;
                  letter-spacing: 0.08em; margin-bottom: 6px; }
   .season-bar-bg { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
-  .season-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .season-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; filter: saturate(1.2); }
   .season-pct { font-size: 20px; font-family: var(--serif);
                 color: var(--text); font-weight: 300; margin-top: 6px; }
   .ins-flag-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
@@ -47,7 +50,8 @@ const css = `
     display: flex; flex-direction: column; gap: 4px;
   }
   .ins-flag-num { font-family: var(--serif); font-size: 28px;
-                  font-weight: 300; line-height: 1; }
+                  font-weight: 300; line-height: 1; transition: filter 0.2s; }
+  .ins-flag-item:hover .ins-flag-num { filter: brightness(1.3); }
   .ins-flag-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .ins-flag-pct { font-size: 11px; color: var(--text3); }
   .ins-loading { display: flex; align-items: center; gap: 8px; color: var(--text3);

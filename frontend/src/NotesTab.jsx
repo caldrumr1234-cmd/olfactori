@@ -25,7 +25,7 @@ const css = `
     border-radius: var(--radius); color: var(--text3); cursor: pointer;
     transition: all 0.15s; text-align: center;
   }
-  .notes-tier-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .notes-tier-btn.active { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
   .notes-cloud-wrap {
     max-height: calc(100vh - 160px); overflow-y: auto; background: var(--bg2);
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -38,8 +38,8 @@ const css = `
     color: var(--text2); cursor: pointer; font-family: var(--sans);
     transition: all 0.15s; white-space: nowrap; line-height: 1; user-select: none;
   }
-  .note-cloud-pill:hover { border-color: var(--gold); color: var(--gold); }
-  .note-cloud-pill.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+  .note-cloud-pill:hover { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
+  .note-cloud-pill.active { background: rgba(167,139,250,0.12); border-color: var(--violet); color: var(--violet); box-shadow: 0 0 8px rgba(167,139,250,0.2); }
   .note-count { font-size: 10px; opacity: 0.6; margin-left: 4px; }
   .notes-clear-btn {
     font-size: 11px; color: var(--text3); background: none; border: none;
@@ -61,8 +61,8 @@ const css = `
   .notes-active-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .notes-active-pill {
     padding: 3px 8px; border-radius: 20px;
-    background: var(--gold-dim); border: 1px solid var(--gold);
-    color: var(--gold); font-size: 12px; font-family: var(--sans);
+    background: rgba(167,139,250,0.12); border: 1px solid var(--violet);
+    color: var(--violet); font-size: 12px; font-family: var(--sans);
     display: flex; align-items: center; gap: 5px;
   }
   .notes-active-pill-x { cursor: pointer; opacity: 0.7; font-size: 10px; }
@@ -78,7 +78,7 @@ const css = `
     border-radius: var(--radius); overflow: hidden;
     cursor: pointer; transition: all 0.2s;
   }
-  .notes-frag-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .notes-frag-card:hover { border-color: rgba(167,139,250,0.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3), 0 0 12px rgba(167,139,250,0.08); }
   .notes-frag-img {
     width: 100%; aspect-ratio: 1; background: var(--bg3);
     display: flex; align-items: center; justify-content: center; overflow: hidden;

@@ -14,7 +14,7 @@ const css = `
     border-radius: var(--radius); overflow: hidden;
     transition: all 0.2s; cursor: pointer;
   }
-  .wl-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .wl-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-3px); box-shadow: var(--shadow-hover), 0 0 20px rgba(201,168,76,0.08); }
   .wl-card-img {
     width: 100%; aspect-ratio: 1; background: var(--bg3);
     display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -43,7 +43,8 @@ const css = `
     color: var(--text3); padding: 5px 10px; font-size: 12px;
     cursor: pointer; transition: all 0.15s; font-family: var(--sans);
   }
-  .priority-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .priority-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); box-shadow: 0 0 8px rgba(201,168,76,0.2); }
+  .priority-btn:hover:not(.active) { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
 
   /* DRAWER */
   .wl-drawer-overlay {
@@ -74,7 +75,7 @@ const css = `
     cursor: pointer; font-size: 14px; color: var(--text2);
     transition: all 0.15s;
   }
-  .wl-drawer-close:hover { border-color: var(--border2); color: var(--text); }
+  .wl-drawer-close:hover { border-color: var(--violet); color: var(--violet); }
   .wl-drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
   .wl-drawer-brand { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
   .wl-drawer-name { font-family: var(--serif); font-size: 26px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 12px; }

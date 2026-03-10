@@ -12,7 +12,9 @@ const css = `
   .explore-card {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 24px;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
+  .explore-card:hover { border-color: var(--border2); }
   .explore-card.wide { grid-column: 1 / -1; }
   .explore-card-title {
     font-size: 11px; color: var(--text3); letter-spacing: 0.1em;
@@ -43,12 +45,14 @@ const css = `
     100% { transform: rotate(360deg) scale(1); }
   }
   .spin-btn {
-    background: var(--gold); color: var(--bg);
+    background: linear-gradient(135deg, var(--gold), #e8b84e);
+    color: var(--bg);
     border: none; border-radius: 10px;
     padding: 12px 32px; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em;
+    box-shadow: 0 2px 16px rgba(201,168,76,0.3);
   }
-  .spin-btn:hover { background: var(--gold2); transform: translateY(-1px); }
+  .spin-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 24px rgba(201,168,76,0.45); }
   .spin-btn:active { transform: translateY(0); }
   .spin-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
   .spin-result {
@@ -57,7 +61,7 @@ const css = `
     animation: fadeSlideUp 0.4s ease;
     cursor: pointer; transition: border-color 0.15s;
   }
-  .spin-result:hover { border-color: var(--gold); }
+  .spin-result:hover { border-color: var(--violet); box-shadow: 0 4px 20px rgba(167,139,250,0.15); }
   @keyframes fadeSlideUp {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -101,10 +105,11 @@ const css = `
     line-height: 1;
   }
   .note-cloud-tag:hover {
-    border-color: var(--gold);
-    background: var(--gold-dim) !important;
-    color: var(--gold) !important;
-    transform: scale(1.05);
+    border-color: var(--violet);
+    background: rgba(167,139,250,0.1) !important;
+    color: var(--violet) !important;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(167,139,250,0.2);
   }
   .note-cloud-tag.active {
     border-color: var(--gold);
@@ -125,13 +130,14 @@ const css = `
   .timeline-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .timeline-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; height: 100px; }
   .timeline-bar {
-    width: 44px; background: var(--gold-dim);
+    width: 44px;
+    background: linear-gradient(180deg, rgba(201,168,76,0.25) 0%, rgba(201,168,76,0.08) 100%);
     border: 1px solid rgba(201,168,76,0.3);
     border-radius: 4px 4px 0 0; min-height: 4px;
-    transition: background 0.15s, transform 0.15s; cursor: default;
+    transition: all 0.2s; cursor: default;
     position: relative;
   }
-  .timeline-bar:hover { background: var(--gold); transform: scaleY(1.03); transform-origin: bottom; }
+  .timeline-bar:hover { background: linear-gradient(180deg, var(--gold) 0%, rgba(201,168,76,0.5) 100%); transform: scaleY(1.04); transform-origin: bottom; box-shadow: 0 0 12px rgba(201,168,76,0.3); }
   .timeline-bar-tooltip {
     position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
     background: var(--bg3); border: 1px solid var(--border2);

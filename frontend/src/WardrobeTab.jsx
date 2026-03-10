@@ -33,13 +33,13 @@ const css = `
   /* OCCASION */
   .occasion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
   .occasion-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; color: var(--text2); font-size: 13px; font-family: var(--sans); }
-  .occasion-btn:hover { border-color: var(--border2); color: var(--text); transform: translateY(-1px); }
-  .occasion-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .occasion-btn:hover { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); transform: translateY(-1px); }
+  .occasion-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); box-shadow: 0 0 10px rgba(201,168,76,0.2); }
   .occasion-icon { font-size: 24px; display: block; margin-bottom: 6px; }
 
   /* SUGGEST BUTTON */
-  .wardrobe-suggest-btn { width: 100%; background: var(--gold); color: var(--bg); border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; font-family: var(--sans); margin-bottom: 28px; }
-  .wardrobe-suggest-btn:hover { background: var(--gold2); transform: translateY(-1px); }
+  .wardrobe-suggest-btn { width: 100%; background: linear-gradient(135deg, var(--gold), #e8b84e); color: var(--bg); border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em; font-family: var(--sans); margin-bottom: 28px; box-shadow: 0 2px 16px rgba(201,168,76,0.25); }
+  .wardrobe-suggest-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 24px rgba(201,168,76,0.4); }
   .wardrobe-suggest-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
 
   /* RESULTS */
@@ -47,7 +47,7 @@ const css = `
   .wardrobe-result-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: flex; gap: 16px; align-items: flex-start; transition: all 0.15s; cursor: pointer; animation: fadeSlideUp 0.3s ease both; }
   .wardrobe-result-card:nth-child(2) { animation-delay: 0.08s; }
   .wardrobe-result-card:nth-child(3) { animation-delay: 0.16s; }
-  .wardrobe-result-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .wardrobe-result-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(201,168,76,0.1); }
   .wardrobe-result-card.primary { border-color: var(--gold); background: rgba(201,168,76,0.05); }
   @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   .wardrobe-result-img { width: 72px; height: 72px; background: #ffffff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
@@ -64,7 +64,7 @@ const css = `
   /* TRENDS */
   .trends-year-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .trends-year-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); padding: 5px 12px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: var(--sans); }
-  .trends-year-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .trends-year-btn.active { border-color: var(--violet); color: var(--violet); background: rgba(167,139,250,0.08); }
   .trends-year-btn:hover { border-color: var(--border2); color: var(--text); }
   .trends-year-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 5px 10px; font-size: 12px; width: 70px; outline: none; font-family: var(--sans); transition: border-color 0.15s; }
   .trends-year-input:focus { border-color: var(--gold); }
@@ -77,13 +77,13 @@ const css = `
   .trends-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
   .trends-label { font-size: 13px; color: var(--text2); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .trends-bar-bg { width: 72px; height: 4px; background: var(--bg3); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
-  .trends-bar-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.5s ease; }
+  .trends-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 3px; transition: width 0.5s ease; }
   .trends-val { font-size: 11px; color: var(--text3); width: 18px; text-align: right; flex-shrink: 0; }
 
   /* RECENTLY WORN */
   .worn-list { display: flex; flex-direction: column; gap: 10px; }
   .worn-item { display: flex; align-items: center; gap: 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; cursor: pointer; transition: all 0.15s; }
-  .worn-item:hover { border-color: var(--border2); transform: translateX(2px); }
+  .worn-item:hover { border-color: var(--violet); transform: translateX(3px); box-shadow: -2px 0 0 var(--violet); }
   .worn-img { width: 44px; height: 44px; background: #ffffff; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
   .worn-img img { width: 90%; height: 90%; object-fit: contain; }
   .worn-info { flex: 1; min-width: 0; }
