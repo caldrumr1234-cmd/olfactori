@@ -82,8 +82,6 @@ async def mirror_fragrance(frag_id: int, request: Request):
         ).fetchone()
         if not row:
             raise HTTPException(404, "Fragrance not found")
-        if row["r2_image_url"]:
-            return {"ok": True, "r2_image_url": row["r2_image_url"], "skipped": True}
         source_url = row["custom_image_url"] or row["fragella_image_url"]
         if not source_url:
             return {"ok": False, "reason": "no_source_url"}
@@ -103,14 +101,21 @@ async def mirror_all(request: Request):
     con = _db()
     try:
         rows = con.execute(
-            """SELECT id, custom_image_url, fragella_image_url
+            """SELECT id, custom_image_url, fragella_image_url, r2_image_url
                FROM fragrances
-               WHERE r2_image_url IS NULL
-                 AND (custom_image_url IS NOT NULL OR fragella_image_url IS NOT NULL)"""
+               WHERE custom_image_url IS NOT NULL
+                  OR (r2_image_url IS NULL AND fragella_image_url IS NOT NULL)"""
         ).fetchall()
-        results = {"mirrored": 0, "failed": 0}
+        results = {"mirrored": 0, "failed": 0, "skipped": 0}
         for row in rows:
+            # Always re-mirror if custom_image_url is set (user may have updated it)
+            # Only skip fragella-sourced ones that are already mirrored
             source_url = row["custom_image_url"] or row["fragella_image_url"]
+            if not source_url:
+                continue
+            if not row["custom_image_url"] and row["r2_image_url"]:
+                results["skipped"] += 1
+                continue
             r2_url = await mirror_url_to_r2(source_url, row["id"])
             if r2_url:
                 con.execute("UPDATE fragrances SET r2_image_url = ? WHERE id = ?", (r2_url, row["id"]))

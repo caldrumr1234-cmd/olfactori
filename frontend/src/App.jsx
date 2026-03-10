@@ -983,7 +983,7 @@ function GoneModal({ frag, onConfirm, onClose }) {
   );
 }
 
-function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, isAdminUser }) {
+function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, isAdminUser, token }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
@@ -993,6 +993,7 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
   const [saving, setSaving] = useState(false);
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [heroError, setHeroError]   = useState(false);
+  const [mirroring, setMirroring]   = useState(false);
   const [showGone, setShowGone] = useState(false);
 
   useEffect(() => {
@@ -1323,7 +1324,36 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
               </div>
               <div className="form-group">
                 <label className="form-label">Custom Image URL</label>
-                <input className="form-input" value={form.custom_image_url||""} onChange={e=>setForm({...form,custom_image_url:e.target.value})} placeholder="https://..." />
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <input className="form-input" style={{flex:1}} value={form.custom_image_url||""} onChange={e=>setForm({...form,custom_image_url:e.target.value})} placeholder="https://..." />
+                  <button
+                    className="btn btn-secondary"
+                    style={{flexShrink:0,fontSize:11,padding:"6px 10px",opacity:mirroring?0.6:1}}
+                    disabled={mirroring || !form.custom_image_url}
+                    onClick={async () => {
+                      setMirroring(true);
+                      try {
+                        const r = await fetch(`${API}/images/mirror/${frag.id}`, {
+                          method: "POST",
+                          headers: { "Authorization": `Bearer ${token}` }
+                        });
+                        const d = await r.json();
+                        if (d.ok) {
+                          onUpdate({ ...frag, ...form, r2_image_url: d.r2_image_url });
+                          toast("Copied to R2 ✓");
+                        } else {
+                          toast(`Mirror failed: ${d.reason || "unknown error"}`);
+                        }
+                      } catch(e) {
+                        toast("Mirror failed: " + e.message);
+                      } finally {
+                        setMirroring(false);
+                      }
+                    }}
+                  >
+                    {mirroring ? "Copying…" : "Copy to R2"}
+                  </button>
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">My Rating</label>
@@ -2173,6 +2203,7 @@ export default function Olfactori() {
             onWear={updateLastWorn}
             toast={showToast}
             isAdminUser={isAdmin}
+            token={token}
           />
         )}
 
