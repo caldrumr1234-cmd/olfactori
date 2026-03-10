@@ -36,14 +36,46 @@ migrations = [
         notes TEXT,
         created_at TEXT DEFAULT (date(\'now\'))
     )''',
+    '''CREATE TABLE IF NOT EXISTS friends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT,
+        invite_token TEXT UNIQUE,
+        invite_url TEXT,
+        revoked INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime(\'now\'))
+    )''',
+    '''CREATE TABLE IF NOT EXISTS login_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        logged_in_at TEXT DEFAULT (datetime(\'now\'))
+    )''',
+    '''CREATE TABLE IF NOT EXISTS share_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        display_name TEXT,
+        bio TEXT,
+        show_size INTEGER DEFAULT 1,
+        show_concentration INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime(\'now\'))
+    )''',
+    '''CREATE TABLE IF NOT EXISTS trade_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        friend_name TEXT NOT NULL,
+        friend_email TEXT,
+        fragrance_ids TEXT NOT NULL,
+        message TEXT,
+        status TEXT DEFAULT \'pending\',
+        created_at TEXT DEFAULT (datetime(\'now\'))
+    )''',
 ]
 for m in migrations:
     try:
         con.execute(m)
         con.commit()
-        print(f'  OK: {m}')
+        print(f'  OK: {m[:80]}')
     except Exception as e:
-        print(f'  Skip: {m} ({e})')
+        print(f'  Skip: {m[:80]} ({e})')
 con.close()
 print('Migrations complete.')
 "
