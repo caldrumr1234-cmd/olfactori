@@ -48,6 +48,11 @@ def migrate(db_path):
             created_at  TEXT NOT NULL DEFAULT (datetime('now'))
         )
     """)
+    # Add sort_order if table existed without it
+    existing_shelf_cols = [row[1] for row in con.execute("PRAGMA table_info(shelves)")]
+    if "sort_order" not in existing_shelf_cols:
+        con.execute("ALTER TABLE shelves ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+        print("  ✓ shelves.sort_order column added")
     print("  ✓ shelves table ready")
 
     con.execute("""

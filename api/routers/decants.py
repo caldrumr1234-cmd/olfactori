@@ -1,6 +1,9 @@
 """
-decants.py — full replacement
-Adds volume_remaining_ml to PATCH and GET responses.
+api/routers/decants.py
+Works with the existing decants schema:
+  id, type, brand, name, concentration, size_ml, quantity, notes, created_at
+Plus new columns added via migration:
+  fragrance_id, volume_remaining_ml, source
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -15,52 +18,87 @@ def row_to_dict(r):
 
 
 class DecantIn(BaseModel):
-    fragrance_id: int
-    size_ml: Optional[float] = None
+    # Support both direct entry and fragrance_id lookup
+    fragrance_id:        Optional[int]   = None
+    brand:               Optional[str]   = None
+    name:                Optional[str]   = None
+    concentration:       Optional[str]   = None
+    type:                Optional[str]   = "decant"
+    size_ml:             Optional[float] = None
     volume_remaining_ml: Optional[float] = None
-    source: Optional[str] = None
-    notes: Optional[str] = None
+    quantity:            Optional[int]   = 1
+    source:              Optional[str]   = None
+    notes:               Optional[str]   = None
 
 
 class DecantUpdate(BaseModel):
-    size_ml: Optional[float] = None
+    size_ml:             Optional[float] = None
     volume_remaining_ml: Optional[float] = None
-    source: Optional[str] = None
-    notes: Optional[str] = None
+    source:              Optional[str]   = None
+    notes:               Optional[str]   = None
+    quantity:            Optional[int]   = None
 
 
 @router.get("")
 def list_decants(db=Depends(get_db)):
     rows = db.execute("""
-        SELECT d.id, d.fragrance_id,
-               COALESCE(f.name, 'Unknown')  AS fragrance_name,
-               COALESCE(f.brand, '')         AS fragrance_brand,
-               f.fragella_image_url, f.custom_image_url,
+        SELECT d.id,
+               d.fragrance_id,
+               CASE WHEN d.fragrance_id IS NOT NULL
+                    THEN COALESCE(f.name, d.name)
+                    ELSE d.name
+               END AS fragrance_name,
+               CASE WHEN d.fragrance_id IS NOT NULL
+                    THEN COALESCE(f.brand, d.brand)
+                    ELSE d.brand
+               END AS fragrance_brand,
+               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
+               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
+               d.type, d.concentration,
                d.size_ml, d.volume_remaining_ml,
-               d.source, d.notes, d.created_at
+               d.quantity, d.source, d.notes, d.created_at
         FROM decants d
         LEFT JOIN fragrances f ON f.id = d.fragrance_id
-        ORDER BY f.brand, f.name
+        ORDER BY fragrance_brand, fragrance_name
     """).fetchall()
     return [row_to_dict(r) for r in rows]
 
 
 @router.post("")
 def create_decant(payload: DecantIn, db=Depends(get_db)):
-    cur = db.execute(
-        """INSERT INTO decants (fragrance_id, size_ml, volume_remaining_ml, source, notes)
-           VALUES (?, ?, ?, ?, ?)""",
-        (payload.fragrance_id, payload.size_ml, payload.volume_remaining_ml,
-         payload.source, payload.notes)
-    )
+    # If fragrance_id provided, look up brand/name
+    brand = payload.brand
+    name  = payload.name
+    if payload.fragrance_id:
+        row = db.execute("SELECT brand, name FROM fragrances WHERE id=?",
+                         (payload.fragrance_id,)).fetchone()
+        if row:
+            brand = row["brand"]
+            name  = row["name"]
+
+    if not name:
+        raise HTTPException(400, "name or fragrance_id required")
+
+    cur = db.execute("""
+        INSERT INTO decants
+            (fragrance_id, brand, name, concentration, type,
+             size_ml, volume_remaining_ml, quantity, source, notes)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+    """, (
+        payload.fragrance_id, brand or "", name,
+        payload.concentration, payload.type or "decant",
+        payload.size_ml, payload.volume_remaining_ml,
+        payload.quantity or 1, payload.source, payload.notes
+    ))
     db.commit()
     row = db.execute("""
         SELECT d.id, d.fragrance_id,
-               COALESCE(f.name,'Unknown') AS fragrance_name,
-               COALESCE(f.brand,'')       AS fragrance_brand,
-               f.fragella_image_url, f.custom_image_url,
-               d.size_ml, d.volume_remaining_ml,
-               d.source, d.notes, d.created_at
+               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.name, d.name)  ELSE d.name  END AS fragrance_name,
+               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.brand, d.brand) ELSE d.brand END AS fragrance_brand,
+               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
+               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
+               d.type, d.concentration, d.size_ml, d.volume_remaining_ml,
+               d.quantity, d.source, d.notes, d.created_at
         FROM decants d
         LEFT JOIN fragrances f ON f.id = d.fragrance_id
         WHERE d.id = ?
@@ -70,33 +108,31 @@ def create_decant(payload: DecantIn, db=Depends(get_db)):
 
 @router.patch("/{decant_id}")
 def update_decant(decant_id: int, payload: DecantUpdate, db=Depends(get_db)):
-    existing = db.execute("SELECT id FROM decants WHERE id = ?", (decant_id,)).fetchone()
+    existing = db.execute("SELECT id FROM decants WHERE id=?", (decant_id,)).fetchone()
     if not existing:
-        raise HTTPException(status_code=404, detail="Decant not found")
+        raise HTTPException(404, "Decant not found")
 
     fields = {}
-    if payload.size_ml is not None:
-        fields["size_ml"] = payload.size_ml
-    if payload.volume_remaining_ml is not None:
-        fields["volume_remaining_ml"] = payload.volume_remaining_ml
-    if payload.source is not None:
-        fields["source"] = payload.source
-    if payload.notes is not None:
-        fields["notes"] = payload.notes
+    if payload.size_ml             is not None: fields["size_ml"]             = payload.size_ml
+    if payload.volume_remaining_ml is not None: fields["volume_remaining_ml"] = payload.volume_remaining_ml
+    if payload.source              is not None: fields["source"]              = payload.source
+    if payload.notes               is not None: fields["notes"]               = payload.notes
+    if payload.quantity            is not None: fields["quantity"]            = payload.quantity
 
     if fields:
-        set_clause = ", ".join(f"{k} = ?" for k in fields)
-        db.execute(f"UPDATE decants SET {set_clause} WHERE id = ?",
+        set_clause = ", ".join(f"{k}=?" for k in fields)
+        db.execute(f"UPDATE decants SET {set_clause} WHERE id=?",
                    (*fields.values(), decant_id))
         db.commit()
 
     row = db.execute("""
         SELECT d.id, d.fragrance_id,
-               COALESCE(f.name,'Unknown') AS fragrance_name,
-               COALESCE(f.brand,'')       AS fragrance_brand,
-               f.fragella_image_url, f.custom_image_url,
-               d.size_ml, d.volume_remaining_ml,
-               d.source, d.notes, d.created_at
+               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.name, d.name)  ELSE d.name  END AS fragrance_name,
+               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.brand, d.brand) ELSE d.brand END AS fragrance_brand,
+               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
+               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
+               d.type, d.concentration, d.size_ml, d.volume_remaining_ml,
+               d.quantity, d.source, d.notes, d.created_at
         FROM decants d
         LEFT JOIN fragrances f ON f.id = d.fragrance_id
         WHERE d.id = ?
@@ -106,9 +142,9 @@ def update_decant(decant_id: int, payload: DecantUpdate, db=Depends(get_db)):
 
 @router.delete("/{decant_id}")
 def delete_decant(decant_id: int, db=Depends(get_db)):
-    existing = db.execute("SELECT id FROM decants WHERE id = ?", (decant_id,)).fetchone()
+    existing = db.execute("SELECT id FROM decants WHERE id=?", (decant_id,)).fetchone()
     if not existing:
-        raise HTTPException(status_code=404, detail="Decant not found")
-    db.execute("DELETE FROM decants WHERE id = ?", (decant_id,))
+        raise HTTPException(404, "Decant not found")
+    db.execute("DELETE FROM decants WHERE id=?", (decant_id,))
     db.commit()
     return {"deleted": decant_id}
