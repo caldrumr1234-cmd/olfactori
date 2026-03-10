@@ -103,7 +103,7 @@ const css = `
     letter-spacing: 0.01em;
   }
   .nav-tab:hover { color: var(--blue); background: rgba(91,141,238,0.08); }
-  .nav-tab.active { color: var(--text); background: var(--bg3); }
+  .nav-tab.active { color: #7aabff; background: var(--bg3); font-weight: 600; }
   .nav-tab.active::after {
     content: '';
     display: block; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
@@ -228,7 +228,7 @@ const css = `
     display: flex; align-items: center; justify-content: center;
     font-weight: 500;
   }
-  .alpha-btn:hover { color: var(--text2); background: var(--bg3); }
+  .alpha-btn:hover { color: var(--blue); background: rgba(91,141,238,0.08); font-size: 13.5px; }
   .alpha-btn.active { color: var(--gold); background: var(--gold-dim); }
   .alpha-btn.disabled { color: var(--border2); cursor: default; }
   .alpha-btn.disabled:hover { background: none; color: var(--border2); }
