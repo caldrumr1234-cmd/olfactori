@@ -708,7 +708,7 @@ const parseArr = (v) => {
   try { return JSON.parse(v || "[]"); } catch { return []; }
 };
 
-const imgSrc = (f) => f?.custom_image_url || f?.fragella_image_url || null;
+const imgSrc = (f) => f?.r2_image_url || f?.custom_image_url || f?.fragella_image_url || null;
 
 const formatDate = (d) => {
   if (!d) return "Never";
@@ -1768,7 +1768,7 @@ export default function Olfactori() {
           concentration: frag.concentration || null,
           year_released: frag.year_released || null,
           reason_gone: reason,
-          custom_image_url: frag.custom_image_url || frag.fragella_image_url || null,
+          custom_image_url: frag.r2_image_url || frag.custom_image_url || frag.fragella_image_url || null,
         }),
       });
       await fetch(`${API}/fragrances/${frag.id}`, { method: "DELETE" });

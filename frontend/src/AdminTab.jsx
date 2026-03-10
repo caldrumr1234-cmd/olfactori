@@ -807,6 +807,82 @@ function LoginHistoryModal({ onClose }) {
   );
 }
 
+
+// ── R2 MIRROR PANEL ──────────────────────────────────────────
+function MirrorPanel({ toast }) {
+  const API = "https://olfactori-production.up.railway.app/api";
+  const [status, setStatus] = useState(null);
+  const [running, setRunning] = useState(false);
+  const token = sessionStorage.getItem("olfactori_token");
+  const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
+
+  const loadStatus = async () => {
+    try {
+      const r = await fetch(`${API}/images/status`, { headers });
+      setStatus(await r.json());
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => { loadStatus(); }, []);
+
+  const runMirror = async () => {
+    setRunning(true);
+    toast("Mirroring images to R2… this may take a few minutes");
+    try {
+      const r = await fetch(`${API}/images/mirror-all`, { method: "POST", headers });
+      const d = await r.json();
+      toast(`Done — mirrored: ${d.mirrored}, failed: ${d.failed}`);
+      await loadStatus();
+    } catch (e) {
+      toast("Mirror failed — check Railway logs");
+    }
+    setRunning(false);
+  };
+
+  if (!status) return <div style={{color:"var(--text3)",fontSize:13}}>Loading…</div>;
+
+  const pct = status.has_source_image > 0
+    ? Math.round((status.mirrored_to_r2 / status.has_source_image) * 100)
+    : 0;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+        {[
+          ["Total Bottles", status.total],
+          ["Have Image", status.has_source_image],
+          ["Mirrored to R2", status.mirrored_to_r2],
+        ].map(([lbl, val]) => (
+          <div key={lbl} style={{background:"var(--bg3)",borderRadius:8,padding:"12px 14px",border:"1px solid var(--border)"}}>
+            <div style={{fontFamily:"var(--serif)",fontSize:28,color:"var(--gold)",fontWeight:300}}>{val}</div>
+            <div style={{fontSize:10,color:"var(--text3)",textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text3)",marginBottom:6}}>
+          <span>Mirror progress</span>
+          <span style={{color:"var(--text)"}}>{pct}%</span>
+        </div>
+        <div style={{height:6,background:"var(--bg3)",borderRadius:3,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${pct}%`,background:"var(--gold)",borderRadius:3,transition:"width 0.4s"}} />
+        </div>
+        {status.pending > 0 && (
+          <div style={{fontSize:12,color:"var(--text3)",marginTop:6}}>{status.pending} images pending</div>
+        )}
+      </div>
+      <button
+        className="btn btn-primary"
+        style={{alignSelf:"flex-start"}}
+        onClick={runMirror}
+        disabled={running || status.pending === 0}
+      >
+        {running ? "Mirroring…" : status.pending === 0 ? "✓ All Mirrored" : `Mirror ${status.pending} Images to R2`}
+      </button>
+    </div>
+  );
+}
+
 export default function AdminTab({ toast }) {
   const [showLoginHistory, setShowLoginHistory] = useState(false);
   const [invites,  setInvites]  = useState([]);
@@ -1046,6 +1122,17 @@ export default function AdminTab({ toast }) {
           </div>
           <div className="admin-section-body">
             <TradeRequestsPanel toast={toast} />
+          </div>
+        </div>
+
+        {/* ── R2 IMAGE MIRROR ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">🗂️ Image Storage</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Mirror fragrance images to Cloudflare R2</span>
+          </div>
+          <div className="admin-section-body">
+            <MirrorPanel toast={toast} />
           </div>
         </div>
 

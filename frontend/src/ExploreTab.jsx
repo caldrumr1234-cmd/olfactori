@@ -327,7 +327,7 @@ function SpinTheBottle({ onOpenFrag }) {
     }, 850);
   };
 
-  const imgSrc = result?.custom_image_url || result?.fragella_image_url || null;
+  const imgSrc = result?.r2_image_url || result?.custom_image_url || result?.fragella_image_url || null;
 
   return (
     <div className="spin-center">

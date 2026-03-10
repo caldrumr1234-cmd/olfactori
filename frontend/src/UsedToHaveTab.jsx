@@ -103,7 +103,7 @@ const css = `
 `;
 
 function imgSrc(item) {
-  return item?.custom_image_url || null;
+  return item?.r2_image_url || item?.custom_image_url || null;
 }
 
 // ── ADD / EDIT MODAL ──────────────────────────────────────────

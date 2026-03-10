@@ -16,6 +16,9 @@ python3 -c "
 import sqlite3
 con = sqlite3.connect('/data/sillage.db')
 migrations = [
+    'ALTER TABLE fragrances ADD COLUMN r2_image_url TEXT',
+    'ALTER TABLE used_to_have ADD COLUMN r2_image_url TEXT',
+    'ALTER TABLE wishlist ADD COLUMN r2_image_url TEXT',
     'ALTER TABLE used_to_have ADD COLUMN custom_image_url TEXT',
     'ALTER TABLE fragrances ADD COLUMN want_to_trade INTEGER DEFAULT 0',
     'ALTER TABLE fragrances ADD COLUMN want_to_sell INTEGER DEFAULT 0',

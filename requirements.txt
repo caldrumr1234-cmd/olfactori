@@ -27,3 +27,5 @@ python-dotenv==1.0.1     # for .env config file
 # Dev / testing
 pytest==8.2.0
 httpx[cli]               # for manual API testing
+
+boto3

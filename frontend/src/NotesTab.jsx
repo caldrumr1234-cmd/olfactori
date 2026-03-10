@@ -104,7 +104,7 @@ const css = `
 `;
 
 function imgSrc(frag) {
-  return frag.custom_image_url || frag.fragella_image_url || null;
+  return frag.r2_image_url || frag.custom_image_url || frag.fragella_image_url || null;
 }
 
 const TIERS = ["All", "Top", "Heart", "Base"];
