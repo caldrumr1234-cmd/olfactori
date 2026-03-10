@@ -8,7 +8,7 @@ function VolumeBar({ remaining, total }) {
   const color = pct > 60 ? "#4ade80" : pct > 25 ? "#fbbf24" : "#f87171";
   return (
     <div style={{ marginTop: "0.4rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.2rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--text3)", marginBottom: "0.2rem" }}>
         <span>{remaining.toFixed(1)} ml left</span>
         <span>{pct.toFixed(0)}%</span>
       </div>
@@ -36,7 +36,7 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
     if (newVol  !== (decant.volume_remaining_ml ?? null)) body.volume_remaining_ml = newVol;
     if (newSize !== (decant.size_ml ?? null))             body.size_ml             = newSize;
     if (Object.keys(body).length) {
-      const res = await fetch(`${API}/api/decants/${decant.id}`, {
+      const res = await fetch(`${API}/decants/${decant.id}`, {
         method: "PATCH", headers, body: JSON.stringify(body),
       });
       if (res.ok) onUpdate(await res.json());
@@ -47,11 +47,11 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
 
   return (
     <div style={{
-      background: "var(--card-bg)", border: "1px solid var(--border)",
+      background: "var(--bg2)", border: "1px solid var(--border)",
       borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column",
     }}>
       {/* Image */}
-      <div style={{ height: "110px", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      <div style={{ height: "110px", background: "var(--bg2)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {imgSrc
           ? <img src={imgSrc} alt={decant.fragrance_name} style={{ height: "100%", width: "100%", objectFit: "cover" }} />
           : <span style={{ fontSize: "2rem" }}>🧴</span>
@@ -60,8 +60,8 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
 
       {/* Content */}
       <div style={{ padding: "0.75rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{decant.fragrance_brand}</div>
-        <div style={{ fontSize: "0.88rem", color: "var(--text-primary)", fontWeight: 600, lineHeight: 1.2 }}>
+        <div style={{ fontSize: "0.72rem", color: "var(--text3)" }}>{decant.fragrance_brand}</div>
+        <div style={{ fontSize: "0.88rem", color: "var(--text)", fontWeight: 600, lineHeight: 1.2 }}>
           {decant.fragrance_name}
         </div>
 
@@ -71,29 +71,29 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
             {decant.volume_remaining_ml != null && decant.size_ml != null
               ? <VolumeBar remaining={decant.volume_remaining_ml} total={decant.size_ml} />
               : decant.volume_remaining_ml != null
-              ? <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
+              ? <div style={{ fontSize: "0.78rem", color: "var(--text3)", marginTop: "0.3rem" }}>
                   {decant.volume_remaining_ml} ml remaining
                 </div>
               : decant.size_ml != null
-              ? <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
+              ? <div style={{ fontSize: "0.78rem", color: "var(--text3)", marginTop: "0.3rem" }}>
                   {decant.size_ml} ml
                 </div>
               : null
             }
             {decant.source && (
-              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+              <div style={{ fontSize: "0.72rem", color: "var(--text3)", marginTop: "0.1rem" }}>
                 📦 {decant.source}
               </div>
             )}
             {decant.notes && (
-              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem", fontStyle: "italic" }}>
+              <div style={{ fontSize: "0.72rem", color: "var(--text3)", marginTop: "0.1rem", fontStyle: "italic" }}>
                 {decant.notes}
               </div>
             )}
           </>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.3rem" }}>
-            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Total size (ml)</label>
+            <label style={{ fontSize: "0.72rem", color: "var(--text3)" }}>Total size (ml)</label>
             <input
               type="number" min="0" step="0.5"
               value={sizeInput}
@@ -101,7 +101,7 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
               style={inputSm}
               placeholder="e.g. 10"
             />
-            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Volume remaining (ml)</label>
+            <label style={{ fontSize: "0.72rem", color: "var(--text3)" }}>Volume remaining (ml)</label>
             <input
               type="number" min="0" step="0.1"
               value={volInput}
@@ -120,7 +120,7 @@ function DecantCard({ decant, token, onUpdate, onDelete }) {
             </button>
           ) : (
             <>
-              <button onClick={save} disabled={saving} style={{ ...btnSmStyle, background: "var(--accent-violet)", color: "#fff" }}>
+              <button onClick={save} disabled={saving} style={{ ...btnSmStyle, background: "var(--violet)", color: "#fff" }}>
                 {saving ? "…" : "Save"}
               </button>
               <button onClick={() => setEditing(false)} style={btnSmStyle}>Cancel</button>
@@ -153,8 +153,8 @@ export default function DecantsTab({ token }) {
   const load = useCallback(async () => {
     setLoading(true);
     const [dr, fr] = await Promise.all([
-      fetch(`${API}/api/decants`, { headers }),
-      fetch(`${API}/api/fragrances`, { headers }),
+      fetch(`${API}/decants`, { headers }),
+      fetch(`${API}/fragrances`, { headers }),
     ]);
     if (dr.ok) setDecants(await dr.json());
     if (fr.ok) setFragrances(await fr.json());
@@ -165,7 +165,7 @@ export default function DecantsTab({ token }) {
 
   const handleUpdate = (updated) => setDecants(prev => prev.map(d => d.id === updated.id ? updated : d));
   const handleDelete = async (id) => {
-    await fetch(`${API}/api/decants/${id}`, { method: "DELETE", headers });
+    await fetch(`${API}/decants/${id}`, { method: "DELETE", headers });
     setDecants(prev => prev.filter(d => d.id !== id));
   };
 
@@ -179,7 +179,7 @@ export default function DecantsTab({ token }) {
       source: form.source || null,
       notes: form.notes || null,
     };
-    const res = await fetch(`${API}/api/decants`, { method: "POST", headers, body: JSON.stringify(body) });
+    const res = await fetch(`${API}/decants`, { method: "POST", headers, body: JSON.stringify(body) });
     if (res.ok) {
       setDecants(prev => [...prev, await res.json()]);
       setForm({ fragrance_id: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
@@ -204,16 +204,16 @@ export default function DecantsTab({ token }) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.1rem", color: "var(--text-primary)" }}>
+          <h2 style={{ margin: 0, fontSize: "1.1rem", color: "var(--text)" }}>
             🧪 Decants
-            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 400, marginLeft: "0.5rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--text3)", fontWeight: 400, marginLeft: "0.5rem" }}>
               {decants.length} total
             </span>
           </h2>
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          style={{ background: "var(--accent-violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
+          style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
         >
           {showForm ? "✕ Cancel" : "+ Add Decant"}
         </button>
@@ -224,12 +224,12 @@ export default function DecantsTab({ token }) {
         placeholder="Search decants…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", boxSizing: "border-box", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text-primary)", fontSize: "0.88rem", marginBottom: "1rem" }}
+        style={{ width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem", marginBottom: "1rem" }}
       />
 
       {/* Add form */}
       {showForm && (
-        <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+        <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle}>Fragrance *</label>
             <input
@@ -239,15 +239,15 @@ export default function DecantsTab({ token }) {
               style={inputStyle}
             />
             {fragSearch && !form.fragrance_id && (
-              <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "8px", marginTop: "0.3rem", background: "var(--bg)" }}>
+              <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "8px", marginTop: "0.3rem", background: "var(--bg2)" }}>
                 {filteredFrags.slice(0, 30).map(f => (
                   <div key={f.id}
                     onClick={() => { setForm(prev => ({ ...prev, fragrance_id: f.id })); setFragSearch(`${f.brand} – ${f.name}`); }}
-                    style={{ padding: "0.5rem 0.75rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-primary)", borderBottom: "1px solid var(--border)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover-bg)"}
+                    style={{ padding: "0.5rem 0.75rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text)", borderBottom: "1px solid var(--border)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
-                    <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{f.brand}</span> {f.name}
+                    <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>{f.brand}</span> {f.name}
                   </div>
                 ))}
               </div>
@@ -271,7 +271,7 @@ export default function DecantsTab({ token }) {
           </div>
           <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
             <button onClick={handleSubmit} disabled={saving || !form.fragrance_id}
-              style={{ background: "var(--accent-violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.5rem 1.4rem", cursor: "pointer", fontSize: "0.9rem", opacity: !form.fragrance_id ? 0.5 : 1 }}>
+              style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.5rem 1.4rem", cursor: "pointer", fontSize: "0.9rem", opacity: !form.fragrance_id ? 0.5 : 1 }}>
               {saving ? "Saving…" : "Add Decant"}
             </button>
           </div>
@@ -280,9 +280,9 @@ export default function DecantsTab({ token }) {
 
       {/* Grid */}
       {loading ? (
-        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+        <p style={{ color: "var(--text3)" }}>Loading…</p>
       ) : filteredDecants.length === 0 ? (
-        <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "2rem" }}>
+        <p style={{ color: "var(--text3)", textAlign: "center", padding: "2rem" }}>
           {decants.length === 0 ? "No decants yet. Add one above." : "No results for that search."}
         </p>
       ) : (
@@ -296,7 +296,7 @@ export default function DecantsTab({ token }) {
   );
 }
 
-const inputStyle = { width: "100%", boxSizing: "border-box", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text-primary)", fontSize: "0.88rem" };
+const inputStyle = { width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem" };
 const inputSm    = { ...inputStyle, padding: "0.35rem 0.6rem", fontSize: "0.82rem" };
-const labelStyle = { display: "block", fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "0.3rem" };
-const btnSmStyle = { background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.25rem 0.6rem", cursor: "pointer", fontSize: "0.75rem", color: "var(--text-muted)" };
+const labelStyle = { display: "block", fontSize: "0.78rem", color: "var(--text3)", marginBottom: "0.3rem" };
+const btnSmStyle = { background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.25rem 0.6rem", cursor: "pointer", fontSize: "0.75rem", color: "var(--text3)" };
