@@ -79,5 +79,5 @@ for m in migrations:
 con.close()
 print('Migrations complete.')
 "
-
+python migrate_v2.py
 exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080}

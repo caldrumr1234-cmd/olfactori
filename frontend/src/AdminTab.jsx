@@ -1,5 +1,6 @@
 // AdminTab.jsx — drop into frontend/src/
 import { useState, useEffect, useRef } from "react";
+import SentSamplesSection from "./SentSamplesSection";
 
 const API = "https://olfactori-production.up.railway.app/api";
 
@@ -1145,6 +1146,17 @@ export default function AdminTab({ toast }) {
           </div>
           <div className="admin-section-body">
             <SecurityPanel toast={toast} />
+          </div>
+        </div>
+
+        {/* ── PREVIOUSLY SENT SAMPLES ── */}
+        <div className="admin-section" style={{gridColumn:"1/-1"}}>
+          <div className="admin-section-header">
+            <span className="admin-section-title">📬 Previously-Sent Samples</span>
+            <span style={{fontSize:12,color:"var(--text3)"}}>Track which samples you've already sent to friends</span>
+          </div>
+          <div className="admin-section-body">
+            <SentSamplesSection token={sessionStorage.getItem("olfactori_token")} />
           </div>
         </div>
 

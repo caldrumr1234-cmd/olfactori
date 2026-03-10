@@ -1,142 +1,170 @@
-"""
-api/routers/shelves.py — Custom shelves / groupings
-"""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from api.database import get_db
+from typing import Optional, List
+from database import get_db
 
 router = APIRouter()
 
-class ShelfCreate(BaseModel):
+
+def row_to_dict(r):
+    return {k: r[k] for k in r.keys()}
+
+
+# ── Models ────────────────────────────────────────────────────────────────────
+
+class ShelfIn(BaseModel):
     name: str
-    description: Optional[str] = None
-    emoji: Optional[str] = None
+    color: Optional[str] = "#7aabff"
+    icon: Optional[str] = "🧴"
+
 
 class ShelfUpdate(BaseModel):
     name: Optional[str] = None
-    description: Optional[str] = None
-    emoji: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
 
-def ensure_tables(db):
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS shelves (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            emoji TEXT DEFAULT '🗄️',
-            created_at TEXT DEFAULT (date('now'))
-        )
-    """)
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS shelf_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            shelf_id INTEGER NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
-            fragrance_id INTEGER NOT NULL REFERENCES fragrances(id) ON DELETE CASCADE,
-            added_at TEXT DEFAULT (date('now')),
-            UNIQUE(shelf_id, fragrance_id)
-        )
-    """)
-    db.commit()
 
-# ── SHELVES CRUD ──────────────────────────────────────────────
+class ReorderShelvesIn(BaseModel):
+    ordered_ids: List[int]
+
+
+class AssignFragrancesIn(BaseModel):
+    fragrance_ids: List[int]
+
+
+class ReorderFragrancesIn(BaseModel):
+    ordered_fragrance_ids: List[int]
+
+
+# ── Shelves CRUD ──────────────────────────────────────────────────────────────
 
 @router.get("")
-def list_shelves(db = Depends(get_db)):
-    ensure_tables(db)
-    rows = db.execute("""
-        SELECT s.id, s.name, s.description, s.emoji, s.created_at,
-               COUNT(si.fragrance_id) as item_count
-        FROM shelves s
-        LEFT JOIN shelf_items si ON si.shelf_id = s.id
-        GROUP BY s.id ORDER BY s.name
-    """).fetchall()
-    return {"shelves": [{k: r[k] for k in r.keys()} for r in rows]}
+def list_shelves(db=Depends(get_db)):
+    shelves = db.execute(
+        "SELECT * FROM shelves ORDER BY sort_order, id"
+    ).fetchall()
+    result = []
+    for shelf in shelves:
+        s = row_to_dict(shelf)
+        frags = db.execute("""
+            SELECT f.id, f.name, f.brand, f.fragella_image_url, f.custom_image_url,
+                   sf.sort_order
+            FROM shelf_fragrances sf
+            JOIN fragrances f ON f.id = sf.fragrance_id
+            WHERE sf.shelf_id = ?
+            ORDER BY sf.sort_order, sf.fragrance_id
+        """, (s["id"],)).fetchall()
+        s["fragrances"] = [row_to_dict(r) for r in frags]
+        result.append(s)
+    return result
+
 
 @router.post("")
-def create_shelf(body: ShelfCreate, db = Depends(get_db)):
-    ensure_tables(db)
+def create_shelf(payload: ShelfIn, db=Depends(get_db)):
+    max_order = db.execute("SELECT COALESCE(MAX(sort_order), -1) FROM shelves").fetchone()[0]
     cur = db.execute(
-        "INSERT INTO shelves (name, description, emoji) VALUES (?, ?, ?)",
-        (body.name, body.description, body.emoji or "🗄️")
+        "INSERT INTO shelves (name, color, icon, sort_order) VALUES (?, ?, ?, ?)",
+        (payload.name, payload.color, payload.icon, max_order + 1)
     )
     db.commit()
     row = db.execute("SELECT * FROM shelves WHERE id = ?", (cur.lastrowid,)).fetchone()
-    return {k: row[k] for k in row.keys()}
+    s = row_to_dict(row)
+    s["fragrances"] = []
+    return s
+
 
 @router.patch("/{shelf_id}")
-def update_shelf(shelf_id: int, body: ShelfUpdate, db = Depends(get_db)):
-    ensure_tables(db)
-    shelf = db.execute("SELECT * FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
-    if not shelf:
+def update_shelf(shelf_id: int, payload: ShelfUpdate, db=Depends(get_db)):
+    existing = db.execute("SELECT * FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
+    if not existing:
         raise HTTPException(status_code=404, detail="Shelf not found")
-    fields, vals = [], []
-    if body.name        is not None: fields.append("name = ?");        vals.append(body.name)
-    if body.description is not None: fields.append("description = ?"); vals.append(body.description)
-    if body.emoji       is not None: fields.append("emoji = ?");       vals.append(body.emoji)
+    fields = {}
+    if payload.name is not None:
+        fields["name"] = payload.name
+    if payload.color is not None:
+        fields["color"] = payload.color
+    if payload.icon is not None:
+        fields["icon"] = payload.icon
     if fields:
-        vals.append(shelf_id)
-        db.execute(f"UPDATE shelves SET {', '.join(fields)} WHERE id = ?", vals)
+        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        db.execute(f"UPDATE shelves SET {set_clause} WHERE id = ?",
+                   (*fields.values(), shelf_id))
         db.commit()
     row = db.execute("SELECT * FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
-    return {k: row[k] for k in row.keys()}
+    s = row_to_dict(row)
+    frags = db.execute("""
+        SELECT f.id, f.name, f.brand, f.fragella_image_url, f.custom_image_url, sf.sort_order
+        FROM shelf_fragrances sf
+        JOIN fragrances f ON f.id = sf.fragrance_id
+        WHERE sf.shelf_id = ?
+        ORDER BY sf.sort_order, sf.fragrance_id
+    """, (shelf_id,)).fetchall()
+    s["fragrances"] = [row_to_dict(r) for r in frags]
+    return s
+
 
 @router.delete("/{shelf_id}")
-def delete_shelf(shelf_id: int, db = Depends(get_db)):
-    ensure_tables(db)
+def delete_shelf(shelf_id: int, db=Depends(get_db)):
+    existing = db.execute("SELECT id FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Shelf not found")
+    db.execute("DELETE FROM shelf_fragrances WHERE shelf_id = ?", (shelf_id,))
     db.execute("DELETE FROM shelves WHERE id = ?", (shelf_id,))
     db.commit()
     return {"deleted": shelf_id}
 
-# ── SHELF ITEMS ───────────────────────────────────────────────
 
-@router.get("/{shelf_id}/items")
-def get_shelf_items(shelf_id: int, db = Depends(get_db)):
-    ensure_tables(db)
-    rows = db.execute("""
-        SELECT f.id, f.brand, f.name, f.concentration, f.main_accords,
-               f.fragella_image_url, f.custom_image_url, f.personal_rating,
-               f.is_discontinued, si.added_at
-        FROM shelf_items si
-        JOIN fragrances f ON f.id = si.fragrance_id
-        WHERE si.shelf_id = ?
-        ORDER BY f.brand, f.name
-    """, (shelf_id,)).fetchall()
-    return {"items": [{k: r[k] for k in r.keys()} for r in rows]}
+# ── Shelf reorder ─────────────────────────────────────────────────────────────
 
-@router.post("/{shelf_id}/items")
-def add_items_to_shelf(shelf_id: int, body: dict, db = Depends(get_db)):
-    """Add one or more fragrance IDs to a shelf. Body: {fragrance_ids: [1,2,3]}"""
-    ensure_tables(db)
-    shelf = db.execute("SELECT id FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
-    if not shelf:
+@router.post("/reorder")
+def reorder_shelves(payload: ReorderShelvesIn, db=Depends(get_db)):
+    for i, shelf_id in enumerate(payload.ordered_ids):
+        db.execute("UPDATE shelves SET sort_order = ? WHERE id = ?", (i, shelf_id))
+    db.commit()
+    return {"reordered": True}
+
+
+# ── Fragrance assignment ──────────────────────────────────────────────────────
+
+@router.put("/{shelf_id}/fragrances")
+def set_shelf_fragrances(shelf_id: int, payload: AssignFragrancesIn, db=Depends(get_db)):
+    """Replace the full fragrance list for a shelf."""
+    existing = db.execute("SELECT id FROM shelves WHERE id = ?", (shelf_id,)).fetchone()
+    if not existing:
         raise HTTPException(status_code=404, detail="Shelf not found")
-    ids = body.get("fragrance_ids", [])
-    added = 0
-    for fid in ids:
-        try:
-            db.execute("INSERT OR IGNORE INTO shelf_items (shelf_id, fragrance_id) VALUES (?, ?)", (shelf_id, fid))
-            added += 1
-        except Exception:
-            pass
+    db.execute("DELETE FROM shelf_fragrances WHERE shelf_id = ?", (shelf_id,))
+    for i, frag_id in enumerate(payload.fragrance_ids):
+        db.execute(
+            "INSERT OR IGNORE INTO shelf_fragrances (shelf_id, fragrance_id, sort_order) VALUES (?, ?, ?)",
+            (shelf_id, frag_id, i)
+        )
     db.commit()
-    return {"added": added, "shelf_id": shelf_id}
+    frags = db.execute("""
+        SELECT f.id, f.name, f.brand, f.fragella_image_url, f.custom_image_url, sf.sort_order
+        FROM shelf_fragrances sf
+        JOIN fragrances f ON f.id = sf.fragrance_id
+        WHERE sf.shelf_id = ?
+        ORDER BY sf.sort_order, sf.fragrance_id
+    """, (shelf_id,)).fetchall()
+    return [row_to_dict(r) for r in frags]
 
-@router.delete("/{shelf_id}/items/{fragrance_id}")
-def remove_item_from_shelf(shelf_id: int, fragrance_id: int, db = Depends(get_db)):
-    ensure_tables(db)
-    db.execute("DELETE FROM shelf_items WHERE shelf_id = ? AND fragrance_id = ?", (shelf_id, fragrance_id))
+
+@router.delete("/{shelf_id}/fragrances/{fragrance_id}")
+def remove_fragrance_from_shelf(shelf_id: int, fragrance_id: int, db=Depends(get_db)):
+    db.execute(
+        "DELETE FROM shelf_fragrances WHERE shelf_id = ? AND fragrance_id = ?",
+        (shelf_id, fragrance_id)
+    )
     db.commit()
-    return {"removed": fragrance_id, "shelf_id": shelf_id}
+    return {"removed": fragrance_id}
 
-@router.get("/by_fragrance/{fragrance_id}")
-def shelves_for_fragrance(fragrance_id: int, db = Depends(get_db)):
-    """Which shelves does this fragrance belong to?"""
-    ensure_tables(db)
-    rows = db.execute("""
-        SELECT s.id, s.name, s.emoji FROM shelves s
-        JOIN shelf_items si ON si.shelf_id = s.id
-        WHERE si.fragrance_id = ?
-        ORDER BY s.name
-    """, (fragrance_id,)).fetchall()
-    return {"shelves": [{k: r[k] for k in r.keys()} for r in rows]}
+
+@router.post("/{shelf_id}/fragrances/reorder")
+def reorder_shelf_fragrances(shelf_id: int, payload: ReorderFragrancesIn, db=Depends(get_db)):
+    for i, frag_id in enumerate(payload.ordered_fragrance_ids):
+        db.execute(
+            "UPDATE shelf_fragrances SET sort_order = ? WHERE shelf_id = ? AND fragrance_id = ?",
+            (i, shelf_id, frag_id)
+        )
+    db.commit()
+    return {"reordered": True}

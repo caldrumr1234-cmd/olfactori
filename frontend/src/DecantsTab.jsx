@@ -1,352 +1,302 @@
-// DecantsTab.jsx — Decants & Samples inventory
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-const API = "https://olfactori-production.up.railway.app/api";
+const API = import.meta.env.VITE_API_URL || "";
 
-const css = `
-  .dec-toolbar {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 20px; flex-wrap: wrap;
-  }
-  .dec-toggle {
-    display: flex; background: var(--bg3);
-    border: 1px solid var(--border); border-radius: 10px;
-    overflow: hidden; flex-shrink: 0;
-  }
-  .dec-toggle-btn {
-    padding: 8px 20px; font-size: 13px; font-weight: 500;
-    background: none; border: none; color: var(--text3);
-    cursor: pointer; transition: all 0.15s;
-  }
-  .dec-toggle-btn.active {
-    background: linear-gradient(135deg, var(--gold), #e0b84a); color: var(--bg);
-  }
-  .dec-search {
-    flex: 1; min-width: 180px;
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 10px; padding: 8px 14px;
-    color: var(--text); font-size: 13px;
-  }
-  .dec-search:focus { outline: none; border-color: var(--gold); }
-  .dec-add-btn {
-    background: linear-gradient(135deg, var(--gold), #e8b84e); color: var(--bg);
-    border: none; border-radius: 10px;
-    padding: 8px 18px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    box-shadow: 0 2px 10px rgba(201,168,76,0.2);
-  }
-  .dec-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.35); }
-
-  /* TABLE */
-  .dec-table-wrap { overflow-x: auto; }
-  .dec-table {
-    width: 100%; border-collapse: collapse;
-    font-size: 13px;
-  }
-  .dec-table th {
-    text-align: left; font-size: 10px; font-weight: 600;
-    color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 8px 12px; border-bottom: 1px solid var(--border);
-  }
-  .dec-table td {
-    padding: 10px 12px; border-bottom: 1px solid var(--border);
-    color: var(--text2); vertical-align: middle;
-  }
-  .dec-table tr:last-child td { border-bottom: none; }
-  .dec-table tr:hover td { background: var(--bg3); }
-  .dec-table tr:hover .dec-name { color: var(--violet); }
-  .dec-table tr.editing td { background: var(--bg3); }
-
-  .dec-brand { font-weight: 600; color: var(--gold); font-size: 12px; }
-  .dec-name  { color: var(--text); font-weight: 500; }
-  .dec-in-coll {
-    display: inline-block;
-    font-size: 10px; background: rgba(201,168,76,0.08);
-    color: var(--gold); border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 6px; padding: 1px 6px; margin-left: 6px;
-    cursor: pointer; transition: background 0.15s;
-  }
-  .dec-in-coll:hover { background: rgba(167,139,250,0.2); border-color: rgba(167,139,250,0.4); color: var(--violet) !important; }
-
-  /* INLINE EDIT */
-  .dec-input {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 6px; padding: 5px 8px;
-    color: var(--text); font-size: 13px; width: 100%;
-  }
-  .dec-input:focus { outline: none; border-color: var(--gold); }
-  .dec-select {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 6px; padding: 5px 8px;
-    color: var(--text); font-size: 13px;
-  }
-  .dec-select:focus { outline: none; border-color: var(--gold); }
-
-  .dec-action-btn {
-    background: none; border: none; cursor: pointer;
-    font-size: 15px; padding: 2px 5px; border-radius: 5px;
-    transition: background 0.15s;
-  }
-  .dec-action-btn:hover { background: var(--bg3); }
-
-  .dec-empty {
-    text-align: center; padding: 60px 20px;
-    color: var(--text3); font-size: 14px;
-  }
-  .dec-count {
-    font-size: 12px; color: var(--text3); margin-left: auto;
-  }
-  .dec-new-row td { background: rgba(201,168,76,0.06); }
-`;
-
-const CONC_OPTIONS = ["EDP","EDT","EDC","EDP Intense","Parfum","Parfum Extract","Hair Mist","Other"];
-
-function EditableRow({ item, onSave, onCancel, onDelete, isNew, onOpenCollection }) {
-  const [form, setForm] = useState({
-    type:          item.type          || "decant",
-    brand:         item.brand         || "",
-    name:          item.name          || "",
-    concentration: item.concentration || "",
-    size_ml:       item.size_ml       != null ? String(item.size_ml) : "",
-    quantity:      item.quantity      != null ? String(item.quantity) : "1",
-    notes:         item.notes         || "",
-  });
-  const brandRef = useRef();
-  useEffect(() => { if (isNew && brandRef.current) brandRef.current.focus(); }, [isNew]);
-
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const save = () => {
-    if (!form.brand.trim() || !form.name.trim()) return;
-    onSave({
-      ...form,
-      size_ml:  form.size_ml  ? parseFloat(form.size_ml)  : null,
-      quantity: form.quantity ? parseInt(form.quantity)    : 1,
-    });
-  };
-
-  const handleKey = (e) => {
-    if (e.key === "Enter") save();
-    if (e.key === "Escape") onCancel();
-  };
-
+function VolumeBar({ remaining, total }) {
+  if (!total) return null;
+  const pct = Math.min(100, Math.max(0, (remaining / total) * 100));
+  const color = pct > 60 ? "#4ade80" : pct > 25 ? "#fbbf24" : "#f87171";
   return (
-    <tr className={`editing ${isNew ? "dec-new-row" : ""}`}>
-      <td>
-        <select className="dec-select" value={form.type} onChange={e => set("type", e.target.value)}>
-          <option value="decant">Decant</option>
-          <option value="sample">Sample</option>
-        </select>
-      </td>
-      <td><input ref={brandRef} className="dec-input" value={form.brand} onChange={e => set("brand", e.target.value)} onKeyDown={handleKey} placeholder="House" /></td>
-      <td><input className="dec-input" value={form.name} onChange={e => set("name", e.target.value)} onKeyDown={handleKey} placeholder="Fragrance name" /></td>
-      <td>
-        <select className="dec-select" value={form.concentration} onChange={e => set("concentration", e.target.value)}>
-          <option value="">—</option>
-          {CONC_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </td>
-      <td><input className="dec-input" style={{width:70}} value={form.size_ml} onChange={e => set("size_ml", e.target.value)} onKeyDown={handleKey} placeholder="ml" type="number" min="0" /></td>
-      <td><input className="dec-input" style={{width:60}} value={form.quantity} onChange={e => set("quantity", e.target.value)} onKeyDown={handleKey} placeholder="1" type="number" min="1" /></td>
-      <td><input className="dec-input" value={form.notes} onChange={e => set("notes", e.target.value)} onKeyDown={handleKey} placeholder="Notes..." /></td>
-      <td>
-        <button className="dec-action-btn" onClick={save} title="Save">✓</button>
-        <button className="dec-action-btn" onClick={onCancel} title="Cancel">✕</button>
-        {!isNew && <button className="dec-action-btn" onClick={onDelete} title="Delete" style={{color:"var(--red)"}}>🗑</button>}
-      </td>
-    </tr>
+    <div style={{ marginTop: "0.4rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.2rem" }}>
+        <span>{remaining.toFixed(1)} ml left</span>
+        <span>{pct.toFixed(0)}%</span>
+      </div>
+      <div style={{ height: "4px", background: "var(--border)", borderRadius: "999px", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "999px", transition: "width 0.3s ease" }} />
+      </div>
+    </div>
   );
 }
 
-function ReadRow({ item, onEdit, onOpenCollection }) {
-  return (
-    <tr>
-      <td>
-        <span style={{
-          fontSize: 10, fontWeight: 600, textTransform: "uppercase",
-          letterSpacing: "0.06em", padding: "2px 8px", borderRadius: 6,
-          background: item.type === "sample" ? "rgba(106,176,212,0.15)" : "rgba(201,168,76,0.12)",
-          color: item.type === "sample" ? "var(--blue)" : "var(--gold)",
-          border: `1px solid ${item.type === "sample" ? "rgba(106,176,212,0.3)" : "rgba(201,168,76,0.25)"}`,
-        }}>
-          {item.type}
-        </span>
-      </td>
-      <td><span className="dec-brand">{item.brand}</span></td>
-      <td>
-        <span className="dec-name">{item.name}</span>
-        {item.in_collection && (
-          <span className="dec-in-coll" onClick={() => onOpenCollection(item.in_collection)} title="In your collection — click to open">
-            ✓ owned
-          </span>
-        )}
-      </td>
-      <td>{item.concentration || <span style={{color:"var(--text3)"}}>—</span>}</td>
-      <td>{item.size_ml != null ? `${item.size_ml}ml` : <span style={{color:"var(--text3)"}}>—</span>}</td>
-      <td>{item.quantity ?? 1}</td>
-      <td style={{maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
-        {item.notes || <span style={{color:"var(--text3)"}}>—</span>}
-      </td>
-      <td>
-        <button className="dec-action-btn" onClick={onEdit} title="Edit">✏️</button>
-      </td>
-    </tr>
-  );
-}
+function DecantCard({ decant, token, onUpdate, onDelete }) {
+  const [editing, setEditing]     = useState(false);
+  const [volInput, setVolInput]   = useState(decant.volume_remaining_ml ?? "");
+  const [sizeInput, setSizeInput] = useState(decant.size_ml ?? "");
+  const [saving, setSaving]       = useState(false);
 
-export default function DecantsTab({ onOpenFrag }) {
-  const [items,     setItems]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [type,      setType]      = useState("all");   // all | decant | sample
-  const [search,    setSearch]    = useState("");
-  const [editingId, setEditingId] = useState(null);    // item id being edited
-  const [addingNew, setAddingNew] = useState(false);
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const imgSrc  = decant.custom_image_url || decant.fragella_image_url;
 
-  const load = async (t = type, s = search) => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (t !== "all") params.set("type", t);
-    if (s) params.set("search", s);
-    try {
-      const res = await fetch(`${API}/decants?${params}`);
-      const d   = await res.json();
-      setItems(d.items || []);
-    } catch (e) { console.error(e); }
-    setLoading(false);
+  const save = async () => {
+    setSaving(true);
+    const body = {};
+    const newVol  = volInput  === "" ? null : parseFloat(volInput);
+    const newSize = sizeInput === "" ? null : parseFloat(sizeInput);
+    if (newVol  !== (decant.volume_remaining_ml ?? null)) body.volume_remaining_ml = newVol;
+    if (newSize !== (decant.size_ml ?? null))             body.size_ml             = newSize;
+    if (Object.keys(body).length) {
+      const res = await fetch(`${API}/api/decants/${decant.id}`, {
+        method: "PATCH", headers, body: JSON.stringify(body),
+      });
+      if (res.ok) onUpdate(await res.json());
+    }
+    setSaving(false);
+    setEditing(false);
   };
-
-  useEffect(() => { load(); }, []);
-
-  const handleTypeChange = (t) => { setType(t); load(t, search); };
-  const handleSearch = (s) => { setSearch(s); load(type, s); };
-
-  const handleAdd = async (form) => {
-    const res = await fetch(`${API}/decants`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const item = await res.json();
-    setItems(prev => [...prev, item]);
-    setAddingNew(false);
-    await load(type, search);
-  };
-
-  const handleSave = async (id, form) => {
-    const res = await fetch(`${API}/decants/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const updated = await res.json();
-    setItems(prev => prev.map(i => i.id === id ? updated : i));
-    setEditingId(null);
-    await load(type, search);
-  };
-
-  const handleDelete = async (id) => {
-    await fetch(`${API}/decants/${id}`, { method: "DELETE" });
-    setItems(prev => prev.filter(i => i.id !== id));
-    setEditingId(null);
-  };
-
-  const handleOpenCollection = async (fragId) => {
-    try {
-      const res = await fetch(`${API}/fragrances/${fragId}`);
-      const frag = await res.json();
-      onOpenFrag(frag);
-    } catch (e) { console.error(e); }
-  };
-
-  const decantCount = items.filter(i => i.type === "decant").length;
-  const sampleCount = items.filter(i => i.type === "sample").length;
 
   return (
-    <>
-      <style>{css}</style>
+    <div style={{
+      background: "var(--card-bg)", border: "1px solid var(--border)",
+      borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column",
+    }}>
+      {/* Image */}
+      <div style={{ height: "110px", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {imgSrc
+          ? <img src={imgSrc} alt={decant.fragrance_name} style={{ height: "100%", width: "100%", objectFit: "cover" }} />
+          : <span style={{ fontSize: "2rem" }}>🧴</span>
+        }
+      </div>
 
-      <div className="dec-toolbar">
-        <div className="dec-toggle">
-          {[["all","All"], ["decant","Decants"], ["sample","Samples"]].map(([val, lbl]) => (
-            <button key={val} className={`dec-toggle-btn ${type === val ? "active" : ""}`}
-              onClick={() => handleTypeChange(val)}>
-              {lbl}
-            </button>
-          ))}
+      {/* Content */}
+      <div style={{ padding: "0.75rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{decant.fragrance_brand}</div>
+        <div style={{ fontSize: "0.88rem", color: "var(--text-primary)", fontWeight: 600, lineHeight: 1.2 }}>
+          {decant.fragrance_name}
         </div>
 
-        <input
-          className="dec-search"
-          placeholder="Search house or fragrance..."
-          value={search}
-          onChange={e => handleSearch(e.target.value)}
-        />
+        {/* Volume display */}
+        {!editing ? (
+          <>
+            {decant.volume_remaining_ml != null && decant.size_ml != null
+              ? <VolumeBar remaining={decant.volume_remaining_ml} total={decant.size_ml} />
+              : decant.volume_remaining_ml != null
+              ? <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
+                  {decant.volume_remaining_ml} ml remaining
+                </div>
+              : decant.size_ml != null
+              ? <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
+                  {decant.size_ml} ml
+                </div>
+              : null
+            }
+            {decant.source && (
+              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                📦 {decant.source}
+              </div>
+            )}
+            {decant.notes && (
+              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem", fontStyle: "italic" }}>
+                {decant.notes}
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.3rem" }}>
+            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Total size (ml)</label>
+            <input
+              type="number" min="0" step="0.5"
+              value={sizeInput}
+              onChange={e => setSizeInput(e.target.value)}
+              style={inputSm}
+              placeholder="e.g. 10"
+            />
+            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Volume remaining (ml)</label>
+            <input
+              type="number" min="0" step="0.1"
+              value={volInput}
+              onChange={e => setVolInput(e.target.value)}
+              style={inputSm}
+              placeholder="e.g. 7.5"
+            />
+          </div>
+        )}
 
-        <span className="dec-count">
-          {decantCount} decant{decantCount !== 1 ? "s" : ""} · {sampleCount} sample{sampleCount !== 1 ? "s" : ""}
-        </span>
+        {/* Actions */}
+        <div style={{ display: "flex", gap: "0.4rem", marginTop: "auto", paddingTop: "0.5rem" }}>
+          {!editing ? (
+            <button onClick={() => setEditing(true)} style={btnSmStyle}>
+              ✏️ Edit
+            </button>
+          ) : (
+            <>
+              <button onClick={save} disabled={saving} style={{ ...btnSmStyle, background: "var(--accent-violet)", color: "#fff" }}>
+                {saving ? "…" : "Save"}
+              </button>
+              <button onClick={() => setEditing(false)} style={btnSmStyle}>Cancel</button>
+            </>
+          )}
+          <button
+            onClick={() => { if (confirm("Delete this decant?")) onDelete(decant.id); }}
+            style={{ ...btnSmStyle, marginLeft: "auto", color: "#f87171" }}
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <button className="dec-add-btn" onClick={() => { setAddingNew(true); setEditingId(null); }}>
-          + Add
+export default function DecantsTab({ token }) {
+  const [decants, setDecants]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [fragrances, setFragrances] = useState([]);
+  const [fragSearch, setFragSearch] = useState("");
+  const [form, setForm] = useState({ fragrance_id: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [dr, fr] = await Promise.all([
+      fetch(`${API}/api/decants`, { headers }),
+      fetch(`${API}/api/fragrances`, { headers }),
+    ]);
+    if (dr.ok) setDecants(await dr.json());
+    if (fr.ok) setFragrances(await fr.json());
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleUpdate = (updated) => setDecants(prev => prev.map(d => d.id === updated.id ? updated : d));
+  const handleDelete = async (id) => {
+    await fetch(`${API}/api/decants/${id}`, { method: "DELETE", headers });
+    setDecants(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.fragrance_id) return;
+    setSaving(true);
+    const body = {
+      fragrance_id: parseInt(form.fragrance_id),
+      size_ml: form.size_ml === "" ? null : parseFloat(form.size_ml),
+      volume_remaining_ml: form.volume_remaining_ml === "" ? null : parseFloat(form.volume_remaining_ml),
+      source: form.source || null,
+      notes: form.notes || null,
+    };
+    const res = await fetch(`${API}/api/decants`, { method: "POST", headers, body: JSON.stringify(body) });
+    if (res.ok) {
+      setDecants(prev => [...prev, await res.json()]);
+      setForm({ fragrance_id: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
+      setFragSearch("");
+      setShowForm(false);
+    }
+    setSaving(false);
+  };
+
+  const filteredDecants = decants.filter(d => {
+    const q = search.toLowerCase();
+    return !q || d.fragrance_name?.toLowerCase().includes(q) || d.fragrance_brand?.toLowerCase().includes(q);
+  });
+
+  const filteredFrags = fragrances.filter(f => {
+    const q = fragSearch.toLowerCase();
+    return !q || f.name?.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q);
+  });
+
+  return (
+    <div style={{ padding: "1rem" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: "1.1rem", color: "var(--text-primary)" }}>
+            🧪 Decants
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 400, marginLeft: "0.5rem" }}>
+              {decants.length} total
+            </span>
+          </h2>
+        </div>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          style={{ background: "var(--accent-violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
+        >
+          {showForm ? "✕ Cancel" : "+ Add Decant"}
         </button>
       </div>
 
-      <div className="dec-table-wrap">
-        <table className="dec-table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>House</th>
-              <th>Fragrance</th>
-              <th>Conc.</th>
-              <th>Size</th>
-              <th>Qty</th>
-              <th>Notes</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {addingNew && (
-              <EditableRow
-                isNew
-                item={{ type: type !== "all" ? type : "decant" }}
-                onSave={handleAdd}
-                onCancel={() => setAddingNew(false)}
-                onDelete={() => {}}
-                onOpenCollection={handleOpenCollection}
-              />
+      {/* Search */}
+      <input
+        placeholder="Search decants…"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", boxSizing: "border-box", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text-primary)", fontSize: "0.88rem", marginBottom: "1rem" }}
+      />
+
+      {/* Add form */}
+      {showForm && (
+        <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={labelStyle}>Fragrance *</label>
+            <input
+              placeholder="Search…"
+              value={fragSearch}
+              onChange={e => { setFragSearch(e.target.value); setForm(f => ({ ...f, fragrance_id: "" })); }}
+              style={inputStyle}
+            />
+            {fragSearch && !form.fragrance_id && (
+              <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "8px", marginTop: "0.3rem", background: "var(--bg)" }}>
+                {filteredFrags.slice(0, 30).map(f => (
+                  <div key={f.id}
+                    onClick={() => { setForm(prev => ({ ...prev, fragrance_id: f.id })); setFragSearch(`${f.brand} – ${f.name}`); }}
+                    style={{ padding: "0.5rem 0.75rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-primary)", borderBottom: "1px solid var(--border)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--hover-bg)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>{f.brand}</span> {f.name}
+                  </div>
+                ))}
+              </div>
             )}
-            {loading ? (
-              <tr><td colSpan={8} style={{textAlign:"center",padding:"40px",color:"var(--text3)"}}>Loading...</td></tr>
-            ) : items.length === 0 && !addingNew ? (
-              <tr><td colSpan={8}>
-                <div className="dec-empty">
-                  No {type !== "all" ? type + "s" : "decants or samples"} yet.
-                  {search && " Try clearing the search."}
-                </div>
-              </td></tr>
-            ) : items.map(item =>
-              editingId === item.id ? (
-                <EditableRow
-                  key={item.id}
-                  item={item}
-                  onSave={(form) => handleSave(item.id, form)}
-                  onCancel={() => setEditingId(null)}
-                  onDelete={() => handleDelete(item.id)}
-                  onOpenCollection={handleOpenCollection}
-                />
-              ) : (
-                <ReadRow
-                  key={item.id}
-                  item={item}
-                  onEdit={() => { setEditingId(item.id); setAddingNew(false); }}
-                  onOpenCollection={handleOpenCollection}
-                />
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
-    </>
+          </div>
+          <div>
+            <label style={labelStyle}>Total size (ml)</label>
+            <input type="number" min="0" step="0.5" placeholder="10" value={form.size_ml} onChange={e => setForm(f => ({ ...f, size_ml: e.target.value }))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Volume remaining (ml)</label>
+            <input type="number" min="0" step="0.1" placeholder="10" value={form.volume_remaining_ml} onChange={e => setForm(f => ({ ...f, volume_remaining_ml: e.target.value }))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Source</label>
+            <input placeholder="e.g. Reddit r/fragrance" value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Notes</label>
+            <input placeholder="Any notes…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={inputStyle} />
+          </div>
+          <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={handleSubmit} disabled={saving || !form.fragrance_id}
+              style={{ background: "var(--accent-violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.5rem 1.4rem", cursor: "pointer", fontSize: "0.9rem", opacity: !form.fragrance_id ? 0.5 : 1 }}>
+              {saving ? "Saving…" : "Add Decant"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Grid */}
+      {loading ? (
+        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+      ) : filteredDecants.length === 0 ? (
+        <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "2rem" }}>
+          {decants.length === 0 ? "No decants yet. Add one above." : "No results for that search."}
+        </p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
+          {filteredDecants.map(d => (
+            <DecantCard key={d.id} decant={d} token={token} onUpdate={handleUpdate} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
+
+const inputStyle = { width: "100%", boxSizing: "border-box", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text-primary)", fontSize: "0.88rem" };
+const inputSm    = { ...inputStyle, padding: "0.35rem 0.6rem", fontSize: "0.82rem" };
+const labelStyle = { display: "block", fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "0.3rem" };
+const btnSmStyle = { background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.25rem 0.6rem", cursor: "pointer", fontSize: "0.75rem", color: "var(--text-muted)" };
