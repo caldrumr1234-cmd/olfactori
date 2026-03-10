@@ -144,8 +144,8 @@ function buildReason(frag, occasion, season, weather) {
   const parts = [];
   if (accords.length) parts.push(`${accords.join(", ")} profile`);
   if (season) parts.push(`suits ${season.toLowerCase()} weather`);
-  if (weather?.temp_f) {
-    const t = Math.round(weather.temp_f);
+  if (weather?.peak_f || weather?.temp_f) {
+    const t = Math.round(weather.peak_f ?? weather.temp_f);
     if (t >= 75) parts.push("light and fresh for the heat");
     else if (t <= 45) parts.push("rich and warming for cool temperatures");
   }
@@ -348,22 +348,23 @@ export default function WardrobeTab({ onOpenFrag }) {
 
   useEffect(() => {
     setWeatherLoading(true);
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weathercode&temperature_unit=fahrenheit`)
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`)
       .then(r => r.json())
       .then(d => {
-        const cur   = d.current || {};
-        const temp  = cur.temperature_2m ?? 70;
-        const code  = cur.weathercode ?? 0;
-        const month = new Date().getMonth();
+        const cur    = d.current || {};
+        const temp   = cur.temperature_2m ?? 70;
+        const code   = cur.weathercode ?? 0;
+        const peak   = d.daily?.temperature_2m_max?.[0] ?? temp;
+        const month  = new Date().getMonth();
         let season;
         if (month >= 2 && month <= 4)       season = "Spring";
         else if (month >= 5 && month <= 7)  season = "Summer";
         else if (month >= 8 && month <= 10) season = "Fall";
         else                                season = "Winter";
-        setWeather({ temp_f: temp, code, season });
+        setWeather({ temp_f: temp, peak_f: peak, code, season });
         setWeatherLoading(false);
       })
-      .catch(() => { setWeather({ temp_f: 70, code: 0, season: "Spring" }); setWeatherLoading(false); });
+      .catch(() => { setWeather({ temp_f: 70, peak_f: 70, code: 0, season: "Spring" }); setWeatherLoading(false); });
   }, [coords]);
 
   const updateCity = () => {
@@ -381,6 +382,7 @@ export default function WardrobeTab({ onOpenFrag }) {
     setLoading(true); setResults(null);
     const params = new URLSearchParams({ occasion });
     params.set("lat", coords.lat); params.set("lon", coords.lon);
+    if (weather?.peak_f) params.set("peak_temp_f", Math.round(weather.peak_f));
     const res  = await fetch(`${API}/suggest?${params}`);
     const data = await res.json();
     const all  = [data.suggestion, ...(data.alternates || [])].filter(Boolean);
@@ -412,7 +414,12 @@ export default function WardrobeTab({ onOpenFrag }) {
             : weather ? <>
                 <div className="weather-icon">{weatherIcon(weather.code)}</div>
                 <div className="weather-info">
-                  <div className="weather-temp">{Math.round(weather.temp_f)}°F</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:12}}>
+                    <div className="weather-temp">{Math.round(weather.temp_f)}°F</div>
+                    <div style={{fontSize:14,color:"var(--text3)"}}>
+                      High <span style={{color:"var(--gold)",fontWeight:500}}>{Math.round(weather.peak_f)}°F</span>
+                    </div>
+                  </div>
                   <div className="weather-desc">{weatherDesc(weather.code)} · {city}</div>
                   <div className="weather-season">{weather.season}</div>
                 </div>
@@ -441,7 +448,7 @@ export default function WardrobeTab({ onOpenFrag }) {
         {/* RESULTS */}
         {results && <>
           <div className="wardrobe-section-title" style={{marginBottom:16}}>
-            Recommended for {OCCASIONS.find(o=>o.id===occasion)?.label} · {Math.round(results.weather?.temp_f ?? weather?.temp_f)}°F · {results.season}
+            Recommended for {OCCASIONS.find(o=>o.id===occasion)?.label} · High {Math.round(results.weather?.peak_f ?? weather?.peak_f ?? results.weather?.temp_f ?? weather?.temp_f)}°F · {results.season}
           </div>
           <div className="wardrobe-results">
             {results.items.map((frag, i) => (

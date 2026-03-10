@@ -755,7 +755,60 @@ function TradeRequestsPanel({ toast }) {
   );
 }
 
+
+// ── LOGIN HISTORY MODAL ───────────────────────────────────────
+function LoginHistoryModal({ onClose }) {
+  const API = "https://olfactori-production.up.railway.app/api";
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/auth/history`)
+      .then(r => r.json())
+      .then(d => { setHistory(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth:520, maxHeight:"80vh", display:"flex", flexDirection:"column"}}>
+        <div className="modal-header">
+          <span className="modal-title">🔐 Login History</span>
+          <button className="drawer-close" style={{position:"static"}} onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{overflowY:"auto", flex:1}}>
+          {loading
+            ? <div style={{color:"var(--text3)",fontSize:13}}>Loading…</div>
+            : history.length === 0
+              ? <div style={{color:"var(--text3)",fontSize:13,padding:"20px 0",textAlign:"center"}}>No logins recorded yet.</div>
+              : <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                  <thead>
+                    <tr style={{borderBottom:"1px solid var(--border)"}}>
+                      <th style={{textAlign:"left",padding:"8px 12px",color:"var(--text3)",fontWeight:400,fontSize:11,letterSpacing:"0.08em",textTransform:"uppercase"}}>Email</th>
+                      <th style={{textAlign:"left",padding:"8px 12px",color:"var(--text3)",fontWeight:400,fontSize:11,letterSpacing:"0.08em",textTransform:"uppercase"}}>When</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((r, i) => (
+                      <tr key={i} style={{borderBottom:"1px solid var(--border)"}}>
+                        <td style={{padding:"10px 12px",color:"var(--text)"}}>{r.email}</td>
+                        <td style={{padding:"10px 12px",color:"var(--text2)",fontFamily:"monospace",fontSize:12}}>{r.logged_in_at}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+          }
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminTab({ toast }) {
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
   const [invites,  setInvites]  = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -816,6 +869,7 @@ export default function AdminTab({ toast }) {
         <div className="admin-section">
           <div className="admin-section-header">
             <span className="admin-section-title">👥 Friends</span>
+            <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 12px"}} onClick={() => setShowLoginHistory(true)}>🔐 Login History</button>
             <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
               + Invite
             </button>
@@ -1014,6 +1068,9 @@ export default function AdminTab({ toast }) {
           onAdd={addInvite}
           toast={toast}
         />
+      )}
+      {showLoginHistory && (
+        <LoginHistoryModal onClose={() => setShowLoginHistory(false)} />
       )}
     </>
   );
