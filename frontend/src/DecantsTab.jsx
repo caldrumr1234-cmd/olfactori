@@ -181,7 +181,8 @@ export default function DecantsTab({ token }) {
     };
     const res = await fetch(`${API}/decants`, { method: "POST", headers, body: JSON.stringify(body) });
     if (res.ok) {
-      setDecants(prev => [...prev, await res.json()]);
+      const newDecant = await res.json();
+      setDecants(prev => [...prev, newDecant]);
       setForm({ fragrance_id: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
       setFragSearch("");
       setShowForm(false);
