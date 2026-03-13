@@ -47,3 +47,27 @@ app.include_router(sent_samples.router,  prefix="/api/sent-samples",  tags=["sen
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": "Olfactori"}
+
+@app.get("/api/wear/today")
+def wear_today(request: Request):
+    from api.routers.auth import get_current_user
+    import sqlite3, os
+    user = get_current_user(request)
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(401, "Not authenticated")
+    from fastapi import Request as R
+    DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
+    con = sqlite3.connect(DB_PATH, check_same_thread=False)
+    con.row_factory = sqlite3.Row
+    today = __import__("datetime").date.today().isoformat()
+    row = con.execute(
+        """SELECT w.id, f.brand, f.name FROM wear_log w
+           JOIN fragrances f ON f.id = w.fragrance_id
+           WHERE w.worn_date = ? ORDER BY w.id DESC LIMIT 1""",
+        (today,)
+    ).fetchone()
+    con.close()
+    if row:
+        return {"brand": row["brand"], "name": row["name"]}
+    return {}

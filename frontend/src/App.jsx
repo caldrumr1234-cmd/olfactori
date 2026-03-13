@@ -1635,6 +1635,7 @@ export default function Olfactori() {
   if (_urlParams.get("auth_error") === "restricted") return <AccessRestricted />;
 
   const [tab, setTab]         = useState("collection");
+  const [todayWear, setTodayWear] = useState(null); // {brand, name} or false
   // ── AUTH ──────────────────────────────────────────────────
   const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);
   const [isAdmin,  setIsAdmin]  = useState(false);
@@ -1719,6 +1720,19 @@ export default function Olfactori() {
         .catch(() => setAuthReady(true));
     } else {
       setAuthReady(true);
+    }
+    // Fetch today's wear
+    if (activeToken) {
+      const today = new Date();
+      const off = today.getTimezoneOffset() * 60000;
+      const todayStr = new Date(today.getTime() - off).toISOString().split("T")[0];
+      fetch(`${API}/wear/today`, { headers: { Authorization: `Bearer ${activeToken}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.brand) setTodayWear({ brand: d.brand, name: d.name });
+          else setTodayWear(false);
+        })
+        .catch(() => setTodayWear(false));
     }
     // Load security settings
     fetch(`${API}/security`)
@@ -1913,6 +1927,25 @@ export default function Olfactori() {
         <main className="main">
           {tab === "collection" && (
             <>
+              {/* TODAY I'M WEARING STRIP */}
+              {todayWear !== null && (
+                <div onClick={() => todayWear === false && setTab('wardrobe')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.6rem',
+                    padding: '0.55rem 1rem',
+                    background: 'var(--bg2)',
+                    borderBottom: '1px solid var(--border)',
+                    fontSize: '0.85rem',
+                    cursor: todayWear === false ? 'pointer' : 'default',
+                  }}>
+                  <span style={{ fontSize: '1.1rem' }}>🫧</span>
+                  <span style={{ color: 'var(--text3)' }}>Today I'm wearing:</span>
+                  {todayWear
+                    ? <span style={{ color: 'var(--text)', fontWeight: 600 }}>{todayWear.brand} {todayWear.name}</span>
+                    : <span style={{ color: 'var(--blue)', fontWeight: 500 }}>nothing yet! <span style={{ textDecoration: 'underline' }}>Pick something.</span></span>
+                  }
+                </div>
+              )}
               {/* TOOLBAR */}
               <div className="toolbar">
                 <div className="search-wrap">

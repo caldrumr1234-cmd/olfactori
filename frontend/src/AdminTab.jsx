@@ -913,6 +913,16 @@ export default function AdminTab({ toast }) {
     toast("Invite revoked");
   };
 
+  const clearRevoked = async () => {
+    if (!window.confirm('Remove all revoked invites?')) return;
+    const revoked = invites.filter(i => !i.is_active);
+    await Promise.all(revoked.map(i =>
+      fetch(`${API}/friends/invites/${i.id}`, { method: 'DELETE' })
+    ));
+    setInvites(prev => prev.filter(i => i.is_active));
+    toast('Revoked invites cleared');
+  };
+
   const copyInviteLink = (token) => {
     navigator.clipboard.writeText(`${window.location.origin}/invite/${token}`);
     toast("Link copied ✓");
@@ -948,6 +958,9 @@ export default function AdminTab({ toast }) {
           <div className="admin-section-header">
             <span className="admin-section-title">👥 Friends</span>
             <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 12px"}} onClick={() => setShowLoginHistory(true)}>🔐 Login History</button>
+            {invites.some(i => !i.is_active) && (
+              <button className="btn btn-secondary" style={{fontSize:11,padding:'4px 12px'}} onClick={clearRevoked}>🗑 Clear Revoked</button>
+            )}
             <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
               + Invite
             </button>
