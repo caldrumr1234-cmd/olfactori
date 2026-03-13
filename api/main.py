@@ -2,7 +2,7 @@
 Olfactori — FastAPI Backend
 Run: uvicorn api.main:app --reload --port 8000
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have, decants
 from api.routers import auth, security, images
@@ -48,7 +48,7 @@ app.include_router(sent_samples.router,  prefix="/api/sent-samples",  tags=["sen
 def health():
     return {"status": "ok", "app": "Olfactori"}
 
-@app.get("/api/wear/today")
+@app.get("/api/today-wear")
 def wear_today(request: Request):
     import sqlite3, os, datetime
     from api.routers.auth import get_current_user

@@ -1732,7 +1732,7 @@ export default function Olfactori() {
       const today = new Date();
       const off = today.getTimezoneOffset() * 60000;
       const todayStr = new Date(today.getTime() - off).toISOString().split("T")[0];
-      fetch(`${API}/wear/today`, { headers: { Authorization: `Bearer ${activeToken}` } })
+      fetch(`${API}/today-wear`, { headers: { Authorization: `Bearer ${activeToken}` } })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d && d.brand) setTodayWear({ brand: d.brand, name: d.name });
