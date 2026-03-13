@@ -20,12 +20,12 @@ function VolumeBar({ remaining, total }) {
 }
 
 function ItemCard({ item, token, onUpdate, onDelete, isDecant }) {
-  const [editing, setEditing]     = useState(false);
-  const [volInput, setVolInput]   = useState(item.volume_remaining_ml ?? "");
-  const [sizeInput, setSizeInput] = useState(item.size_ml ?? "");
-  const [saving, setSaving]       = useState(false);
-
-  const imgSrc = item.custom_image_url || item.fragella_image_url;
+  const [editing, setEditing]       = useState(false);
+  const [volInput, setVolInput]     = useState(item.volume_remaining_ml ?? "");
+  const [sizeInput, setSizeInput]   = useState(item.size_ml ?? "");
+  const [imgInput, setImgInput]     = useState(item.image_url ?? "");
+  const [fragInput, setFragInput]   = useState(item.fragrantica_url ?? "");
+  const [saving, setSaving]         = useState(false);
 
   const save = async () => {
     setSaving(true);
@@ -35,7 +35,9 @@ function ItemCard({ item, token, onUpdate, onDelete, isDecant }) {
     const newVol  = volInput  === "" ? null : parseFloat(volInput);
     const newSize = sizeInput === "" ? null : parseFloat(sizeInput);
     if (newVol  !== (item.volume_remaining_ml ?? null)) body.volume_remaining_ml = newVol;
-    if (newSize !== (item.size_ml ?? null))             body.size_ml             = newSize;
+    if (newSize !== (item.size_ml ?? null))             body.size_ml = newSize;
+    if (imgInput  !== (item.image_url ?? ""))           body.custom_image_url = imgInput || null;
+    if (fragInput !== (item.fragrantica_url ?? ""))     body.fragrantica_url  = fragInput || null;
     if (Object.keys(body).length) {
       const res = await fetch(`${API}/decants/${item.id}`, {
         method: "PATCH", headers, body: JSON.stringify(body),
@@ -54,17 +56,34 @@ function ItemCard({ item, token, onUpdate, onDelete, isDecant }) {
   };
 
   return (
-    <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
+      {/* Fragrantica F badge */}
+      {item.fragrantica_url ? (
+        <a href={item.fragrantica_url} target="_blank" rel="noreferrer"
+          onClick={e => e.stopPropagation()}
+          title="View on Fragrantica"
+          style={{ position: "absolute", top: "6px", right: "6px", zIndex: 2, width: "22px", height: "22px", borderRadius: "50%", background: "var(--gold)", color: "#000", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          F
+        </a>
+      ) : (
+        <span title="No Fragrantica link — add one in Edit"
+          style={{ position: "absolute", top: "6px", right: "6px", zIndex: 2, width: "22px", height: "22px", borderRadius: "50%", background: "var(--border)", color: "var(--text3)", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "default" }}>
+          F
+        </span>
+      )}
+
       {/* Image */}
       <div style={{ height: "130px", background: "var(--bg3)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5rem" }}>
-        {imgSrc
-          ? <img src={imgSrc} alt={item.fragrance_name} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+        {item.image_url
+          ? <img src={item.image_url} alt={item.fragrance_name} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
           : <span style={{ fontSize: "2.5rem" }}>{isDecant ? "🧴" : "🫙"}</span>}
       </div>
+
       {/* Content */}
       <div style={{ padding: "0.75rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.3rem" }}>
         <div style={{ fontSize: "0.72rem", color: "var(--text3)" }}>{item.fragrance_brand}</div>
         <div style={{ fontSize: "0.88rem", color: "var(--text)", fontWeight: 600, lineHeight: 1.2 }}>{item.fragrance_name}</div>
+
         {!editing ? (
           <>
             {isDecant && item.volume_remaining_ml != null && item.size_ml != null
@@ -83,8 +102,13 @@ function ItemCard({ item, token, onUpdate, onDelete, isDecant }) {
               <label style={labelStyle}>Volume remaining (ml)</label>
               <input type="number" min="0" step="0.1" value={volInput} onChange={e => setVolInput(e.target.value)} style={inputSm} placeholder="e.g. 7.5" />
             </>}
+            <label style={labelStyle}>Image URL</label>
+            <input value={imgInput} onChange={e => setImgInput(e.target.value)} style={inputSm} placeholder="https://…" />
+            <label style={labelStyle}>Fragrantica URL</label>
+            <input value={fragInput} onChange={e => setFragInput(e.target.value)} style={inputSm} placeholder="https://www.fragrantica.com/…" />
           </div>
         )}
+
         <div style={{ display: "flex", gap: "0.4rem", marginTop: "auto", paddingTop: "0.5rem" }}>
           {!editing
             ? <button onClick={() => setEditing(true)} style={btnSmStyle}>✏️ Edit</button>
@@ -105,9 +129,9 @@ export default function DecantsTab({ token }) {
   const [activeTab, setActiveTab]   = useState("decants");
   const [showForm, setShowForm]     = useState(false);
   const [fragrances, setFragrances] = useState([]);
-  const [entryMode, setEntryMode]   = useState("search"); // "search" | "manual"
+  const [entryMode, setEntryMode]   = useState("search");
   const [fragSearch, setFragSearch] = useState("");
-  const [form, setForm]             = useState({ fragrance_id: "", brand: "", name: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
+  const [form, setForm]             = useState({ fragrance_id: "", brand: "", name: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "", custom_image_url: "", fragrantica_url: "" });
   const [saving, setSaving]         = useState(false);
   const [search, setSearch]         = useState("");
 
@@ -136,7 +160,7 @@ export default function DecantsTab({ token }) {
   const handleDelete = (id) => setItems(prev => prev.filter(d => d.id !== id));
 
   const resetForm = () => {
-    setForm({ fragrance_id: "", brand: "", name: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "" });
+    setForm({ fragrance_id: "", brand: "", name: "", size_ml: "", volume_remaining_ml: "", source: "", notes: "", custom_image_url: "", fragrantica_url: "" });
     setFragSearch("");
     setEntryMode("search");
   };
@@ -152,8 +176,10 @@ export default function DecantsTab({ token }) {
       type:                activeTab === "decants" ? "decant" : "sample",
       size_ml:             form.size_ml             === "" ? null : parseFloat(form.size_ml),
       volume_remaining_ml: form.volume_remaining_ml === "" ? null : parseFloat(form.volume_remaining_ml),
-      source:              form.source  || null,
-      notes:               form.notes   || null,
+      source:              form.source           || null,
+      notes:               form.notes            || null,
+      custom_image_url:    form.custom_image_url || null,
+      fragrantica_url:     form.fragrantica_url  || null,
     };
     if (entryMode === "search") {
       body.fragrance_id = parseInt(form.fragrance_id);
@@ -174,12 +200,10 @@ export default function DecantsTab({ token }) {
   const decants = items.filter(i => !i.type || i.type === "decant");
   const samples = items.filter(i => i.type === "sample");
   const activeItems = activeTab === "decants" ? decants : samples;
-
   const filtered = activeItems.filter(d => {
     const q = search.toLowerCase();
     return !q || d.fragrance_name?.toLowerCase().includes(q) || d.fragrance_brand?.toLowerCase().includes(q);
   });
-
   const filteredFrags = fragrances.filter(f => {
     const q = fragSearch.toLowerCase();
     return q && (f.name?.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q));
@@ -187,13 +211,10 @@ export default function DecantsTab({ token }) {
 
   return (
     <div style={{ padding: "1rem" }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
         <h2 style={{ margin: 0, fontSize: "1.1rem", color: "var(--text)" }}>🧪 Decants &amp; Samples</h2>
-        <button
-          onClick={() => { setShowForm(v => !v); resetForm(); }}
-          style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
-        >
+        <button onClick={() => { setShowForm(v => !v); resetForm(); }}
+          style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}>
           {showForm ? "✕ Cancel" : `+ Add ${activeTab === "decants" ? "Decant" : "Sample"}`}
         </button>
       </div>
@@ -202,30 +223,19 @@ export default function DecantsTab({ token }) {
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
         {["decants", "samples"].map(t => (
           <button key={t} onClick={() => { setActiveTab(t); setShowForm(false); resetForm(); }}
-            style={{
-              background: activeTab === t ? "var(--violet)" : "var(--bg2)",
-              color: activeTab === t ? "#fff" : "var(--text3)",
-              border: "1px solid var(--border)", borderRadius: "8px",
-              padding: "0.35rem 0.9rem", cursor: "pointer", fontSize: "0.82rem",
-              fontWeight: activeTab === t ? 600 : 400, textTransform: "capitalize",
-            }}>
+            style={{ background: activeTab === t ? "var(--violet)" : "var(--bg2)", color: activeTab === t ? "#fff" : "var(--text3)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.35rem 0.9rem", cursor: "pointer", fontSize: "0.82rem", fontWeight: activeTab === t ? 600 : 400, textTransform: "capitalize" }}>
             {t} ({t === "decants" ? decants.length : samples.length})
           </button>
         ))}
       </div>
 
       {/* Search */}
-      <input
-        placeholder={`Search ${activeTab}…`}
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem", marginBottom: "1rem" }}
-      />
+      <input placeholder={`Search ${activeTab}…`} value={search} onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem", marginBottom: "1rem" }} />
 
       {/* Add form */}
       {showForm && (
         <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem" }}>
-          {/* Entry mode toggle */}
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
             {[["search", "Pick from collection"], ["manual", "Enter manually"]].map(([mode, label]) => (
               <button key={mode} type="button"
@@ -237,17 +247,13 @@ export default function DecantsTab({ token }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-            {/* Fragrance field */}
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Fragrance *</label>
               {entryMode === "search" ? (
                 <>
-                  <input
-                    placeholder="Search your collection…"
-                    value={fragSearch}
+                  <input placeholder="Search your collection…" value={fragSearch}
                     onChange={e => { setFragSearch(e.target.value); setForm(f => ({ ...f, fragrance_id: "" })); }}
-                    style={inputStyle}
-                  />
+                    style={inputStyle} />
                   {fragSearch && !form.fragrance_id && filteredFrags.length > 0 && (
                     <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "8px", marginTop: "0.3rem", background: "var(--bg2)" }}>
                       {filteredFrags.slice(0, 30).map(f => (
@@ -255,21 +261,18 @@ export default function DecantsTab({ token }) {
                           onClick={() => { setForm(prev => ({ ...prev, fragrance_id: f.id })); setFragSearch(`${f.brand} – ${f.name}`); }}
                           style={{ padding: "0.5rem 0.75rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text)", borderBottom: "1px solid var(--border)" }}
                           onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
-                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                        >
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                           <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>{f.brand}</span> {f.name}
                         </div>
                       ))}
                     </div>
                   )}
-                  {form.fragrance_id && (
-                    <div style={{ fontSize: "0.78rem", color: "var(--green)", marginTop: "0.3rem" }}>✓ {fragSearch}</div>
-                  )}
+                  {form.fragrance_id && <div style={{ fontSize: "0.78rem", color: "var(--green)", marginTop: "0.3rem" }}>✓ {fragSearch}</div>}
                 </>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   <input placeholder="Brand" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} style={inputStyle} />
-                  <input placeholder="Name" value={form.name}  onChange={e => setForm(f => ({ ...f, name:  e.target.value }))} style={inputStyle} />
+                  <input placeholder="Name"  value={form.name}  onChange={e => setForm(f => ({ ...f, name:  e.target.value }))} style={inputStyle} />
                 </div>
               )}
             </div>
@@ -292,12 +295,17 @@ export default function DecantsTab({ token }) {
               <label style={labelStyle}>Notes</label>
               <input placeholder="Any notes…" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={inputStyle} />
             </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Image URL</label>
+              <input placeholder="https://…" value={form.custom_image_url} onChange={e => setForm(f => ({ ...f, custom_image_url: e.target.value }))} style={inputStyle} />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Fragrantica URL</label>
+              <input placeholder="https://www.fragrantica.com/…" value={form.fragrantica_url} onChange={e => setForm(f => ({ ...f, fragrantica_url: e.target.value }))} style={inputStyle} />
+            </div>
             <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
-              <button
-                onClick={handleSubmit}
-                disabled={saving || !canSubmit}
-                style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.5rem 1.4rem", cursor: canSubmit ? "pointer" : "not-allowed", fontSize: "0.9rem", opacity: !canSubmit ? 0.5 : 1 }}
-              >
+              <button onClick={handleSubmit} disabled={saving || !canSubmit}
+                style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.5rem 1.4rem", cursor: canSubmit ? "pointer" : "not-allowed", fontSize: "0.9rem", opacity: !canSubmit ? 0.5 : 1 }}>
                 {saving ? "Saving…" : `Add ${activeTab === "decants" ? "Decant" : "Sample"}`}
               </button>
             </div>

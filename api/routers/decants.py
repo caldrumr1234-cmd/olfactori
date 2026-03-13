@@ -1,9 +1,7 @@
 """
 api/routers/decants.py
-Works with the existing decants schema:
-  id, type, brand, name, concentration, size_ml, quantity, notes, created_at
-Plus new columns added via migration:
-  fragrance_id, volume_remaining_ml, source
+Schema: id, type, brand, name, concentration, size_ml, quantity, notes, created_at
+        + fragrance_id, volume_remaining_ml, source, custom_image_url, fragrantica_url
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -17,8 +15,22 @@ def row_to_dict(r):
     return {k: r[k] for k in r.keys()}
 
 
+FULL_SELECT = """
+    SELECT d.id,
+           d.fragrance_id,
+           CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.name,  d.name)  ELSE d.name  END AS fragrance_name,
+           CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.brand, d.brand) ELSE d.brand END AS fragrance_brand,
+           COALESCE(d.custom_image_url,   f.custom_image_url,   f.r2_image_url, f.fragella_image_url) AS image_url,
+           COALESCE(d.fragrantica_url,    f.fragrantica_url)    AS fragrantica_url,
+           d.type, d.concentration,
+           d.size_ml, d.volume_remaining_ml,
+           d.quantity, d.source, d.notes, d.created_at
+    FROM decants d
+    LEFT JOIN fragrances f ON f.id = d.fragrance_id
+"""
+
+
 class DecantIn(BaseModel):
-    # Support both direct entry and fragrance_id lookup
     fragrance_id:        Optional[int]   = None
     brand:               Optional[str]   = None
     name:                Optional[str]   = None
@@ -29,6 +41,8 @@ class DecantIn(BaseModel):
     quantity:            Optional[int]   = 1
     source:              Optional[str]   = None
     notes:               Optional[str]   = None
+    custom_image_url:    Optional[str]   = None
+    fragrantica_url:     Optional[str]   = None
 
 
 class DecantUpdate(BaseModel):
@@ -37,36 +51,18 @@ class DecantUpdate(BaseModel):
     source:              Optional[str]   = None
     notes:               Optional[str]   = None
     quantity:            Optional[int]   = None
+    custom_image_url:    Optional[str]   = None
+    fragrantica_url:     Optional[str]   = None
 
 
 @router.get("")
 def list_decants(db=Depends(get_db)):
-    rows = db.execute("""
-        SELECT d.id,
-               d.fragrance_id,
-               CASE WHEN d.fragrance_id IS NOT NULL
-                    THEN COALESCE(f.name, d.name)
-                    ELSE d.name
-               END AS fragrance_name,
-               CASE WHEN d.fragrance_id IS NOT NULL
-                    THEN COALESCE(f.brand, d.brand)
-                    ELSE d.brand
-               END AS fragrance_brand,
-               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
-               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
-               d.type, d.concentration,
-               d.size_ml, d.volume_remaining_ml,
-               d.quantity, d.source, d.notes, d.created_at
-        FROM decants d
-        LEFT JOIN fragrances f ON f.id = d.fragrance_id
-        ORDER BY fragrance_brand, fragrance_name
-    """).fetchall()
+    rows = db.execute(FULL_SELECT + " ORDER BY fragrance_brand, fragrance_name").fetchall()
     return [row_to_dict(r) for r in rows]
 
 
 @router.post("")
 def create_decant(payload: DecantIn, db=Depends(get_db)):
-    # If fragrance_id provided, look up brand/name
     brand = payload.brand
     name  = payload.name
     if payload.fragrance_id:
@@ -82,27 +78,18 @@ def create_decant(payload: DecantIn, db=Depends(get_db)):
     cur = db.execute("""
         INSERT INTO decants
             (fragrance_id, brand, name, concentration, type,
-             size_ml, volume_remaining_ml, quantity, source, notes)
-        VALUES (?,?,?,?,?,?,?,?,?,?)
+             size_ml, volume_remaining_ml, quantity, source, notes,
+             custom_image_url, fragrantica_url)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
     """, (
         payload.fragrance_id, brand or "", name,
         payload.concentration, payload.type or "decant",
         payload.size_ml, payload.volume_remaining_ml,
-        payload.quantity or 1, payload.source, payload.notes
+        payload.quantity or 1, payload.source, payload.notes,
+        payload.custom_image_url, payload.fragrantica_url,
     ))
     db.commit()
-    row = db.execute("""
-        SELECT d.id, d.fragrance_id,
-               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.name, d.name)  ELSE d.name  END AS fragrance_name,
-               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.brand, d.brand) ELSE d.brand END AS fragrance_brand,
-               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
-               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
-               d.type, d.concentration, d.size_ml, d.volume_remaining_ml,
-               d.quantity, d.source, d.notes, d.created_at
-        FROM decants d
-        LEFT JOIN fragrances f ON f.id = d.fragrance_id
-        WHERE d.id = ?
-    """, (cur.lastrowid,)).fetchone()
+    row = db.execute(FULL_SELECT + " WHERE d.id = ?", (cur.lastrowid,)).fetchone()
     return row_to_dict(row)
 
 
@@ -113,11 +100,11 @@ def update_decant(decant_id: int, payload: DecantUpdate, db=Depends(get_db)):
         raise HTTPException(404, "Decant not found")
 
     fields = {}
-    if payload.size_ml             is not None: fields["size_ml"]             = payload.size_ml
-    if payload.volume_remaining_ml is not None: fields["volume_remaining_ml"] = payload.volume_remaining_ml
-    if payload.source              is not None: fields["source"]              = payload.source
-    if payload.notes               is not None: fields["notes"]               = payload.notes
-    if payload.quantity            is not None: fields["quantity"]            = payload.quantity
+    for attr in ("size_ml", "volume_remaining_ml", "source", "notes", "quantity",
+                 "custom_image_url", "fragrantica_url"):
+        val = getattr(payload, attr)
+        if val is not None:
+            fields[attr] = val
 
     if fields:
         set_clause = ", ".join(f"{k}=?" for k in fields)
@@ -125,18 +112,7 @@ def update_decant(decant_id: int, payload: DecantUpdate, db=Depends(get_db)):
                    (*fields.values(), decant_id))
         db.commit()
 
-    row = db.execute("""
-        SELECT d.id, d.fragrance_id,
-               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.name, d.name)  ELSE d.name  END AS fragrance_name,
-               CASE WHEN d.fragrance_id IS NOT NULL THEN COALESCE(f.brand, d.brand) ELSE d.brand END AS fragrance_brand,
-               COALESCE(f.fragella_image_url, NULL) AS fragella_image_url,
-               COALESCE(f.custom_image_url,   NULL) AS custom_image_url,
-               d.type, d.concentration, d.size_ml, d.volume_remaining_ml,
-               d.quantity, d.source, d.notes, d.created_at
-        FROM decants d
-        LEFT JOIN fragrances f ON f.id = d.fragrance_id
-        WHERE d.id = ?
-    """, (decant_id,)).fetchone()
+    row = db.execute(FULL_SELECT + " WHERE d.id = ?", (decant_id,)).fetchone()
     return row_to_dict(row)
 
 
