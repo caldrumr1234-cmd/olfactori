@@ -74,8 +74,7 @@ def create_shelf(payload: ShelfIn, db=Depends(get_db)):
         return s
     except Exception as e:
         import traceback
-        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}
-{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.patch("/{shelf_id}")
