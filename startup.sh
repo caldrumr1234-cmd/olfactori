@@ -28,10 +28,10 @@ migrations = [
     'ALTER TABLE decants ADD COLUMN fragrance_id INTEGER',
     'ALTER TABLE decants ADD COLUMN volume_remaining_ml REAL',
     'ALTER TABLE decants ADD COLUMN source TEXT',
-    'ALTER TABLE decants ADD COLUMN custom_image_url TEXT',
-    'ALTER TABLE decants ADD COLUMN fragrantica_url TEXT',
-    # shelves: add sort_order if missing
+    # shelves: add missing columns
     'ALTER TABLE shelves ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
+    "ALTER TABLE shelves ADD COLUMN color TEXT NOT NULL DEFAULT '#7aabff'",
+    "ALTER TABLE shelves ADD COLUMN icon TEXT NOT NULL DEFAULT '🧴'",
     'CREATE TABLE IF NOT EXISTS security_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, label TEXT, grp TEXT, public INTEGER DEFAULT 0)',
     '''CREATE TABLE IF NOT EXISTS decants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
