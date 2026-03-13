@@ -1635,7 +1635,12 @@ export default function Olfactori() {
   if (_urlParams.get("auth_error") === "restricted") return <AccessRestricted />;
 
   const [tab, setTab]         = useState("collection");
-  const [todayWear, setTodayWear] = useState(null); // {brand, name} or false
+  const [todayWear, setTodayWear] = useState(null);
+  const [showUserLogin, setShowUserLogin] = useState(false);
+  const [userLoginEmail, setUserLoginEmail] = useState("");
+  const [userLoginPin, setUserLoginPin]   = useState("");
+  const [userLoginError, setUserLoginError] = useState("");
+  const [userLoginLoading, setUserLoginLoading] = useState(false); // {brand, name} or false
   // ── AUTH ──────────────────────────────────────────────────
   const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);
   const [isAdmin,  setIsAdmin]  = useState(false);
@@ -1808,6 +1813,35 @@ export default function Olfactori() {
   const signIn = () => {
     window.location.href = `${API}/auth/login`;
   };
+  const handleUserLogin = async () => {
+    setUserLoginError("");
+    setUserLoginLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/friend-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userLoginEmail.trim(), pin: userLoginPin.trim() }),
+      });
+      const data = await res.json();
+      if (data.authenticated && data.token) {
+        sessionStorage.setItem("olfactori_token", data.token);
+        setToken(data.token);
+        setShowUserLogin(false);
+        setUserLoginEmail("");
+        setUserLoginPin("");
+        // Verify role
+        fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data.token}` } })
+          .then(r => r.json())
+          .then(d => { if (d.role === "admin") setIsAdmin(true); });
+      } else {
+        setUserLoginError(data.error || "Invalid email or PIN");
+      }
+    } catch(e) {
+      setUserLoginError("Connection error. Please try again.");
+    }
+    setUserLoginLoading(false);
+  };
+
   const signOut = () => {
     sessionStorage.removeItem("olfactori_token");
     setToken(null);
@@ -1916,10 +1950,16 @@ export default function Olfactori() {
                 Sign Out
               </button>
             ) : (
-              <button className="suggest-btn" onClick={signIn}
-                style={{padding:"6px 14px",fontSize:12}}>
-                🔑 Sign In
-              </button>
+              <div style={{display:"flex",gap:"6px"}}>
+                <button className="suggest-btn" onClick={() => setShowUserLogin(true)}
+                  style={{padding:"6px 14px",fontSize:12}}>
+                  👤 User Sign In
+                </button>
+                <button className="suggest-btn" onClick={signIn}
+                  style={{padding:"6px 14px",fontSize:12,opacity:0.7}}>
+                  🔑 Admin
+                </button>
+              </div>
             )}
           </div>
         </nav>
@@ -2246,6 +2286,53 @@ export default function Olfactori() {
         {/* ADD MODAL */}
         {showAdd && (
           <AddModal onClose={() => setShowAdd(false)} onAdd={addFrag} toast={showToast} />
+        )}
+
+        {/* USER LOGIN MODAL */}
+        {showUserLogin && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}}
+            onClick={e => { if(e.target===e.currentTarget) setShowUserLogin(false); }}>
+            <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:"16px",padding:"2rem",width:"100%",maxWidth:"360px",display:"flex",flexDirection:"column",gap:"1rem"}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"1.8rem",marginBottom:"0.25rem"}}>🫧</div>
+                <h2 style={{margin:0,fontSize:"1.1rem",color:"var(--text)"}}>User Sign In</h2>
+                <p style={{margin:"0.25rem 0 0",fontSize:"0.82rem",color:"var(--text3)"}}>Enter your email and PIN to access the collection</p>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"0.6rem"}}>
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  value={userLoginEmail}
+                  onChange={e => setUserLoginEmail(e.target.value)}
+                  onKeyDown={e => e.key==="Enter" && handleUserLogin()}
+                  style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:"8px",padding:"0.6rem 0.85rem",color:"var(--text)",fontSize:"0.9rem",width:"100%",boxSizing:"border-box"}}
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit PIN"
+                  value={userLoginPin}
+                  onChange={e => setUserLoginPin(e.target.value.replace(/\D/g,""))}
+                  onKeyDown={e => e.key==="Enter" && handleUserLogin()}
+                  style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:"8px",padding:"0.6rem 0.85rem",color:"var(--text)",fontSize:"1.1rem",letterSpacing:"0.3em",width:"100%",boxSizing:"border-box",textAlign:"center"}}
+                />
+                {userLoginError && (
+                  <div style={{color:"var(--red)",fontSize:"0.82rem",textAlign:"center"}}>{userLoginError}</div>
+                )}
+              </div>
+              <div style={{display:"flex",gap:"0.6rem"}}>
+                <button onClick={() => { setShowUserLogin(false); setUserLoginError(""); setUserLoginEmail(""); setUserLoginPin(""); }}
+                  style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:"8px",padding:"0.6rem",color:"var(--text3)",cursor:"pointer",fontSize:"0.9rem"}}>
+                  Cancel
+                </button>
+                <button onClick={handleUserLogin} disabled={userLoginLoading || !userLoginEmail || userLoginPin.length !== 6}
+                  style={{flex:2,background:"var(--violet)",border:"none",borderRadius:"8px",padding:"0.6rem",color:"#fff",cursor:"pointer",fontSize:"0.9rem",fontWeight:600,opacity:(userLoginLoading||!userLoginEmail||userLoginPin.length!==6)?0.5:1}}>
+                  {userLoginLoading ? "Signing in…" : "Sign In"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* SCROLL TO TOP */}

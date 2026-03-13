@@ -913,14 +913,13 @@ export default function AdminTab({ toast }) {
     toast("Invite revoked");
   };
 
-  const clearRevoked = async () => {
-    if (!window.confirm('Remove all revoked invites?')) return;
-    const revoked = invites.filter(i => !i.is_active);
-    await Promise.all(revoked.map(i =>
-      fetch(`${API}/friends/invites/${i.id}`, { method: 'DELETE' })
-    ));
-    setInvites(prev => prev.filter(i => i.is_active));
-    toast('Revoked invites cleared');
+  const regeneratePin = async (id) => {
+    const res = await fetch(`${API}/friends/invites/${id}/regenerate-pin`, { method: 'POST' });
+    if (res.ok) {
+      const data = await res.json();
+      setInvites(prev => prev.map(i => i.id === id ? {...i, pin: data.pin} : i));
+      toast('New PIN generated ✓');
+    }
   };
 
   const copyInviteLink = (token) => {
@@ -958,9 +957,6 @@ export default function AdminTab({ toast }) {
           <div className="admin-section-header">
             <span className="admin-section-title">👥 Friends</span>
             <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 12px"}} onClick={() => setShowLoginHistory(true)}>🔐 Login History</button>
-            {invites.some(i => !i.is_active) && (
-              <button className="btn btn-secondary" style={{fontSize:11,padding:'4px 12px'}} onClick={clearRevoked}>🗑 Clear Revoked</button>
-            )}
             <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
               + Invite
             </button>
@@ -983,10 +979,15 @@ export default function AdminTab({ toast }) {
                   {inv.is_active
                     ? <>
                         <div className="invite-active" title="Active" />
-                        <button className="invite-link" onClick={() => copyInviteLink(inv.token)}>
-                          Copy Link
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => revokeInvite(inv.id)} title="Revoke">✕</button>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px"}}>
+                          <div style={{fontSize:"13px",fontWeight:700,letterSpacing:"0.15em",color:"var(--gold)",fontFamily:"monospace"}}>
+                            {inv.pin || "—"}
+                          </div>
+                          <div style={{display:"flex",gap:"4px"}}>
+                            <button className="btn btn-secondary" style={{fontSize:10,padding:"2px 8px"}} onClick={() => regeneratePin(inv.id)} title="New PIN">↻ PIN</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => revokeInvite(inv.id)} title="Revoke">✕</button>
+                          </div>
+                        </div>
                       </>
                     : <div className="invite-inactive" title="Revoked" />
                   }

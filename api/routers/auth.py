@@ -143,6 +143,39 @@ async def callback(request: Request, code: str = "", error: str = ""):
     except Exception as e:
         return RedirectResponse(f"{FRONTEND_URL}?auth_error=exception&msg={str(e)[:100]}")
 
+@router.post("/friend-login")
+async def friend_login(request: Request):
+    import json as _json
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    pin   = (body.get("pin")   or "").strip()
+
+    if not email or not pin:
+        return JSONResponse({"authenticated": False, "error": "Email and PIN required"}, status_code=400)
+
+    con = sqlite3.connect(DB_PATH, check_same_thread=False)
+    con.row_factory = sqlite3.Row
+    row = con.execute(
+        "SELECT id, name FROM friend_invites WHERE LOWER(email)=? AND pin=? AND is_active=1",
+        (email, pin)
+    ).fetchone()
+    if row:
+        try:
+            con.execute(
+                "INSERT INTO login_history (email, logged_in_at) VALUES (?, datetime('now'))",
+                (email,)
+            )
+            con.commit()
+        except Exception:
+            pass
+    con.close()
+
+    if not row:
+        return JSONResponse({"authenticated": False, "error": "Invalid email or PIN"}, status_code=401)
+
+    jwt = issue_token(email)
+    return JSONResponse({"authenticated": True, "token": jwt})
+
 @router.get("/history")
 def login_history(request: Request):
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
