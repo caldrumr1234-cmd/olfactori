@@ -44,24 +44,6 @@ app.include_router(share.router,         prefix="/api/share",        tags=["shar
 app.include_router(trade_requests.router,prefix="/api/trade_requests",tags=["trade_requests"])
 app.include_router(sent_samples.router,  prefix="/api/sent-samples",  tags=["sent-samples"])
 
-@app.get("/api/admin/run-migrations")
-def run_migrations_endpoint():
-    import sqlite3, os
-    DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
-    con = sqlite3.connect(DB_PATH)
-    results = []
-    for sql in [
-        "ALTER TABLE friend_invites ADD COLUMN pin TEXT",
-    ]:
-        try:
-            con.execute(sql)
-            con.commit()
-            results.append(f"OK: {sql}")
-        except Exception as e:
-            results.append(f"Skip: {sql} ({e})")
-    con.close()
-    return {"results": results}
-
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": "Olfactori"}
