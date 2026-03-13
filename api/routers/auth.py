@@ -81,57 +81,67 @@ def login(request: Request):
     return RedirectResponse(f"{GOOGLE_AUTH_URL}?{params}")
 
 @router.get("/callback")
-async def callback(code: str, request: Request):
-    redirect_uri = f"{BACKEND_URL}/api/auth/callback"
-    async with httpx.AsyncClient() as client:
-        token_resp = await client.post(GOOGLE_TOKEN_URL, data={
-            "code":          code,
-            "client_id":     GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri":  redirect_uri,
-            "grant_type":    "authorization_code",
-        })
-        tokens = token_resp.json()
-        access_token = tokens.get("access_token")
-        if not access_token:
-            return RedirectResponse(f"{FRONTEND_URL}?auth_error=no_token")
+async def callback(request: Request, code: str = "", error: str = ""):
+    # Google returned an error
+    if error:
+        return RedirectResponse(f"{FRONTEND_URL}?auth_error={error}")
+    if not code:
+        return RedirectResponse(f"{FRONTEND_URL}?auth_error=no_code")
 
-        user_resp = await client.get(GOOGLE_USER_URL,
-            headers={"Authorization": f"Bearer {access_token}"})
-        user = user_resp.json()
-        email = user.get("email", "")
+    try:
+        redirect_uri = f"{BACKEND_URL}/api/auth/callback"
+        async with httpx.AsyncClient() as client:
+            token_resp = await client.post(GOOGLE_TOKEN_URL, data={
+                "code":          code,
+                "client_id":     GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uri":  redirect_uri,
+                "grant_type":    "authorization_code",
+            })
+            tokens = token_resp.json()
+            access_token = tokens.get("access_token")
+            if not access_token:
+                return RedirectResponse(f"{FRONTEND_URL}?auth_error=no_access_token")
 
-    if not email:
-        return RedirectResponse(f"{FRONTEND_URL}?auth_error=no_email")
+            user_resp = await client.get(GOOGLE_USER_URL,
+                headers={"Authorization": f"Bearer {access_token}"})
+            user = user_resp.json()
+            email = user.get("email", "")
 
-    is_admin = email.lower() == ADMIN_EMAIL.lower()
+        if not email:
+            return RedirectResponse(f"{FRONTEND_URL}?auth_error=no_email")
 
-    if not is_admin:
-        con = sqlite3.connect(DB_PATH, check_same_thread=False)
-        con.row_factory = sqlite3.Row
-        friend_row = con.execute(
-            "SELECT id FROM friend_invites WHERE LOWER(email)=LOWER(?) AND is_active=1",
-            (email,)
-        ).fetchone()
-        con.close()
-        if not friend_row:
-            return RedirectResponse(f"{FRONTEND_URL}?auth_error=restricted")
+        is_admin = email.lower() == ADMIN_EMAIL.lower()
 
-    jwt = issue_token(email)
-
-    if not is_admin:
-        try:
-            con2 = sqlite3.connect(DB_PATH, check_same_thread=False)
-            con2.execute(
-                "INSERT INTO login_history (email, logged_in_at) VALUES (?, datetime('now'))",
+        if not is_admin:
+            con = sqlite3.connect(DB_PATH, check_same_thread=False)
+            con.row_factory = sqlite3.Row
+            friend_row = con.execute(
+                "SELECT id FROM friend_invites WHERE LOWER(email)=LOWER(?) AND is_active=1",
                 (email,)
-            )
-            con2.commit()
-            con2.close()
-        except Exception:
-            pass
+            ).fetchone()
+            con.close()
+            if not friend_row:
+                return RedirectResponse(f"{FRONTEND_URL}?auth_error=restricted&email={email}")
 
-    return RedirectResponse(f"{FRONTEND_URL}#token={jwt}")
+        jwt = issue_token(email)
+
+        if not is_admin:
+            try:
+                con2 = sqlite3.connect(DB_PATH, check_same_thread=False)
+                con2.execute(
+                    "INSERT INTO login_history (email, logged_in_at) VALUES (?, datetime('now'))",
+                    (email,)
+                )
+                con2.commit()
+                con2.close()
+            except Exception:
+                pass
+
+        return RedirectResponse(f"{FRONTEND_URL}#token={jwt}")
+
+    except Exception as e:
+        return RedirectResponse(f"{FRONTEND_URL}?auth_error=exception&msg={str(e)[:100]}")
 
 @router.get("/history")
 def login_history(request: Request):
