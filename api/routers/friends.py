@@ -2,6 +2,7 @@
 api/routers/friends.py — Friend invites + sample requests
 """
 import json
+import random
 import secrets
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -33,9 +34,10 @@ def list_invites(db = Depends(get_db)):
 @router.post("/invites")
 def create_invite(data: InviteCreate, db = Depends(get_db)):
     token = secrets.token_urlsafe(8)
+    pin   = str(random.randint(100000, 999999))
     cur = db.execute(
-        "INSERT INTO friend_invites (name, email, token) VALUES (?,?,?)",
-        (data.name, data.email, token)
+        "INSERT INTO friend_invites (name, email, token, pin) VALUES (?,?,?,?)",
+        (data.name, data.email, token, pin)
     )
     db.commit()
     return {
@@ -43,6 +45,7 @@ def create_invite(data: InviteCreate, db = Depends(get_db)):
         "name":  data.name,
         "email": data.email,
         "token": token,
+        "pin":   pin,
         "invite_url": f"/invite/{token}"
     }
 
@@ -59,6 +62,16 @@ def hard_delete_invite(invite_id: int, db = Depends(get_db)):
     db.execute("DELETE FROM friend_invites WHERE id=?", (invite_id,))
     db.commit()
     return {"deleted": invite_id}
+
+@router.post("/invites/{invite_id}/regenerate-pin")
+def regenerate_pin(invite_id: int, db = Depends(get_db)):
+    row = db.execute("SELECT id FROM friend_invites WHERE id=?", (invite_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Invite not found")
+    new_pin = str(random.randint(100000, 999999))
+    db.execute("UPDATE friend_invites SET pin=? WHERE id=?", (new_pin, invite_id))
+    db.commit()
+    return {"pin": new_pin}
 
 @router.get("/invites/validate/{token}")
 def validate_invite(token: str, db = Depends(get_db)):
@@ -106,7 +119,6 @@ def create_request(data: SampleRequest, db = Depends(get_db)):
     if not friend:
         raise HTTPException(403, "Invalid invite token")
 
-    # Get fragrance names for display
     names = []
     for fid in data.fragrance_ids:
         row = db.execute("SELECT brand, name FROM fragrances WHERE id=?", (fid,)).fetchone()
