@@ -1982,7 +1982,14 @@ export default function Olfactori() {
                   <span style={{ fontSize: '1.1rem' }}>🫧</span>
                   <span style={{ color: 'var(--text3)' }}>Today I'm wearing:</span>
                   {todayWear
-                    ? <span style={{ color: 'var(--text)', fontWeight: 600 }}>{todayWear.brand} {todayWear.name}</span>
+                    ? <span
+                        onClick={() => {
+                          const f = frags.find(f => f.brand === todayWear.brand && f.name === todayWear.name);
+                          if (f) handleOpenFrag(f);
+                        }}
+                        style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
+                        {todayWear.brand} {todayWear.name}
+                      </span>
                     : <span style={{ color: 'var(--blue)', fontWeight: 500 }}>nothing yet! <span style={{ textDecoration: 'underline' }}>Pick something.</span></span>
                   }
                 </div>

@@ -13,7 +13,6 @@ router = APIRouter()
 class InviteCreate(BaseModel):
     name:  str
     email: Optional[str] = None
-    pin:   Optional[str] = None
 
 class SampleRequest(BaseModel):
     token:         str
@@ -33,12 +32,10 @@ def list_invites(db = Depends(get_db)):
 
 @router.post("/invites")
 def create_invite(data: InviteCreate, db = Depends(get_db)):
-    import random
     token = secrets.token_urlsafe(8)
-    pin = data.pin or str(random.randint(100000, 999999))
     cur = db.execute(
-        "INSERT INTO friend_invites (name, email, token, pin) VALUES (?,?,?,?)",
-        (data.name, data.email, token, pin)
+        "INSERT INTO friend_invites (name, email, token) VALUES (?,?,?)",
+        (data.name, data.email, token)
     )
     db.commit()
     return {
@@ -46,15 +43,22 @@ def create_invite(data: InviteCreate, db = Depends(get_db)):
         "name":  data.name,
         "email": data.email,
         "token": token,
-        "pin":   pin,
         "invite_url": f"/invite/{token}"
     }
 
 @router.delete("/invites/{invite_id}")
 def revoke_invite(invite_id: int, db = Depends(get_db)):
+    """Soft-revoke: sets is_active=0"""
     db.execute("UPDATE friend_invites SET is_active=0 WHERE id=?", (invite_id,))
     db.commit()
     return {"revoked": True}
+
+@router.delete("/invites/{invite_id}/delete")
+def hard_delete_invite(invite_id: int, db = Depends(get_db)):
+    """Hard delete: permanently removes invite row"""
+    db.execute("DELETE FROM friend_invites WHERE id=?", (invite_id,))
+    db.commit()
+    return {"deleted": invite_id}
 
 @router.get("/invites/validate/{token}")
 def validate_invite(token: str, db = Depends(get_db)):
@@ -68,17 +72,6 @@ def validate_invite(token: str, db = Depends(get_db)):
     )
     db.commit()
     return {"valid": True, "name": row["name"], "friend_id": row["id"]}
-
-@router.post("/invites/{invite_id}/regenerate-pin")
-def regenerate_pin(invite_id: int, db = Depends(get_db)):
-    import random
-    row = db.execute("SELECT id FROM friend_invites WHERE id=?", (invite_id,)).fetchone()
-    if not row:
-        raise HTTPException(404, "Invite not found")
-    new_pin = str(random.randint(100000, 999999))
-    db.execute("UPDATE friend_invites SET pin=? WHERE id=?", (new_pin, invite_id))
-    db.commit()
-    return {"pin": new_pin}
 
 # ── SAMPLE REQUESTS ───────────────────────────────────────────
 @router.get("/requests")

@@ -133,15 +133,22 @@ function AddInviteModal({ onClose, onAdd, toast }) {
   const submit = async () => {
     if (!form.name) return;
     setSaving(true);
-    const res = await fetch(`${API}/friends/invites`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setResult(data);
-      onAdd(data);
+    try {
+      const res = await fetch(`${API}/friends/invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setResult(data);
+        onAdd(data);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast("Error: " + (err.detail || "Could not create invite"));
+      }
+    } catch(e) {
+      toast("Network error: " + e.message);
     }
     setSaving(false);
   };
@@ -171,27 +178,23 @@ function AddInviteModal({ onClose, onAdd, toast }) {
                 <input className="form-input" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="friend@example.com" />
               </div>
               <p style={{fontSize:12,color:"var(--text3)",lineHeight:1.6}}>
-                This generates a magic link. Send it to your friend — they click it, set their name, and can browse your collection and request samples. No account or password needed.
+                A 6-digit PIN will be generated. Share it with your friend along with their email — they sign in at {window.location.origin} using "User Sign In".
               </p>
             </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               <p style={{fontSize:13,color:"var(--text2)"}}>
-                Share this link with <strong style={{color:"var(--text)"}}>{result.name}</strong>:
+                Invite created for <strong style={{color:"var(--text)"}}>{result.name}</strong>!
               </p>
-              <div style={{
-                background:"var(--bg3)", border:"1px solid var(--border)",
-                borderRadius:8, padding:"10px 14px",
-                fontFamily:"monospace", fontSize:12, color:"var(--text2)",
-                wordBreak:"break-all"
-              }}>
-                {window.location.origin}{result.invite_url}
+              <p style={{fontSize:12,color:"var(--text3)",margin:0}}>
+                Share these credentials with your friend:
+              </p>
+              <div style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:8,padding:"14px",display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:12,color:"var(--text3)"}}>Email: <span style={{color:"var(--text)"}}>{result.email || "(none set)"}</span></div>
+                <div style={{fontSize:12,color:"var(--text3)"}}>PIN: <span style={{fontFamily:"monospace",fontSize:18,fontWeight:700,letterSpacing:"0.2em",color:"var(--gold)"}}>{result.pin}</span></div>
               </div>
-              <button className="btn btn-primary" onClick={copyLink}>
-                📋 Copy Link
-              </button>
-              <p style={{fontSize:11,color:"var(--text3)"}}>
-                The link is single-use per friend and can be revoked from the Admin panel at any time.
+              <p style={{fontSize:11,color:"var(--text3)",margin:0}}>
+                They go to {window.location.origin}, click "User Sign In", and enter their email + PIN.
               </p>
             </div>
           )}
@@ -913,6 +916,16 @@ export default function AdminTab({ toast }) {
     toast("Invite revoked");
   };
 
+  const clearRevoked = async () => {
+    if (!window.confirm('Permanently remove all revoked invites?')) return;
+    const revoked = invites.filter(i => !i.is_active);
+    await Promise.all(revoked.map(i =>
+      fetch(`${API}/friends/invites/${i.id}/delete`, { method: 'DELETE' })
+    ));
+    setInvites(prev => prev.filter(i => i.is_active));
+    toast('Revoked invites removed');
+  };
+
   const regeneratePin = async (id) => {
     const res = await fetch(`${API}/friends/invites/${id}/regenerate-pin`, { method: 'POST' });
     if (res.ok) {
@@ -957,6 +970,9 @@ export default function AdminTab({ toast }) {
           <div className="admin-section-header">
             <span className="admin-section-title">👥 Friends</span>
             <button className="btn btn-secondary" style={{fontSize:11,padding:"4px 12px"}} onClick={() => setShowLoginHistory(true)}>🔐 Login History</button>
+            {invites.some(i => !i.is_active) && (
+              <button className="btn btn-secondary" style={{fontSize:11,padding:'4px 12px'}} onClick={clearRevoked}>🗑 Clear Revoked</button>
+            )}
             <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
               + Invite
             </button>
@@ -981,10 +997,10 @@ export default function AdminTab({ toast }) {
                         <div className="invite-active" title="Active" />
                         <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px"}}>
                           <div style={{fontSize:"13px",fontWeight:700,letterSpacing:"0.15em",color:"var(--gold)",fontFamily:"monospace"}}>
-                            {inv.pin || "—"}
+                            PIN: {inv.pin || "—"}
                           </div>
                           <div style={{display:"flex",gap:"4px"}}>
-                            <button className="btn btn-secondary" style={{fontSize:10,padding:"2px 8px"}} onClick={() => regeneratePin(inv.id)} title="New PIN">↻ PIN</button>
+                            <button className="btn btn-secondary" style={{fontSize:10,padding:"2px 8px"}} onClick={() => regeneratePin(inv.id)}>↻ PIN</button>
                             <button className="btn btn-danger btn-sm" onClick={() => revokeInvite(inv.id)} title="Revoke">✕</button>
                           </div>
                         </div>
