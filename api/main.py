@@ -2,14 +2,14 @@
 Olfactori — FastAPI Backend
 Run: uvicorn api.main:app --reload --port 8000
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have, decants
 from api.routers import auth, security, images
 from api.routers import share, trade_requests
 from api.routers import sent_samples
 
-app = FastAPI(title="Olfactori API", version="1.0.0")
+app = FastAPI(title="Olfactori API", version="1.0.0", redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
