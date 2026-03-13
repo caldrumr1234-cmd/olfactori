@@ -61,16 +61,21 @@ def list_shelves(db=Depends(get_db)):
 
 @router.post("")
 def create_shelf(payload: ShelfIn, db=Depends(get_db)):
-    max_order = db.execute("SELECT COALESCE(MAX(sort_order), -1) FROM shelves").fetchone()[0]
-    cur = db.execute(
-        "INSERT INTO shelves (name, color, icon, sort_order) VALUES (?, ?, ?, ?)",
-        (payload.name, payload.color, payload.icon, max_order + 1)
-    )
-    db.commit()
-    row = db.execute("SELECT * FROM shelves WHERE id = ?", (cur.lastrowid,)).fetchone()
-    s = row_to_dict(row)
-    s["fragrances"] = []
-    return s
+    try:
+        max_order = db.execute("SELECT COALESCE(MAX(sort_order), -1) FROM shelves").fetchone()[0]
+        cur = db.execute(
+            "INSERT INTO shelves (name, color, icon, sort_order) VALUES (?, ?, ?, ?)",
+            (payload.name, payload.color, payload.icon, max_order + 1)
+        )
+        db.commit()
+        row = db.execute("SELECT * FROM shelves WHERE id = ?", (cur.lastrowid,)).fetchone()
+        s = row_to_dict(row)
+        s["fragrances"] = []
+        return s
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}
+{traceback.format_exc()}")
 
 
 @router.patch("/{shelf_id}")
