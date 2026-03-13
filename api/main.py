@@ -9,7 +9,7 @@ from api.routers import auth, security, images
 from api.routers import share, trade_requests
 from api.routers import sent_samples
 
-app = FastAPI(title="Olfactori API", version="1.0.0")
+app = FastAPI(title="Olfactori API", version="1.0.0", redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
