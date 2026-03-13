@@ -66,6 +66,26 @@ migrations = [
         status TEXT DEFAULT 'pending',
         created_at TEXT DEFAULT (datetime('now'))
     )""",
+    """CREATE TABLE IF NOT EXISTS friend_invites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT,
+        token TEXT UNIQUE,
+        is_active INTEGER DEFAULT 1,
+        last_seen TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS sample_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        friend_id INTEGER,
+        friend_name TEXT NOT NULL,
+        fragrance_ids TEXT NOT NULL,
+        fragrance_names TEXT,
+        message TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT
+    )""",
 ]
 
 for m in migrations:
