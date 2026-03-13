@@ -1983,8 +1983,14 @@ export default function Olfactori() {
                   <span style={{ color: 'var(--text3)' }}>Today I'm wearing:</span>
                   {todayWear
                     ? <span
-                        onClick={() => {
-                          const f = frags.find(f => f.brand === todayWear.brand && f.name === todayWear.name);
+                        onClick={e => {
+                          e.stopPropagation();
+                          const b = (todayWear.brand||'').toLowerCase().trim();
+                          const n = (todayWear.name||'').toLowerCase().trim();
+                          const f = frags.find(f =>
+                            (f.brand||'').toLowerCase().trim() === b &&
+                            (f.name||'').toLowerCase().trim() === n
+                          );
                           if (f) handleOpenFrag(f);
                         }}
                         style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>

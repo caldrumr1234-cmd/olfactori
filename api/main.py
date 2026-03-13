@@ -2,14 +2,14 @@
 Olfactori — FastAPI Backend
 Run: uvicorn api.main:app --reload --port 8000
 """
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import fragrances, wear_log, wishlist, friends, suggest, insights, export, settings, shelves, used_to_have, decants
 from api.routers import auth, security, images
 from api.routers import share, trade_requests
 from api.routers import sent_samples
 
-app = FastAPI(title="Olfactori API", version="1.0.0", redirect_slashes=False)
+app = FastAPI(title="Olfactori API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,24 +50,25 @@ def health():
 
 @app.get("/api/wear/today")
 def wear_today(request: Request):
+    import sqlite3, os, datetime
     from api.routers.auth import get_current_user
-    import sqlite3, os
     user = get_current_user(request)
     if not user:
         from fastapi import HTTPException
         raise HTTPException(401, "Not authenticated")
-    from fastapi import Request as R
     DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.row_factory = sqlite3.Row
-    today = __import__("datetime").date.today().isoformat()
+    today = datetime.date.today().isoformat()
     row = con.execute(
-        """SELECT w.id, f.brand, f.name FROM wear_log w
+        """SELECT f.id as frag_id, f.brand, f.name
+           FROM wear_log w
            JOIN fragrances f ON f.id = w.fragrance_id
-           WHERE w.worn_date = ? ORDER BY w.id DESC LIMIT 1""",
+           WHERE w.worn_date = ?
+           ORDER BY w.id DESC LIMIT 1""",
         (today,)
     ).fetchone()
     con.close()
     if row:
-        return {"brand": row["brand"], "name": row["name"]}
+        return {"id": row["frag_id"], "brand": row["brand"], "name": row["name"]}
     return {}
