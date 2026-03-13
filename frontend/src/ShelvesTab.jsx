@@ -12,6 +12,11 @@ const SHELF_ICONS = [
   "🍂", "🫧", "💎", "🎋", "🌾", "🍵", "🌺", "🦋", "❄️", "🎩",
 ];
 
+function getHeaders(token) {
+  const tok = token || sessionStorage.getItem("olfactori_token");
+  return { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
+}
+
 function ColorIconPicker({ color, icon, onChange }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -19,14 +24,9 @@ function ColorIconPicker({ color, icon, onChange }) {
         <div style={{ fontSize: "0.72rem", color: "var(--text3)", marginBottom: "0.3rem" }}>Color</div>
         <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
           {SHELF_COLORS.map(c => (
-            <div key={c}
-              onClick={() => onChange({ color: c, icon })}
-              style={{
-                width: "22px", height: "22px", borderRadius: "50%", background: c, cursor: "pointer",
-                boxShadow: color === c ? `0 0 0 2px var(--bg), 0 0 0 4px ${c}` : "none",
-                transition: "box-shadow 0.15s"
-              }}
-            />
+            <div key={c} onClick={() => onChange({ color: c, icon })}
+              style={{ width: "22px", height: "22px", borderRadius: "50%", background: c, cursor: "pointer",
+                boxShadow: color === c ? `0 0 0 2px var(--bg), 0 0 0 4px ${c}` : "none", transition: "box-shadow 0.15s" }} />
           ))}
         </div>
       </div>
@@ -34,15 +34,10 @@ function ColorIconPicker({ color, icon, onChange }) {
         <div style={{ fontSize: "0.72rem", color: "var(--text3)", marginBottom: "0.3rem" }}>Icon</div>
         <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
           {SHELF_ICONS.map(ic => (
-            <span key={ic}
-              onClick={() => onChange({ color, icon: ic })}
-              style={{
-                fontSize: "1.1rem", cursor: "pointer", padding: "2px 4px", borderRadius: "6px",
+            <span key={ic} onClick={() => onChange({ color, icon: ic })}
+              style={{ fontSize: "1.1rem", cursor: "pointer", padding: "2px 4px", borderRadius: "6px",
                 background: icon === ic ? "rgba(255,255,255,0.15)" : "transparent",
-                outline: icon === ic ? `2px solid ${color}` : "none",
-                transition: "background 0.1s"
-              }}
-            >
+                outline: icon === ic ? `2px solid ${color}` : "none", transition: "background 0.1s" }}>
               {ic}
             </span>
           ))}
@@ -52,10 +47,7 @@ function ColorIconPicker({ color, icon, onChange }) {
   );
 }
 
-function ShelfCard({
-  shelf, allFragrances, token,
-  onUpdate, onDelete, onReorderUp, onReorderDown, isFirst, isLast
-}) {
+function ShelfCard({ shelf, allFragrances, token, onUpdate, onDelete, onReorderUp, onReorderDown, isFirst, isLast }) {
   const [expanded, setExpanded]       = useState(false);
   const [editing, setEditing]         = useState(false);
   const [editName, setEditName]       = useState(shelf.name);
@@ -65,18 +57,13 @@ function ShelfCard({
   const [showPicker, setShowPicker]   = useState(false);
   const [showAddFrag, setShowAddFrag] = useState(false);
   const [fragSearch, setFragSearch]   = useState("");
-
-  // drag state for reordering fragrances within shelf
-  const dragItem    = useRef(null);
+  const dragItem     = useRef(null);
   const dragOverItem = useRef(null);
-
-  const tok = token || sessionStorage.getItem("olfactori_token");
-  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
 
   const saveEdits = async () => {
     setSaving(true);
     const res = await fetch(`${API}/shelves/${shelf.id}`, {
-      method: "PATCH", headers,
+      method: "PATCH", headers: getHeaders(token),
       body: JSON.stringify({ name: editName, color: editColor, icon: editIcon }),
     });
     if (res.ok) onUpdate(await res.json());
@@ -86,7 +73,7 @@ function ShelfCard({
   };
 
   const removeFrag = async (fragId) => {
-    await fetch(`${API}/shelves/${shelf.id}/fragrances/${fragId}`, { method: "DELETE", headers });
+    await fetch(`${API}/shelves/${shelf.id}/fragrances/${fragId}`, { method: "DELETE", headers: getHeaders(token) });
     onUpdate({ ...shelf, fragrances: shelf.fragrances.filter(f => f.id !== fragId) });
   };
 
@@ -95,7 +82,7 @@ function ShelfCard({
     if (existing.includes(frag.id)) return;
     const newIds = [...existing, frag.id];
     const res = await fetch(`${API}/shelves/${shelf.id}/fragrances`, {
-      method: "PUT", headers, body: JSON.stringify({ fragrance_ids: newIds }),
+      method: "PUT", headers: getHeaders(token), body: JSON.stringify({ fragrance_ids: newIds }),
     });
     if (res.ok) {
       const updatedFrags = await res.json();
@@ -113,9 +100,8 @@ function ShelfCard({
     dragItem.current = null;
     dragOverItem.current = null;
     onUpdate({ ...shelf, fragrances: reordered });
-    // Persist reorder
     await fetch(`${API}/shelves/${shelf.id}/fragrances/reorder`, {
-      method: "POST", headers,
+      method: "POST", headers: getHeaders(token),
       body: JSON.stringify({ ordered_fragrance_ids: reordered.map(f => f.id) }),
     });
   };
@@ -127,37 +113,22 @@ function ShelfCard({
   });
 
   return (
-    <div style={{
-      background: "var(--bg2)", border: `1px solid ${shelf.color}44`,
-      borderRadius: "14px", overflow: "hidden", marginBottom: "0.75rem",
-      boxShadow: `0 0 0 0`,
-    }}>
-      {/* Shelf header */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "0.75rem",
-        padding: "0.85rem 1rem", cursor: "pointer",
-        borderLeft: `4px solid ${shelf.color}`,
-        background: `linear-gradient(90deg, ${shelf.color}18 0%, transparent 60%)`,
-      }}>
+    <div style={{ background: "var(--bg2)", border: `1px solid ${shelf.color}44`, borderRadius: "14px", overflow: "hidden", marginBottom: "0.75rem" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", cursor: "pointer",
+        borderLeft: `4px solid ${shelf.color}`, background: `linear-gradient(90deg, ${shelf.color}18 0%, transparent 60%)` }}>
         {/* Reorder arrows */}
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-          <button onClick={e => { e.stopPropagation(); onReorderUp(); }} disabled={isFirst}
-            style={arrowBtn}>▲</button>
-          <button onClick={e => { e.stopPropagation(); onReorderDown(); }} disabled={isLast}
-            style={arrowBtn}>▼</button>
+          <button onClick={e => { e.stopPropagation(); onReorderUp(); }} disabled={isFirst} style={arrowBtn}>▲</button>
+          <button onClick={e => { e.stopPropagation(); onReorderDown(); }} disabled={isLast} style={arrowBtn}>▼</button>
         </div>
 
         <span style={{ fontSize: "1.4rem" }}>{shelf.icon}</span>
 
         <div style={{ flex: 1, minWidth: 0 }} onClick={() => setExpanded(v => !v)}>
           {editing ? (
-            <input
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              onClick={e => e.stopPropagation()}
-              autoFocus
-              style={{ background: "transparent", border: "none", borderBottom: `1px solid ${shelf.color}`, color: "var(--text)", fontSize: "0.95rem", fontWeight: 600, outline: "none", width: "100%" }}
-            />
+            <input value={editName} onChange={e => setEditName(e.target.value)} onClick={e => e.stopPropagation()} autoFocus
+              style={{ background: "transparent", border: "none", borderBottom: `1px solid ${shelf.color}`, color: "var(--text)", fontSize: "0.95rem", fontWeight: 600, outline: "none", width: "100%" }} />
           ) : (
             <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text)" }}>{shelf.name}</span>
           )}
@@ -166,7 +137,6 @@ function ShelfCard({
           </span>
         </div>
 
-        {/* Action buttons */}
         <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
           {!editing ? (
             <>
@@ -199,26 +169,19 @@ function ShelfCard({
       {/* Fragrance grid */}
       {expanded && (
         <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid var(--border)" }}>
-          {/* Add fragrance */}
           {showAddFrag ? (
             <div style={{ marginBottom: "0.75rem", position: "relative" }}>
-              <input
-                autoFocus
-                placeholder="Search to add…"
-                value={fragSearch}
+              <input autoFocus placeholder="Search to add…" value={fragSearch}
                 onChange={e => setFragSearch(e.target.value)}
                 onBlur={() => setTimeout(() => setShowAddFrag(false), 200)}
-                style={{ ...inputStyle, borderColor: shelf.color }}
-              />
+                style={{ ...inputStyle, borderColor: shelf.color }} />
               {fragSearch && (
                 <div style={{ position: "absolute", zIndex: 10, top: "calc(100% + 4px)", left: 0, right: 0, maxHeight: "200px", overflowY: "auto", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px" }}>
                   {filteredFrags.slice(0, 20).map(f => (
-                    <div key={f.id}
-                      onMouseDown={() => addFrag(f)}
+                    <div key={f.id} onMouseDown={() => addFrag(f)}
                       style={{ padding: "0.45rem 0.75rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text)", borderBottom: "1px solid var(--border)" }}
                       onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                    >
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                       <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>{f.brand}</span> {f.name}
                     </div>
                   ))}
@@ -233,26 +196,20 @@ function ShelfCard({
             </button>
           )}
 
-          {/* Fragrance chips (drag to reorder) */}
           {shelf.fragrances.length === 0 ? (
             <p style={{ color: "var(--text3)", fontSize: "0.82rem", margin: 0 }}>No fragrances yet.</p>
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
               {shelf.fragrances.map((f, i) => (
-                <div key={f.id}
-                  draggable
+                <div key={f.id} draggable
                   onDragStart={() => { dragItem.current = i; }}
                   onDragEnter={() => { dragOverItem.current = i; }}
                   onDragEnd={handleFragDragEnd}
                   onDragOver={e => e.preventDefault()}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "0.4rem",
+                  style={{ display: "flex", alignItems: "center", gap: "0.4rem",
                     background: `${shelf.color}22`, border: `1px solid ${shelf.color}55`,
                     borderRadius: "20px", padding: "0.25rem 0.6rem 0.25rem 0.75rem",
-                    fontSize: "0.8rem", color: "var(--text)", cursor: "grab",
-                    userSelect: "none",
-                  }}
-                >
+                    fontSize: "0.8rem", color: "var(--text)", cursor: "grab", userSelect: "none" }}>
                   <span style={{ color: "var(--text3)", fontSize: "0.72rem" }}>⠿</span>
                   {f.brand && <span style={{ color: "var(--text3)", fontSize: "0.72rem" }}>{f.brand} –</span>}
                   {f.name}
@@ -271,24 +228,21 @@ function ShelfCard({
 }
 
 export default function ShelvesTab({ token }) {
-  const [shelves, setShelves]       = useState([]);
+  const [shelves, setShelves]     = useState([]);
   const [fragrances, setFragrances] = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [showNew, setShowNew]       = useState(false);
-  const [newName, setNewName]       = useState("");
-  const [newColor, setNewColor]     = useState(SHELF_COLORS[0]);
-  const [newIcon, setNewIcon]       = useState(SHELF_ICONS[0]);
-  const [creating, setCreating]     = useState(false);
-
-  const tok = token || sessionStorage.getItem("olfactori_token");
-  const headers = { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" };
+  const [loading, setLoading]     = useState(true);
+  const [showNew, setShowNew]     = useState(false);
+  const [newName, setNewName]     = useState("");
+  const [newColor, setNewColor]   = useState(SHELF_COLORS[0]);
+  const [newIcon, setNewIcon]     = useState(SHELF_ICONS[0]);
+  const [creating, setCreating]   = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [sr, fr] = await Promise.all([
-        fetch(`${API}/shelves`, { headers }),
-        fetch(`${API}/fragrances`, { headers }),
+        fetch(`${API}/shelves`, { headers: getHeaders(token) }),
+        fetch(`${API}/fragrances?limit=2000`),
       ]);
       if (sr.ok) setShelves(await sr.json());
       if (fr.ok) {
@@ -299,7 +253,7 @@ export default function ShelvesTab({ token }) {
       console.error("ShelvesTab load error:", e);
     }
     setLoading(false);
-  }, [tok]);
+  }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -307,7 +261,7 @@ export default function ShelvesTab({ token }) {
     if (!newName.trim()) return;
     setCreating(true);
     const res = await fetch(`${API}/shelves`, {
-      method: "POST", headers,
+      method: "POST", headers: getHeaders(token),
       body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
     });
     if (res.ok) {
@@ -322,7 +276,7 @@ export default function ShelvesTab({ token }) {
   const handleUpdate = (updated) => setShelves(prev => prev.map(s => s.id === updated.id ? updated : s));
 
   const handleDelete = async (id) => {
-    await fetch(`${API}/shelves/${id}`, { method: "DELETE", headers });
+    await fetch(`${API}/shelves/${id}`, { method: "DELETE", headers: getHeaders(token) });
     setShelves(prev => prev.filter(s => s.id !== id));
   };
 
@@ -333,14 +287,13 @@ export default function ShelvesTab({ token }) {
     [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
     setShelves(reordered);
     await fetch(`${API}/shelves/reorder`, {
-      method: "POST", headers,
+      method: "POST", headers: getHeaders(token),
       body: JSON.stringify({ ordered_ids: reordered.map(s => s.id) }),
     });
   };
 
   return (
     <div style={{ padding: "1rem" }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <h2 style={{ margin: 0, fontSize: "1.1rem", color: "var(--text)" }}>
           🗄 Shelves
@@ -348,25 +301,20 @@ export default function ShelvesTab({ token }) {
             {shelves.length} shelf{shelves.length !== 1 ? "ves" : ""}
           </span>
         </h2>
-        <button
-          onClick={() => setShowNew(v => !v)}
-          style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
-        >
+        <button onClick={() => setShowNew(v => !v)}
+          style={{ background: "var(--violet)", color: "#fff", border: "none", borderRadius: "8px", padding: "0.4rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}>
           {showNew ? "✕ Cancel" : "+ New Shelf"}
         </button>
       </div>
 
-      {/* Create form */}
       {showNew && (
         <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem" }}>
           <div style={{ marginBottom: "0.75rem" }}>
             <label style={labelStyle}>Shelf name *</label>
-            <input
-              autoFocus placeholder="e.g. Summer Rotation"
-              value={newName} onChange={e => setNewName(e.target.value)}
+            <input autoFocus placeholder="e.g. Summer Rotation" value={newName}
+              onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleCreate()}
-              style={inputStyle}
-            />
+              style={inputStyle} />
           </div>
           <ColorIconPicker color={newColor} icon={newIcon}
             onChange={({ color, icon }) => { setNewColor(color); setNewIcon(icon); }} />
@@ -383,7 +331,6 @@ export default function ShelvesTab({ token }) {
         </div>
       )}
 
-      {/* Shelves list */}
       {loading ? (
         <p style={{ color: "var(--text3)" }}>Loading…</p>
       ) : shelves.length === 0 ? (
@@ -392,25 +339,17 @@ export default function ShelvesTab({ token }) {
         </p>
       ) : (
         shelves.map((shelf, i) => (
-          <ShelfCard
-            key={shelf.id}
-            shelf={shelf}
-            allFragrances={fragrances}
-            token={token}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            onReorderUp={() => reorder(i, -1)}
-            onReorderDown={() => reorder(i, 1)}
-            isFirst={i === 0}
-            isLast={i === shelves.length - 1}
-          />
+          <ShelfCard key={shelf.id} shelf={shelf} allFragrances={fragrances} token={token}
+            onUpdate={handleUpdate} onDelete={handleDelete}
+            onReorderUp={() => reorder(i, -1)} onReorderDown={() => reorder(i, 1)}
+            isFirst={i === 0} isLast={i === shelves.length - 1} />
         ))
       )}
     </div>
   );
 }
 
-const inputStyle  = { width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem" };
-const labelStyle  = { display: "block", fontSize: "0.78rem", color: "var(--text3)", marginBottom: "0.3rem" };
-const iconBtn     = { background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.25rem 0.5rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text3)" };
-const arrowBtn    = { background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: "0.65rem", lineHeight: 1, padding: "1px 3px", opacity: 0.7 };
+const inputStyle = { width: "100%", boxSizing: "border-box", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0.5rem 0.75rem", color: "var(--text)", fontSize: "0.88rem" };
+const labelStyle = { display: "block", fontSize: "0.78rem", color: "var(--text3)", marginBottom: "0.3rem" };
+const iconBtn    = { background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.25rem 0.5rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text3)" };
+const arrowBtn   = { background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: "0.65rem", lineHeight: 1, padding: "1px 3px", opacity: 0.7 };
