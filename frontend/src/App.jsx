@@ -1695,10 +1695,11 @@ export default function Olfactori() {
 
   // ── AUTH INIT ─────────────────────────────────────────────
   useEffect(() => {
-    // Check for token in URL (after OAuth redirect)
+    // Check for token in URL (after OAuth redirect) — check both hash and query param
     const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get("token");
-    const authError = params.get("auth_error");
+    const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
+    const urlToken = hashParams.get("token") || params.get("token");
+    const authError = hashParams.get("auth_error") || params.get("auth_error");
     if (urlToken) {
       sessionStorage.setItem("olfactori_token", urlToken);
       setToken(urlToken);

@@ -131,7 +131,7 @@ async def callback(code: str, request: Request):
         except Exception:
             pass
 
-    return RedirectResponse(f"{FRONTEND_URL}?token={jwt}")
+    return RedirectResponse(f"{FRONTEND_URL}#token={jwt}")
 
 @router.get("/history")
 def login_history(request: Request):
