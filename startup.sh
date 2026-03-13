@@ -24,12 +24,6 @@ migrations = [
     'ALTER TABLE fragrances ADD COLUMN want_to_sell INTEGER DEFAULT 0',
     'ALTER TABLE fragrances ADD COLUMN want_to_give_away INTEGER DEFAULT 0',
     'ALTER TABLE wishlist ADD COLUMN custom_image_url TEXT',
-    # decants: add fragrance_id and volume_remaining_ml to existing table
-    'ALTER TABLE decants ADD COLUMN fragrance_id INTEGER',
-    'ALTER TABLE decants ADD COLUMN volume_remaining_ml REAL',
-    'ALTER TABLE decants ADD COLUMN source TEXT',
-    # shelves: add sort_order if missing
-    'ALTER TABLE shelves ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
     'CREATE TABLE IF NOT EXISTS security_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, label TEXT, grp TEXT, public INTEGER DEFAULT 0)',
     '''CREATE TABLE IF NOT EXISTS decants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +68,11 @@ migrations = [
         status TEXT DEFAULT \'pending\',
         created_at TEXT DEFAULT (datetime(\'now\'))
     )''',
+    # These run AFTER CREATE TABLE so the table is guaranteed to exist
+    'ALTER TABLE decants ADD COLUMN fragrance_id INTEGER',
+    'ALTER TABLE decants ADD COLUMN volume_remaining_ml REAL',
+    'ALTER TABLE decants ADD COLUMN source TEXT',
+    'ALTER TABLE shelves ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0',
 ]
 for m in migrations:
     try:
