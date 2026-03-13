@@ -39,23 +39,24 @@ app.include_router(decants.router,      prefix="/api/decants",      tags=["decan
 app.include_router(auth.router,     prefix="/api/auth",     tags=["auth"])
 app.include_router(security.router, prefix="/api/security", tags=["security"])
 
-app.include_router(images.router,        prefix="/api/images",       tags=["images"])
-app.include_router(share.router,         prefix="/api/share",        tags=["share"])
+app.include_router(images.router,        prefix="/api/images",        tags=["images"])
+app.include_router(share.router,         prefix="/api/share",         tags=["share"])
 app.include_router(trade_requests.router,prefix="/api/trade_requests",tags=["trade_requests"])
 app.include_router(sent_samples.router,  prefix="/api/sent-samples",  tags=["sent-samples"])
 
 @app.get("/api/today-wear")
-def today_wear(request: Request):
+def today_wear(request: Request, date: str = ""):
     import sqlite3, os, datetime
     from api.routers.auth import get_current_user
+    from fastapi import HTTPException
     user = get_current_user(request)
     if not user:
-        from fastapi import HTTPException
         raise HTTPException(401, "Not authenticated")
+    # Use client-provided date, fall back to server UTC date
+    today = date if date else datetime.date.today().isoformat()
     DB_PATH = os.environ.get("DB_PATH", "/data/sillage.db")
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.row_factory = sqlite3.Row
-    today = datetime.date.today().isoformat()
     row = con.execute(
         """SELECT f.id as frag_id, f.brand, f.name
            FROM wear_log w
