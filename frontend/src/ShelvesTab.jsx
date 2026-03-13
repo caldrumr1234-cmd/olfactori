@@ -260,15 +260,21 @@ export default function ShelvesTab({ token }) {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const res = await fetch(`${API}/shelves`, {
-      method: "POST", headers: getHeaders(token),
-      body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
-    });
-    if (res.ok) {
-      const newShelf = await res.json();
-      setShelves(prev => [...prev, newShelf]);
-      setNewName(""); setNewColor(SHELF_COLORS[0]); setNewIcon(SHELF_ICONS[0]);
-      setShowNew(false);
+    try {
+      const res = await fetch(`${API}/shelves`, {
+        method: "POST", headers: getHeaders(token),
+        body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setShelves(prev => [...prev, body]);
+        setNewName(""); setNewColor(SHELF_COLORS[0]); setNewIcon(SHELF_ICONS[0]);
+        setShowNew(false);
+      } else {
+        alert("Server error: " + JSON.stringify(body));
+      }
+    } catch(e) {
+      alert("Fetch error: " + e.message);
     }
     setCreating(false);
   };
