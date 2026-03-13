@@ -1694,14 +1694,6 @@ export default function Olfactori() {
 
   // ── AUTH INIT ─────────────────────────────────────────────
   useEffect(() => {
-    // Handle /invite/{token} path — redirect to Google OAuth with invite token as state
-    const inviteMatch = window.location.pathname.match(/^\/invite\/([^/]+)/);
-    if (inviteMatch) {
-      const inviteToken = inviteMatch[1];
-      window.location.href = `${API}/auth/login?invite_token=${inviteToken}`;
-      return;
-    }
-
     // Check for token in URL (after OAuth redirect)
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("token");
