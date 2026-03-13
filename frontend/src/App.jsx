@@ -1732,7 +1732,7 @@ export default function Olfactori() {
       const today = new Date();
       const off = today.getTimezoneOffset() * 60000;
       const todayStr = new Date(today.getTime() - off).toISOString().split("T")[0];
-      fetch(`${API}/today-wear`, { headers: { Authorization: `Bearer ${activeToken}` } })
+      fetch(`${API}/wear/today`, { headers: { Authorization: `Bearer ${activeToken}` } })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d && d.brand) setTodayWear({ brand: d.brand, name: d.name });
@@ -1825,14 +1825,8 @@ export default function Olfactori() {
       const data = await res.json();
       if (data.authenticated && data.token) {
         sessionStorage.setItem("olfactori_token", data.token);
-        setToken(data.token);
         setShowUserLogin(false);
-        setUserLoginEmail("");
-        setUserLoginPin("");
-        // Verify role
-        fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data.token}` } })
-          .then(r => r.json())
-          .then(d => { if (d.role === "admin") setIsAdmin(true); });
+        window.location.reload();
       } else {
         setUserLoginError(data.error || "Invalid email or PIN");
       }
@@ -1983,14 +1977,8 @@ export default function Olfactori() {
                   <span style={{ color: 'var(--text3)' }}>Today I'm wearing:</span>
                   {todayWear
                     ? <span
-                        onClick={e => {
-                          e.stopPropagation();
-                          const b = (todayWear.brand||'').toLowerCase().trim();
-                          const n = (todayWear.name||'').toLowerCase().trim();
-                          const f = frags.find(f =>
-                            (f.brand||'').toLowerCase().trim() === b &&
-                            (f.name||'').toLowerCase().trim() === n
-                          );
+                        onClick={() => {
+                          const f = frags.find(f => f.brand === todayWear.brand && f.name === todayWear.name);
                           if (f) handleOpenFrag(f);
                         }}
                         style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
