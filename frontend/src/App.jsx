@@ -1732,7 +1732,6 @@ export default function Olfactori() {
       const today = new Date();
       const off = today.getTimezoneOffset() * 60000;
       const todayStr = new Date(today.getTime() - off).toISOString().split("T")[0];
-      const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset()*60000).toISOString().split('T')[0];
       fetch(`${API}/today-wear?date=${todayStr}`, { headers: { Authorization: `Bearer ${activeToken}` } })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
@@ -1984,14 +1983,8 @@ export default function Olfactori() {
                   <span style={{ color: 'var(--text3)' }}>Today I'm wearing:</span>
                   {todayWear
                     ? <span
-                        onClick={e => {
-                          e.stopPropagation();
-                          const b = (todayWear.brand||'').toLowerCase().trim();
-                          const n = (todayWear.name||'').toLowerCase().trim();
-                          const f = frags.find(f =>
-                            (f.brand||'').toLowerCase().trim() === b &&
-                            (f.name||'').toLowerCase().trim() === n
-                          );
+                        onClick={() => {
+                          const f = frags.find(f => f.brand === todayWear.brand && f.name === todayWear.name);
                           if (f) handleOpenFrag(f);
                         }}
                         style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
