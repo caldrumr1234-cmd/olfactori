@@ -4,7 +4,7 @@ api/routers/friends.py — Friend invites + sample requests
 import json
 import random
 import secrets
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from api.database import get_db
@@ -16,7 +16,7 @@ class InviteCreate(BaseModel):
     email: Optional[str] = None
 
 class SampleRequest(BaseModel):
-    token:         str
+    token:         Optional[str] = None   # invite link token OR use JWT auth header
     fragrance_ids: list[int]
     message:       Optional[str] = None
 
@@ -112,12 +112,21 @@ def list_requests(status: Optional[str] = None, db = Depends(get_db)):
     return results
 
 @router.post("/requests")
-def create_request(data: SampleRequest, db = Depends(get_db)):
-    friend = db.execute(
-        "SELECT * FROM friend_invites WHERE token=? AND is_active=1", (data.token,)
-    ).fetchone()
+def create_request(data: SampleRequest, request: Request, db = Depends(get_db)):
+    from api.routers.auth import get_current_user
+    friend = None
+    user = get_current_user(request)
+    if user:
+        email = user.get("email", "").lower()
+        friend = db.execute(
+            "SELECT * FROM friend_invites WHERE LOWER(email)=? AND is_active=1", (email,)
+        ).fetchone()
+    elif data.token:
+        friend = db.execute(
+            "SELECT * FROM friend_invites WHERE token=? AND is_active=1", (data.token,)
+        ).fetchone()
     if not friend:
-        raise HTTPException(403, "Invalid invite token")
+        raise HTTPException(403, "Authentication required or invalid invite token")
 
     names = []
     for fid in data.fragrance_ids:

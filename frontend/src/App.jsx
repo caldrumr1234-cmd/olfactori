@@ -985,7 +985,7 @@ function GoneModal({ frag, onConfirm, onClose }) {
   );
 }
 
-function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, isAdminUser, token }) {
+function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, isAdminUser, isUser, token }) {
   const [tab, setTab] = useState("info");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
@@ -1028,6 +1028,26 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
       setWearLog(d.wear_log || []);
     });
   }, [frag]);
+
+  const handleRequestSample = async () => {
+    const tok = sessionStorage.getItem("olfactori_token");
+    const res = await fetch(`${API}/friends/requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+      body: JSON.stringify({ fragrance_ids: [frag.id], message: "" }),
+    });
+    toast(res.ok ? "Sample requested ✓" : "Request failed — please try again");
+  };
+
+  const handleRequestTrade = async () => {
+    const tok = sessionStorage.getItem("olfactori_token");
+    const res = await fetch(`${API}/trade_requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+      body: JSON.stringify({ fragrance_id: frag.id, fragrance_name: frag.name, fragrance_brand: frag.brand }),
+    });
+    toast(res.ok ? "Trade requested ✓" : "Request failed — please try again");
+  };
 
   const save = async () => {
     setSaving(true);
@@ -1408,6 +1428,12 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
                 {isAdminUser && <button className="btn btn-secondary" onClick={() => setTab("wear")}>Log Wear</button>}
                 {isAdminUser && onMarkGone && (
                   <button className="btn btn-secondary" onClick={() => setShowGone(true)}>Gone 👋</button>
+                )}
+                {!isAdminUser && isUser && (
+                  <button className="btn btn-primary btn-sm" onClick={handleRequestSample}>Request Sample</button>
+                )}
+                {!isAdminUser && isUser && frag.want_to_trade === 1 && (
+                  <button className="btn btn-secondary btn-sm" onClick={handleRequestTrade}>🤝 Request Trade</button>
                 )}
                 <button className="btn btn-secondary btn-sm" style={{marginLeft:"auto"}} onClick={onClose}>Close</button>
               </>
@@ -2282,6 +2308,7 @@ export default function Olfactori() {
             onWear={updateLastWorn}
             toast={showToast}
             isAdminUser={isAdmin}
+            isUser={isUser}
             token={token}
           />
         )}
@@ -2352,7 +2379,21 @@ export default function Olfactori() {
             <div className="cart-label">
               {selected.size} fragrance{selected.size>1?"s":""} selected for sample request
             </div>
-            <button className="btn btn-primary btn-sm">Request Samples</button>
+            <button className="btn btn-primary btn-sm" onClick={async () => {
+              const tok = sessionStorage.getItem("olfactori_token");
+              const res = await fetch(`${API}/friends/requests`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+                body: JSON.stringify({ fragrance_ids: [...selected], message: "" }),
+              });
+              if (res.ok) {
+                showToast(`${selected.size} sample${selected.size>1?"s":""} requested ✓`);
+                setSelected(new Set());
+                setSelectMode(false);
+              } else {
+                showToast("Request failed — please try again");
+              }
+            }}>Request Samples</button>
             <button className="cart-clear" onClick={() => setSelected(new Set())}>Clear</button>
           </div>
         )}

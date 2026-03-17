@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from api.database import get_db
@@ -9,8 +9,8 @@ class TradeRequestIn(BaseModel):
     fragrance_id: int
     fragrance_name: str
     fragrance_brand: str
-    requester_name: str
-    requester_email: str
+    requester_name:  Optional[str] = None   # filled from JWT if not provided
+    requester_email: Optional[str] = None
     offering: Optional[str] = None
     message: Optional[str] = None
 
@@ -18,7 +18,21 @@ class TradeStatusUpdate(BaseModel):
     status: str  # pending | accepted | declined
 
 @router.post("")
-def create_trade_request(body: TradeRequestIn, db=Depends(get_db)):
+def create_trade_request(body: TradeRequestIn, request: Request, db=Depends(get_db)):
+    from api.routers.auth import get_current_user
+    requester_name  = body.requester_name
+    requester_email = body.requester_email
+    user = get_current_user(request)
+    if user:
+        email = user.get("email", "").lower()
+        friend = db.execute(
+            "SELECT * FROM friend_invites WHERE LOWER(email)=? AND is_active=1", (email,)
+        ).fetchone()
+        if friend:
+            requester_name  = requester_name  or friend["name"]
+            requester_email = requester_email or email
+    if not requester_name or not requester_email:
+        raise HTTPException(400, "Requester name and email are required")
     db.execute("""
         INSERT INTO trade_requests
             (fragrance_id, fragrance_name, fragrance_brand,
@@ -26,7 +40,7 @@ def create_trade_request(body: TradeRequestIn, db=Depends(get_db)):
         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', date('now'))
     """, (
         body.fragrance_id, body.fragrance_name, body.fragrance_brand,
-        body.requester_name, body.requester_email,
+        requester_name, requester_email,
         body.offering, body.message,
     ))
     db.commit()
