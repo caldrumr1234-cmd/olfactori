@@ -1670,7 +1670,7 @@ export default function Olfactori() {
   // ── AUTH ──────────────────────────────────────────────────
   const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);
   const [isAdmin,  setIsAdmin]  = useState(false);
-  const [isUser,   setIsUser]   = useState(false);
+  const [isUser,   setIsUser]   = useState(() => !!sessionStorage.getItem("olfactori_token"));
   const [authReady,setAuthReady]= useState(false);
   const [security, setSecurity] = useState({});
 
@@ -1747,7 +1747,7 @@ export default function Olfactori() {
       })
         .then(r => r.json())
         .then(d => {
-          if (d.authenticated) setIsUser(true);
+          setIsUser(d.authenticated === true);
           if (d.authenticated && d.role === "admin") setIsAdmin(true);
           setAuthReady(true);
         })
