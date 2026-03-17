@@ -265,16 +265,14 @@ export default function ShelvesTab({ token }) {
         method: "POST", headers: getHeaders(token),
         body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
       });
-      const body = await res.json();
       if (res.ok) {
-        setShelves(prev => [...prev, body]);
+        const newShelf = await res.json();
+        setShelves(prev => [...prev, newShelf]);
         setNewName(""); setNewColor(SHELF_COLORS[0]); setNewIcon(SHELF_ICONS[0]);
         setShowNew(false);
-      } else {
-        alert("Server error: " + JSON.stringify(body));
       }
     } catch(e) {
-      alert("Fetch error: " + e.message);
+      console.error("Create shelf error:", e);
     }
     setCreating(false);
   };
