@@ -1825,14 +1825,7 @@ export default function Olfactori() {
       const data = await res.json();
       if (data.authenticated && data.token) {
         sessionStorage.setItem("olfactori_token", data.token);
-        setToken(data.token);
-        setShowUserLogin(false);
-        setUserLoginEmail("");
-        setUserLoginPin("");
-        // Verify role
-        fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data.token}` } })
-          .then(r => r.json())
-          .then(d => { if (d.role === "admin") setIsAdmin(true); });
+        window.location.reload();
       } else {
         setUserLoginError(data.error || "Invalid email or PIN");
       }
