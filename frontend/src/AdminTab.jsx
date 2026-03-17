@@ -911,16 +911,24 @@ export default function AdminTab({ toast }) {
 
   const revokeInvite = async (id) => {
     if (!window.confirm("Revoke this invite link?")) return;
-    await fetch(`${API}/friends/invites/${id}`, { method: "DELETE" });
+    const tok = sessionStorage.getItem("olfactori_token");
+    await fetch(`${API}/friends/invites/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${tok}` },
+    });
     setInvites(prev => prev.map(i => i.id === id ? {...i, is_active: 0} : i));
     toast("Invite revoked");
   };
 
   const clearRevoked = async () => {
     if (!window.confirm('Permanently remove all revoked invites?')) return;
+    const tok = sessionStorage.getItem("olfactori_token");
     const revoked = invites.filter(i => !i.is_active);
     await Promise.all(revoked.map(i =>
-      fetch(`${API}/friends/invites/${i.id}/delete`, { method: 'DELETE' })
+      fetch(`${API}/friends/invites/${i.id}/delete`, {
+        method: 'DELETE',
+        headers: { "Authorization": `Bearer ${tok}` },
+      })
     ));
     setInvites(prev => prev.filter(i => i.is_active));
     toast('Revoked invites removed');

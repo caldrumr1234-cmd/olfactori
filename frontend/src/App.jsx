@@ -1644,6 +1644,7 @@ export default function Olfactori() {
   // ── AUTH ──────────────────────────────────────────────────
   const [token,    setToken]    = useState(() => sessionStorage.getItem("olfactori_token") || null);
   const [isAdmin,  setIsAdmin]  = useState(false);
+  const [isUser,   setIsUser]   = useState(false);
   const [authReady,setAuthReady]= useState(false);
   const [security, setSecurity] = useState({});
 
@@ -1720,6 +1721,7 @@ export default function Olfactori() {
       })
         .then(r => r.json())
         .then(d => {
+          if (d.authenticated) setIsUser(true);
           if (d.authenticated && d.role === "admin") setIsAdmin(true);
           setAuthReady(true);
         })
@@ -1839,10 +1841,11 @@ export default function Olfactori() {
     sessionStorage.removeItem("olfactori_token");
     setToken(null);
     setIsAdmin(false);
+    setIsUser(false);
   };
 
   // canSee — returns true if admin OR the setting is public
-  const canSee = (key) => isAdmin || security[key] === true;
+  const canSee = (key) => isAdmin || isUser || security[key] === true;
 
   const handleOpenFrag = (frag) => {
     setActiveFrag(frag);
@@ -1937,7 +1940,7 @@ export default function Olfactori() {
               onClick={() => window.open(`${API}/export/catalog`, "_blank")}>
               🖨️
             </button>
-            {isAdmin ? (
+            {(isAdmin || isUser) ? (
               <button className="icon-btn" title="Sign out" onClick={signOut}
                 style={{fontSize:11,width:"auto",padding:"0 10px",color:"var(--text3)"}}>
                 Sign Out
