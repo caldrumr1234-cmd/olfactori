@@ -1031,22 +1031,42 @@ function Drawer({ frag, onClose, onUpdate, onDelete, onWear, onMarkGone, toast, 
 
   const handleRequestSample = async () => {
     const tok = sessionStorage.getItem("olfactori_token");
-    const res = await fetch(`${API}/friends/requests`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
-      body: JSON.stringify({ fragrance_ids: [frag.id], message: "" }),
-    });
-    toast(res.ok ? "Sample requested ✓" : "Request failed — please try again");
+    if (!tok) { toast("Not logged in"); return; }
+    try {
+      const res = await fetch(`${API}/friends/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+        body: JSON.stringify({ fragrance_ids: [frag.id], message: "" }),
+      });
+      if (res.ok) {
+        toast("Sample requested ✓");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast(`Request failed (${res.status}): ${data.detail || "Unknown error"}`);
+      }
+    } catch (e) {
+      toast(`Network error: ${e.message}`);
+    }
   };
 
   const handleRequestTrade = async () => {
     const tok = sessionStorage.getItem("olfactori_token");
-    const res = await fetch(`${API}/trade_requests`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
-      body: JSON.stringify({ fragrance_id: frag.id, fragrance_name: frag.name, fragrance_brand: frag.brand }),
-    });
-    toast(res.ok ? "Trade requested ✓" : "Request failed — please try again");
+    if (!tok) { toast("Not logged in"); return; }
+    try {
+      const res = await fetch(`${API}/trade_requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+        body: JSON.stringify({ fragrance_id: frag.id, fragrance_name: frag.name, fragrance_brand: frag.brand }),
+      });
+      if (res.ok) {
+        toast("Trade requested ✓");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast(`Request failed (${res.status}): ${data.detail || "Unknown error"}`);
+      }
+    } catch (e) {
+      toast(`Network error: ${e.message}`);
+    }
   };
 
   const save = async () => {
