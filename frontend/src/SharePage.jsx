@@ -190,7 +190,7 @@ function TradeForm({ frag, onClose }) {
     if (!form.name.trim() || !form.email.trim()) return;
     setSending(true);
     try {
-      await fetch(`${API}/trade-requests`, {
+      await fetch(`${API}/trade_requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

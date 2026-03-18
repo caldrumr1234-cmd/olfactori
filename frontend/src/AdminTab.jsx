@@ -706,14 +706,14 @@ function TradeRequestsPanel({ toast }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/trade-requests`)
+    fetch(`${API}/trade_requests`)
       .then(r => r.json())
       .then(d => { setRequests(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
   const update = async (id, status) => {
-    await fetch(`${API}/trade-requests/${id}`, {
+    await fetch(`${API}/trade_requests/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -723,7 +723,7 @@ function TradeRequestsPanel({ toast }) {
   };
 
   const remove = async (id) => {
-    await fetch(`${API}/trade-requests/${id}`, { method: "DELETE" });
+    await fetch(`${API}/trade_requests/${id}`, { method: "DELETE" });
     setRequests(rs => rs.filter(r => r.id !== id));
     toast("Request deleted");
   };
