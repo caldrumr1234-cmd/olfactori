@@ -311,12 +311,16 @@ def _fetch_fragella(brand: str, name: str) -> dict | None:
             return None
         results = resp.json()
         target = f"{brand} {name}".lower()
-        best, best_score = None, 0
+        best, best_score, best_excess = None, 0, float("inf")
         for item in results:
             candidate = f"{item.get('Brand','')} {item.get('Name','')}".lower()
             score = fuzz.token_set_ratio(target, candidate)
-            if score > best_score:
+            # When scores tie (token_set_ratio ignores extra words), prefer the
+            # candidate closest in length to the target — fewest extra words wins.
+            excess = len(candidate) - len(target)
+            if score > best_score or (score == best_score and excess < best_excess):
                 best_score = score
+                best_excess = excess
                 best = item
         return best if best_score >= 60 else None
     except Exception:
