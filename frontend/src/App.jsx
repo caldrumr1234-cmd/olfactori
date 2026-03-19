@@ -258,13 +258,9 @@ const css = `
   }
   .card-img-inner {
     width: 75%; height: 75%;
-    background: radial-gradient(ellipse at center, #1e1e2a 0%, var(--bg3) 100%);
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; overflow: hidden; flex-shrink: 0;
-    transition: background 0.3s;
-  }
-  .card:hover .card-img-inner {
-    background: radial-gradient(ellipse at center, rgba(91,141,238,0.10) 0%, var(--bg3) 80%);
   }
   .card-img-inner img {
     width: 100%; height: 100%; object-fit: contain;

@@ -467,10 +467,10 @@ def _scrape_fragrantica(url: str) -> dict:
 
         # Year — extended range covers pre-1950 classics (e.g. 1916 ADP Colonia)
         _YEAR_RE = re.compile(r'\b(1[6-9]\d\d|20[0-2]\d)\b')
-        # Strategy 1: paragraph text that mentions launch/creation (most reliable)
-        for el in soup.select("p, .cell, .fragranceDescriptionText, div.cell"):
+        # Strategy 1: look in the intro/description paragraph (Fragrantica puts "launched in YYYY" here)
+        for el in soup.select("p, .fragranceDescriptionText, div[class*='description']"):
             txt = el.get_text()
-            if any(kw in txt.lower() for kw in ("launched", "introduced", "created", "since", "year:")):
+            if any(kw in txt.lower() for kw in ("launched", "introduced", "created", "since", "year", "release")):
                 m = _YEAR_RE.search(txt)
                 if m:
                     result["year_released"] = int(m.group())
@@ -482,6 +482,15 @@ def _scrape_fragrantica(url: str) -> dict:
                 if m:
                     result["year_released"] = int(m.group())
                     break
+        # Strategy 3: look in any div.cell (Fragrantica product info grid cells)
+        if not result.get("year_released"):
+            for el in soup.select("div.cell, td"):
+                txt = el.get_text()
+                if any(kw in txt.lower() for kw in ("launched", "year", "release", "introduced")):
+                    m = _YEAR_RE.search(txt)
+                    if m:
+                        result["year_released"] = int(m.group())
+                        break
 
         # Rating
         rating_el = soup.select_one('[itemprop="ratingValue"]')
@@ -489,10 +498,33 @@ def _scrape_fragrantica(url: str) -> dict:
             try: result["fragrantica_rating"] = float(rating_el.text.strip())
             except (ValueError, TypeError): pass
 
-        # Perfumer
+        # Perfumer — try multiple selector strategies
         for a in soup.select('a[href*="/noses/"]'):
-            result["perfumer"] = a.text.strip()
-            break
+            txt = a.get_text(strip=True)
+            if txt:
+                result["perfumer"] = txt
+                break
+        if not result.get("perfumer"):
+            # Fallback: look for label "Perfumer" / "Nose" in text, grab adjacent link or text
+            for el in soup.select("b, strong, span, td, div"):
+                label = el.get_text(strip=True).lower()
+                if label in ("perfumer:", "perfumer", "nose:", "nose", "noses:"):
+                    nxt = el.find_next_sibling()
+                    if nxt:
+                        txt = nxt.get_text(strip=True)
+                        if txt:
+                            result["perfumer"] = txt
+                            break
+                    parent = el.parent
+                    if parent:
+                        links = parent.select("a")
+                        for lnk in links:
+                            txt = lnk.get_text(strip=True)
+                            if txt and txt.lower() not in ("view more", "read more"):
+                                result["perfumer"] = txt
+                                break
+                    if result.get("perfumer"):
+                        break
 
         # Gender
         for el in soup.select("small, .gender"):
@@ -745,6 +777,9 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
                     merged[field] = majority
                 elif len(set(valid)) > 1:
                     conflicts.append({"field": field, "values": source_vals})
+                else:
+                    # Single uncontested source — accept it
+                    merged[field] = valid[0]
             continue
 
         # Perfumer: accept first match from any source, no majority needed
