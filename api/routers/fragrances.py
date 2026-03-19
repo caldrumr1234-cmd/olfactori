@@ -465,12 +465,23 @@ def _scrape_fragrantica(url: str) -> dict:
         accords = [a.text.strip() for a in soup.select(".cell.accord-box span, [class*='accord'] span")]
         if accords: result["main_accords"] = accords
 
-        # Year
-        for el in soup.select("b, strong"):
-            m = re.search(r'\b(19[5-9]\d|20[0-2]\d)\b', el.parent.get_text() if el.parent else "")
-            if m:
-                result["year_released"] = int(m.group())
-                break
+        # Year — extended range covers pre-1950 classics (e.g. 1916 ADP Colonia)
+        _YEAR_RE = re.compile(r'\b(1[6-9]\d\d|20[0-2]\d)\b')
+        # Strategy 1: paragraph text that mentions launch/creation (most reliable)
+        for el in soup.select("p, .cell, .fragranceDescriptionText, div.cell"):
+            txt = el.get_text()
+            if any(kw in txt.lower() for kw in ("launched", "introduced", "created", "since", "year:")):
+                m = _YEAR_RE.search(txt)
+                if m:
+                    result["year_released"] = int(m.group())
+                    break
+        # Strategy 2: year directly inside a <b>/<strong> element itself (not parent)
+        if not result.get("year_released"):
+            for el in soup.select("b, strong"):
+                m = _YEAR_RE.search(el.get_text())
+                if m:
+                    result["year_released"] = int(m.group())
+                    break
 
         # Rating
         rating_el = soup.select_one('[itemprop="ratingValue"]')
@@ -556,9 +567,9 @@ def _scrape_basenotes(brand: str, name: str) -> dict:
                 if notes_list:
                     result.setdefault(current_tier, []).extend(notes_list)
 
-        # Year
+        # Year — extended range covers pre-1950 classics
         for el in soup2.select("td, .meta-value, .fragrance-details td"):
-            m = re.search(r'\b(19[5-9]\d|20[0-2]\d)\b', el.text)
+            m = re.search(r'\b(1[6-9]\d\d|20[0-2]\d)\b', el.text)
             if m:
                 result["year_released"] = int(m.group())
                 break
@@ -630,9 +641,9 @@ def _scrape_parfumo(brand: str, name: str) -> dict:
                 result["main_accords"] = accords
                 break
 
-        # Year
+        # Year — extended range covers pre-1950 classics
         for el in soup2.select(".meta_content, .details_list dt, .details_list dd, .meta"):
-            m = re.search(r'\b(19[5-9]\d|20[0-2]\d)\b', el.text)
+            m = re.search(r'\b(1[6-9]\d\d|20[0-2]\d)\b', el.text)
             if m:
                 result["year_released"] = int(m.group())
                 break
@@ -727,7 +738,7 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
 
         # Special case: year outlier correction (e.g. 1809 vs 2009)
         if field == "year_released":
-            valid = [v for v in vals if isinstance(v, int) and 1900 <= v <= 2030]
+            valid = [v for v in vals if isinstance(v, int) and 1700 <= v <= 2030]
             if valid:
                 majority = _majority_value(valid)
                 if majority:
