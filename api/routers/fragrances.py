@@ -465,32 +465,46 @@ def _scrape_fragrantica(url: str) -> dict:
         accords = [a.text.strip() for a in soup.select(".cell.accord-box span, [class*='accord'] span")]
         if accords: result["main_accords"] = accords
 
-        # Year — extended range covers pre-1950 classics (e.g. 1916 ADP Colonia)
-        _YEAR_RE = re.compile(r'\b(1[6-9]\d\d|20[0-2]\d)\b')
-        # Strategy 1: look in the intro/description paragraph (Fragrantica puts "launched in YYYY" here)
-        for el in soup.select("p, .fragranceDescriptionText, div[class*='description']"):
-            txt = el.get_text()
-            if any(kw in txt.lower() for kw in ("launched", "introduced", "created", "since", "year", "release")):
-                m = _YEAR_RE.search(txt)
-                if m:
-                    result["year_released"] = int(m.group())
+        # Year — use targeted patterns so we don't grab stray years from reviews/ads
+        _YEAR_BARE = re.compile(r'\b(1[6-9]\d\d|20[0-2]\d)\b')
+        # Matches "launched in 1916", "introduced in 1916", "debuted 2001", etc.
+        _LAUNCH_RE = re.compile(
+            r'(?:launched?|introduced?|debuted?|released?|created|since)\s+(?:in\s+)?(\b(?:1[6-9]\d\d|20[0-2]\d)\b)',
+            re.IGNORECASE
+        )
+
+        # Strategy 1: JSON-LD structured data (most reliable, Fragrantica embeds this)
+        import json as _json
+        for script in soup.select('script[type="application/ld+json"]'):
+            try:
+                ld = _json.loads(script.string or "")
+                for key in ("datePublished", "releaseDate", "copyrightYear"):
+                    val = ld.get(key)
+                    if val:
+                        m = _YEAR_BARE.search(str(val))
+                        if m:
+                            result["year_released"] = int(m.group())
+                            break
+                if result.get("year_released"):
                     break
-        # Strategy 2: year directly inside a <b>/<strong> element itself (not parent)
+            except Exception:
+                pass
+
+        # Strategy 2: launch-context regex in description paragraphs
+        if not result.get("year_released"):
+            for el in soup.select("p, .fragranceDescriptionText, div[class*='description']"):
+                m = _LAUNCH_RE.search(el.get_text())
+                if m:
+                    result["year_released"] = int(m.group(1))
+                    break
+
+        # Strategy 3: <b>/<strong> element whose entire text IS a year (e.g. "Year: <b>1916</b>")
         if not result.get("year_released"):
             for el in soup.select("b, strong"):
-                m = _YEAR_RE.search(el.get_text())
+                m = re.fullmatch(r'\s*(1[6-9]\d\d|20[0-2]\d)\s*', el.get_text())
                 if m:
-                    result["year_released"] = int(m.group())
+                    result["year_released"] = int(m.group(1))
                     break
-        # Strategy 3: look in any div.cell (Fragrantica product info grid cells)
-        if not result.get("year_released"):
-            for el in soup.select("div.cell, td"):
-                txt = el.get_text()
-                if any(kw in txt.lower() for kw in ("launched", "year", "release", "introduced")):
-                    m = _YEAR_RE.search(txt)
-                    if m:
-                        result["year_released"] = int(m.group())
-                        break
 
         # Rating
         rating_el = soup.select_one('[itemprop="ratingValue"]')
@@ -599,11 +613,19 @@ def _scrape_basenotes(brand: str, name: str) -> dict:
                 if notes_list:
                     result.setdefault(current_tier, []).extend(notes_list)
 
-        # Year — extended range covers pre-1950 classics
+        # Year — prefer cells whose text IS a bare year, then launch-context pattern
+        _LAUNCH_RE_BN = re.compile(
+            r'(?:launched?|introduced?|debuted?|released?|created|since|year)\s*:?\s*(\b(?:1[6-9]\d\d|20[0-2]\d)\b)',
+            re.IGNORECASE
+        )
         for el in soup2.select("td, .meta-value, .fragrance-details td"):
-            m = re.search(r'\b(1[6-9]\d\d|20[0-2]\d)\b', el.text)
+            txt = el.get_text(strip=True)
+            if re.fullmatch(r'1[6-9]\d\d|20[0-2]\d', txt):
+                result["year_released"] = int(txt)
+                break
+            m = _LAUNCH_RE_BN.search(txt)
             if m:
-                result["year_released"] = int(m.group())
+                result["year_released"] = int(m.group(1))
                 break
 
         # Perfumer — Basenotes uses /noses/ not /perfumer/
@@ -673,11 +695,19 @@ def _scrape_parfumo(brand: str, name: str) -> dict:
                 result["main_accords"] = accords
                 break
 
-        # Year — extended range covers pre-1950 classics
-        for el in soup2.select(".meta_content, .details_list dt, .details_list dd, .meta"):
-            m = re.search(r'\b(1[6-9]\d\d|20[0-2]\d)\b', el.text)
+        # Year — prefer bare-year dd cells, then launch-context pattern
+        _LAUNCH_RE_PM = re.compile(
+            r'(?:launched?|introduced?|debuted?|released?|created|since|year)\s*:?\s*(\b(?:1[6-9]\d\d|20[0-2]\d)\b)',
+            re.IGNORECASE
+        )
+        for el in soup2.select(".details_list dd, .meta_content, .meta"):
+            txt = el.get_text(strip=True)
+            if re.fullmatch(r'1[6-9]\d\d|20[0-2]\d', txt):
+                result["year_released"] = int(txt)
+                break
+            m = _LAUNCH_RE_PM.search(txt)
             if m:
-                result["year_released"] = int(m.group())
+                result["year_released"] = int(m.group(1))
                 break
 
         # Perfumer — Parfumo links perfumers via /Perfumers/ path or labels in details
@@ -1000,6 +1030,12 @@ def enrich_rescrape(frag_id: int, db = Depends(get_db)):
         "conflicts": conflicts,
         "image": image_result,
         "sources_found": {k: bool(v) for k, v in sources.items() if k != "fragrantica_url"},
+        "raw_sources": {
+            "fragella":    {k: v for k, v in sources["fragella"].items() if k not in ("fragella_image_url",)},
+            "fragrantica": {k: v for k, v in sources["fragrantica"].items() if k not in ("fragrantica_image_url",)},
+            "basenotes":   sources["basenotes"],
+            "parfumo":     sources["parfumo"],
+        },
     }
 
 
