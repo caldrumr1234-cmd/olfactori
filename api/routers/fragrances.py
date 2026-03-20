@@ -3,12 +3,15 @@ api/routers/fragrances.py
 Full CRUD + search + multi-source enrichment
 """
 import json
+import logging
 import re
 import time
 import random
 import secrets
 import httpx
 from typing import Optional
+
+log = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from rapidfuzz import fuzz
@@ -439,7 +442,9 @@ def _scrape_fragrantica(url: str) -> dict:
         scraper = cloudscraper.create_scraper()
         _delay()
         resp = scraper.get(url, timeout=20)
+        log.info(f"Fragrantica fetch {url} → HTTP {resp.status_code} ({len(resp.text)} bytes)")
         if resp.status_code != 200:
+            log.warning(f"Fragrantica blocked: {resp.status_code} — first 200 chars: {resp.text[:200]}")
             return result
         soup = BeautifulSoup(resp.text, "lxml")
 
@@ -599,8 +604,8 @@ def _scrape_fragrantica(url: str) -> dict:
                 except (AttributeError, ValueError, TypeError):
                     pass
 
-    except Exception:
-        pass
+    except Exception as e:
+        log.error(f"_scrape_fragrantica exception for {url}: {e}", exc_info=True)
     return result
 
 
