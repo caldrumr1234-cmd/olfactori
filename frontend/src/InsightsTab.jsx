@@ -56,6 +56,12 @@ const css = `
   .ins-flag-pct { font-size: 11px; color: var(--text3); }
   .ins-loading { display: flex; align-items: center; gap: 8px; color: var(--text3);
                  font-size: 13px; padding: 40px 0; justify-content: center; }
+  @media (max-width: 768px) {
+    .ins-hero-grid { grid-template-columns: repeat(2, 1fr); }
+    .ins-grid { grid-template-columns: 1fr; }
+    .ins-hero-num { font-size: 26px; }
+    .ins-big-num { font-size: 36px; }
+  }
 `;
 
 const SEASON_COLORS = {

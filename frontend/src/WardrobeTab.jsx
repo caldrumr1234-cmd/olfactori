@@ -102,6 +102,11 @@ const css = `
   .log-brand { font-size: 11px; color: var(--text3); }
   .load-more-btn { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text3); padding: 10px; font-size: 12px; cursor: pointer; margin-top: 12px; font-family: var(--sans); transition: all 0.15s; }
   .load-more-btn:hover { border-color: var(--border2); color: var(--text2); }
+  @media (max-width: 480px) {
+    .wardrobe-location-input { width: 100%; }
+    .occasion-grid { grid-template-columns: repeat(2, 1fr); }
+    .wardrobe-result-name { font-size: 17px; }
+  }
 `;
 
 const WEATHER_ICONS = { clear:"☀️", cloud:"⛅", rain:"🌧️", snow:"❄️", fog:"🌫️", storm:"⛈️" };

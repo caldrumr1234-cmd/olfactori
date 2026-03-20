@@ -715,12 +715,98 @@ const css = `
   .scroll-top-btn.visible { opacity: 1; pointer-events: auto; }
   .scroll-top-btn:hover { transform: translateY(-2px); border-color: rgba(201,168,76,0.7); }
 
-  /* RESPONSIVE */
-  @media (max-width: 640px) {
+  /* ── MOBILE TAB BAR ─────────────────────────────────────── */
+  .mobile-tab-bar {
+    display: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 52px; z-index: 99;
+    padding: 0 4px;
+  }
+  .mobile-tab-bar::-webkit-scrollbar { display: none; }
+  .mobile-tab {
+    flex-shrink: 0;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--text3);
+    font-family: var(--sans); font-size: 11px; font-weight: 400;
+    padding: 10px 14px 8px;
+    cursor: pointer; transition: color 0.15s, border-color 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    white-space: nowrap;
+    margin-bottom: -1px;
+  }
+  .mobile-tab-icon { font-size: 17px; line-height: 1; }
+  .mobile-tab:hover { color: var(--blue); }
+  .mobile-tab.active { color: var(--gold); font-weight: 600; border-bottom-color: var(--gold); }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* NAV */
+    .nav { padding: 0 12px; height: 52px; }
+    .nav-logo { margin-right: 0; }
+    .nav-logo-name { font-size: 14px; }
     .nav-tabs { display: none; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-    .main { padding: 16px; }
+    .nav-right { gap: 5px; margin-left: auto; }
+    .icon-btn { width: 34px; height: 34px; font-size: 15px; }
+    .suggest-btn { padding: 6px 10px; font-size: 11px; gap: 4px; }
+    .suggest-btn-label { display: none; }
+
+    /* MOBILE TAB BAR */
+    .mobile-tab-bar { display: flex; }
+
+    /* MAIN */
+    .main { padding: 12px; }
+
+    /* TOOLBAR */
+    .toolbar { gap: 8px; }
+    .search-wrap { flex: 1 1 100%; order: -1; }
+    .filter-select { flex: 1; min-width: 0; font-size: 12px; padding: 8px 8px; }
+    .view-toggle { flex-shrink: 0; }
+    .count-badge { font-size: 11px; white-space: nowrap; }
+
+    /* FILTER PANEL */
+    .filter-panel { padding: 12px; gap: 10px; }
+    .filter-group { min-width: 100px; }
+
+    /* ALPHA NAV */
+    .alpha-nav { padding: 6px 8px; gap: 1px; }
+    .alpha-btn { width: 21px; height: 21px; font-size: 11px; }
+
+    /* GRID */
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    /* CARD */
+    .card-name { font-size: 12px; }
+    .card-brand { font-size: 10px; }
+
+    /* DRAWER */
     .drawer { width: 100vw; }
+    .drawer-hero { height: 220px; }
+
+    /* MODAL */
+    .modal-overlay { padding: 12px; align-items: flex-end; }
+    .modal { width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 16px 16px 12px 12px; }
+
+    /* SCROLL TO TOP */
+    .scroll-top-btn { bottom: 20px; right: 14px; width: 38px; height: 38px; font-size: 16px; }
+
+    /* TODAY I'M WEARING */
+    .wearing-strip { font-size: 12px; padding: 0.5rem 0.75rem; }
+  }
+
+  @media (max-width: 480px) {
+    .nav { padding: 0 10px; }
+    .nav-logo-name { font-size: 13px; }
+    .nav-logo-mark { width: 22px; height: 22px; font-size: 11px; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .main { padding: 10px; }
+    .toolbar { gap: 6px; }
+    .alpha-btn { width: 18px; height: 18px; font-size: 10px; }
+    .mobile-tab { padding: 9px 10px 7px; font-size: 10px; }
+    .mobile-tab-icon { font-size: 15px; }
   }
 `;
 
@@ -1991,16 +2077,34 @@ export default function Olfactori() {
               <div style={{display:"flex",gap:"6px"}}>
                 <button className="suggest-btn" onClick={() => setShowUserLogin(true)}
                   style={{padding:"6px 14px",fontSize:12}}>
-                  👤 User Sign In
+                  👤 <span className="suggest-btn-label">User Sign In</span>
                 </button>
                 <button className="suggest-btn" onClick={signIn}
                   style={{padding:"6px 14px",fontSize:12,opacity:0.7}}>
-                  🔑 Admin
+                  🔑 <span className="suggest-btn-label">Admin</span>
                 </button>
               </div>
             )}
           </div>
         </nav>
+
+        {/* MOBILE TAB BAR */}
+        <div className="mobile-tab-bar">
+          {tabs.map(t => {
+            const icons = {
+              collection:"🫧", insights:"📊", explore:"🎲", wishlist:"✨",
+              wardrobe:"☁️", shelves:"🗄", notes:"🌿", usedtohave:"📦",
+              decants:"🧪", admin:"⚙️"
+            };
+            return (
+              <button key={t.id} className={`mobile-tab ${tab===t.id?"active":""}`}
+                onClick={() => setTab(t.id)}>
+                <span className="mobile-tab-icon">{icons[t.id] || "•"}</span>
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
         {/* MAIN */}
         <main className="main">
