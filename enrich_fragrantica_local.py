@@ -196,18 +196,33 @@ def enrich_one(frag: dict, force: bool = False):
     print(f"  done")
 
 
+def find_by_name(frags: list, query: str) -> list:
+    """Return fragrances whose brand+name matches the query (substring or fuzzy)."""
+    q = query.lower().strip()
+    scored = []
+    for f in frags:
+        candidate = f"{f['brand']} {f['name']}".lower()
+        # Substring match scores 100
+        if q in candidate:
+            scored.append((100, f))
+        else:
+            score = fuzz.token_set_ratio(q, candidate)
+            if score >= 60:
+                scored.append((score, f))
+    scored.sort(key=lambda x: -x[0])
+    return [f for _, f in scored]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Local Fragrantica enrichment for Olfactori")
-    parser.add_argument("--all",   action="store_true", help="Enrich all fragrances with fragrantica_url")
-    parser.add_argument("--id",    type=int,            help="Enrich a single fragrance by ID")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--all",  action="store_true", help="Enrich all fragrances with fragrantica_url")
+    group.add_argument("--id",   type=int,            help="Enrich a single fragrance by ID")
+    group.add_argument("--name", type=str,            help='Enrich by name, e.g. --name "Vaporocindro"')
     parser.add_argument("--force", action="store_true", help="Re-scrape even if fields are already filled")
     args = parser.parse_args()
 
-    if not args.all and not args.id:
-        parser.print_help()
-        sys.exit(1)
-
-    print(f"Fetching fragrance list from Railway...")
+    print("Fetching fragrance list from Railway...")
     frags = get_fragrances()
     print(f"  {len(frags)} fragrances loaded\n")
 
@@ -217,7 +232,20 @@ def main():
             print(f"ID {args.id} not found")
             sys.exit(1)
         enrich_one(matches[0], force=args.force)
-    else:
+
+    elif args.name:
+        matches = find_by_name(frags, args.name)
+        if not matches:
+            print(f"No match found for '{args.name}'")
+            sys.exit(1)
+        if len(matches) > 1:
+            print(f"Found {len(matches)} matches — enriching best match first.")
+            for f in matches[:5]:
+                print(f"  [{f['id']}] {f['brand']} - {f['name']}")
+            print()
+        enrich_one(matches[0], force=args.force)
+
+    else:  # --all
         candidates = [f for f in frags if f.get("fragrantica_url")]
         if not args.force:
             candidates = [f for f in candidates if missing_fields(f)]
