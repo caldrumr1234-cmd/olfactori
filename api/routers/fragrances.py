@@ -368,17 +368,25 @@ def _find_fragrantica_url(brand: str, name: str) -> str | None:
     """
     Search Fragrantica directly and return the best matching perfume URL.
     Tries multiple search strategies for robustness.
+    Note: Fragrantica search results are JS-rendered, so only pre-loaded
+    featured links are in the static HTML. The fuzzy match threshold ensures
+    we only accept genuine hits.
     """
     try:
+        import cloudscraper
         from bs4 import BeautifulSoup
         target = f"{brand} {name}".lower()
+        scraper = cloudscraper.create_scraper()
 
         def search_ft(query: str):
             encoded = query.replace(" ", "+")
             url = f"https://www.fragrantica.com/search/?query={encoded}"
-            with httpx.Client() as client:
-                resp = _fetch(client, url)
-            if not resp:
+            try:
+                _delay()
+                resp = scraper.get(url, timeout=20)
+                if resp.status_code != 200:
+                    return None
+            except Exception:
                 return None
             soup = BeautifulSoup(resp.text, "lxml")
             best_url, best_score = None, 0
@@ -424,12 +432,14 @@ def _find_fragrantica_url(brand: str, name: str) -> str | None:
 
 def _scrape_fragrantica(url: str) -> dict:
     """Scrape a Fragrantica perfume page and return normalized data + image URL."""
+    import cloudscraper
     from bs4 import BeautifulSoup
     result = {}
     try:
-        with httpx.Client() as client:
-            resp = _fetch(client, url)
-        if not resp:
+        scraper = cloudscraper.create_scraper()
+        _delay()
+        resp = scraper.get(url, timeout=20)
+        if resp.status_code != 200:
             return result
         soup = BeautifulSoup(resp.text, "lxml")
 
@@ -447,31 +457,48 @@ def _scrape_fragrantica(url: str) -> dict:
                     img_src = "https://www.fragrantica.com" + img_src
                 result["fragrantica_image_url"] = img_src
 
-        # Notes pyramid
+        # Notes pyramid — new Fragrantica layout uses <pyramid-level-new notes="top|middle|base">
         notes = {"top": [], "middle": [], "base": []}
-        for cell in soup.select(".cell.pyramid-cell, [class*='pyramid']"):
-            label = cell.select_one("label, .notes-box label")
-            if not label:
-                continue
-            label_text = label.text.strip().lower()
-            items = []
-            for el in cell.select("img[alt], span.cell-name"):
-                n = el.get("alt", el.text.strip())
-                if n: items.append(n)
-            if "top" in label_text:       notes["top"]    = items
-            elif "heart" in label_text or "middle" in label_text: notes["middle"] = items
-            elif "base" in label_text:    notes["base"]   = items
+        for pln in soup.find_all("pyramid-level-new"):
+            tier = pln.get("notes", "").lower()
+            items = [s.get_text(strip=True) for s in pln.select(".pyramid-note-label") if s.get_text(strip=True)]
+            if tier == "top":    notes["top"]    = items
+            elif tier == "middle": notes["middle"] = items
+            elif tier == "base": notes["base"]   = items
+        # Fallback: old layout used .cell.pyramid-cell with a label element
+        if not any(notes.values()):
+            for cell in soup.select(".cell.pyramid-cell"):
+                label = cell.select_one("label, .notes-box label")
+                if not label:
+                    continue
+                label_text = label.text.strip().lower()
+                items = []
+                for el in cell.select("img[alt], span.cell-name"):
+                    n = el.get("alt", el.text.strip())
+                    if n: items.append(n)
+                if "top" in label_text:                               notes["top"]    = items
+                elif "heart" in label_text or "middle" in label_text: notes["middle"] = items
+                elif "base" in label_text:                            notes["base"]   = items
         if notes["top"]:    result["top_notes"]    = notes["top"]
         if notes["middle"]: result["middle_notes"] = notes["middle"]
         if notes["base"]:   result["base_notes"]   = notes["base"]
 
-        # Accords
-        accords = [a.text.strip() for a in soup.select(".cell.accord-box span, [class*='accord'] span")]
-        if accords: result["main_accords"] = accords
+        # Accords — new layout: h6 "main accords" -> sibling div -> span.truncate
+        h6_accord = soup.find("h6", string=re.compile(r"main accords", re.I))
+        if h6_accord:
+            sib = h6_accord.find_next_sibling()
+            if sib:
+                accords = [s.get_text(strip=True) for s in sib.select("span.truncate") if s.get_text(strip=True)]
+                if accords:
+                    result["main_accords"] = accords
+        # Fallback: old layout
+        if not result.get("main_accords"):
+            accords = [a.text.strip() for a in soup.select(".cell.accord-box span") if a.text.strip()]
+            if accords:
+                result["main_accords"] = accords
 
         # Year — use targeted patterns so we don't grab stray years from reviews/ads
         _YEAR_BARE = re.compile(r'\b(1[6-9]\d\d|20[0-2]\d)\b')
-        # Matches "launched in 1916", "introduced in 1916", "debuted 2001", etc.
         _LAUNCH_RE = re.compile(
             r'(?:launched?|introduced?|debuted?|released?|created|since)\s+(?:in\s+)?(\b(?:1[6-9]\d\d|20[0-2]\d)\b)',
             re.IGNORECASE
@@ -516,12 +543,14 @@ def _scrape_fragrantica(url: str) -> dict:
             try: result["fragrantica_rating"] = float(rating_el.text.strip())
             except (ValueError, TypeError): pass
 
-        # Perfumer — try multiple selector strategies
+        # Perfumer — require a specific nose path (filter out generic /noses/ index links)
         for a in soup.select('a[href*="/noses/"]'):
-            txt = a.get_text(strip=True)
-            if txt:
-                result["perfumer"] = txt
-                break
+            href = a.get("href", "")
+            if re.search(r"/noses/\w", href):  # skip generic /noses/ links
+                txt = a.get_text(strip=True)
+                if txt:
+                    result["perfumer"] = txt
+                    break
         if not result.get("perfumer"):
             # Fallback: look for label "Perfumer" / "Nose" in text, grab adjacent link or text
             for el in soup.select("b, strong, span, td, div"):
@@ -544,26 +573,27 @@ def _scrape_fragrantica(url: str) -> dict:
                     if result.get("perfumer"):
                         break
 
-        # Gender
-        for el in soup.select("small, .gender"):
-            txt = el.text.strip().lower()
-            if "for women" in txt and "men" in txt:
-                result["gender_class"] = "Unisex"
-                break
-            elif "for women" in txt:
-                result["gender_class"] = "Female"
-                break
-            elif "for men" in txt:
-                result["gender_class"] = "Male"
+        # Gender — new layout: teal span with "for women/men" text; old: small/.gender
+        def _parse_gender(txt: str) -> str | None:
+            t = txt.strip().lower()
+            if "for women" in t and "men" in t: return "Unisex"
+            if "for women" in t:                return "Female"
+            if "for men" in t:                  return "Male"
+            return None
+
+        for el in soup.select("span[class*='teal'], small, .gender"):
+            g = _parse_gender(el.get_text())
+            if g:
+                result["gender_class"] = g
                 break
 
-        # Longevity + Sillage from vote bars
+        # Longevity + Sillage — old vote bars (.voting-small-chart-size) no longer in new layout
         for row in soup.select(".voting-small-chart-size"):
             label = row.get_text(strip=True).lower()
             bar = row.find_next("span", class_=re.compile("vote"))
             if bar:
                 try:
-                    val = float(re.search(r'[\d.]+', bar.text).group()) / 2  # normalize to /5
+                    val = float(re.search(r'[\d.]+', bar.text).group()) / 2
                     if "longevity" in label:   result["longevity_rating"] = round(val, 1)
                     elif "sillage" in label:   result["sillage_rating"]   = round(val, 1)
                 except (AttributeError, ValueError, TypeError):
@@ -867,20 +897,24 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
 # ── PERFUMER FRAGRANTICA FALLBACK ────────────────────────────
 def _fetch_perfumer_fragrantica(brand: str, name: str, fragrantica_url: str = None) -> str | None:
     """Last-resort perfumer lookup from Fragrantica. Returns name string or None."""
+    import cloudscraper
     from bs4 import BeautifulSoup
     try:
         ft_url = fragrantica_url or _find_fragrantica_url(brand, name)
         if not ft_url:
             return None
-        with httpx.Client() as client:
-            resp = _fetch(client, ft_url)
-        if not resp:
+        scraper = cloudscraper.create_scraper()
+        _delay()
+        resp = scraper.get(ft_url, timeout=20)
+        if resp.status_code != 200:
             return None
         soup = BeautifulSoup(resp.text, "lxml")
         for a in soup.select('a[href*="/noses/"]'):
-            txt = a.get_text(strip=True)
-            if txt:
-                return txt
+            href = a.get("href", "")
+            if re.search(r"/noses/\w", href):
+                txt = a.get_text(strip=True)
+                if txt:
+                    return txt
     except Exception:
         pass
     return None
