@@ -10,7 +10,8 @@ google-auth-oauthlib==1.2.0
 httpx==0.27.0
 beautifulsoup4==4.12.3
 lxml==5.2.1              # faster BS4 parser
-cloudscraper==1.2.71     # Cloudflare bypass for Fragrantica
+cloudscraper==1.2.71     # kept for reference; replaced by curl-cffi
+curl-cffi==0.14.0        # TLS fingerprint impersonation — bypasses Cloudflare on server IPs
 
 # Fuzzy matching
 rapidfuzz==3.9.3

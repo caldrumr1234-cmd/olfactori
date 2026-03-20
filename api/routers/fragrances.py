@@ -376,17 +376,16 @@ def _find_fragrantica_url(brand: str, name: str) -> str | None:
     we only accept genuine hits.
     """
     try:
-        import cloudscraper
         from bs4 import BeautifulSoup
+        from curl_cffi import requests as cffi_requests
         target = f"{brand} {name}".lower()
-        scraper = cloudscraper.create_scraper()
 
         def search_ft(query: str):
             encoded = query.replace(" ", "+")
             url = f"https://www.fragrantica.com/search/?query={encoded}"
             try:
                 _delay()
-                resp = scraper.get(url, timeout=20)
+                resp = cffi_requests.get(url, impersonate="chrome110", timeout=20)
                 if resp.status_code != 200:
                     return None
             except Exception:
@@ -436,24 +435,15 @@ def _find_fragrantica_url(brand: str, name: str) -> str | None:
 def _scrape_fragrantica(url: str) -> dict:
     """Scrape a Fragrantica perfume page and return normalized data + image URL."""
     from bs4 import BeautifulSoup
+    from curl_cffi import requests as cffi_requests
     result = {}
-    _ft_error = None
     try:
-        try:
-            import cloudscraper
-            scraper = cloudscraper.create_scraper()
-        except Exception as e:
-            _ft_error = f"cloudscraper import failed: {e}"
-            print(f"[fragrantica] {_ft_error}")
-            result["_debug_error"] = _ft_error
-            return result
         _delay()
-        resp = scraper.get(url, timeout=20)
+        resp = cffi_requests.get(url, impersonate="chrome110", timeout=20)
         print(f"[fragrantica] GET {url} → {resp.status_code} ({len(resp.text)} bytes)")
         if resp.status_code != 200:
-            _ft_error = f"HTTP {resp.status_code}: {resp.text[:300]}"
-            print(f"[fragrantica] blocked: {_ft_error}")
-            result["_debug_error"] = _ft_error
+            result["_debug_error"] = f"HTTP {resp.status_code}: {resp.text[:300]}"
+            print(f"[fragrantica] blocked: {result['_debug_error']}")
             return result
         soup = BeautifulSoup(resp.text, "lxml")
 
@@ -912,15 +902,14 @@ def _merge_sources(sources: list[dict]) -> tuple[dict, list[dict]]:
 # ── PERFUMER FRAGRANTICA FALLBACK ────────────────────────────
 def _fetch_perfumer_fragrantica(brand: str, name: str, fragrantica_url: str = None) -> str | None:
     """Last-resort perfumer lookup from Fragrantica. Returns name string or None."""
-    import cloudscraper
     from bs4 import BeautifulSoup
+    from curl_cffi import requests as cffi_requests
     try:
         ft_url = fragrantica_url or _find_fragrantica_url(brand, name)
         if not ft_url:
             return None
-        scraper = cloudscraper.create_scraper()
         _delay()
-        resp = scraper.get(ft_url, timeout=20)
+        resp = cffi_requests.get(ft_url, impersonate="chrome110", timeout=20)
         if resp.status_code != 200:
             return None
         soup = BeautifulSoup(resp.text, "lxml")
