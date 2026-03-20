@@ -1254,7 +1254,7 @@ def get_similar(frag_id: int, db = Depends(get_db)):
 def batch_enrich(db = Depends(get_db)):
     """
     Batch enrich all fragrances with missing data.
-    Uses Fragella + Basenotes + Parfumo only (no Fragrantica scraping).
+    Uses Fragella + Fragrantica (when fragrantica_url is stored) + Basenotes + Parfumo.
     Perfumer: first match wins. All other fields: require 2 matching sources.
     Images are skipped entirely.
     Auto-applies updates without user confirmation.
@@ -1272,16 +1272,18 @@ def batch_enrich(db = Depends(get_db)):
 
         brand, name = frag["brand"], frag["name"]
         try:
-            # Fetch Fragella + Basenotes + Parfumo only
+            # Fetch Fragella + Fragrantica (if URL stored) + Basenotes + Parfumo
             sources = {}
             fe = _fetch_fragella(brand, name)
             sources["fragella"] = _normalize_fragella(fe) if fe else {}
+            ft_url = frag.get("fragrantica_url")
+            sources["fragrantica"] = _scrape_fragrantica(ft_url) if ft_url else {}
             sources["basenotes"] = _scrape_basenotes(brand, name)
             sources["parfumo"]   = _scrape_parfumo(brand, name)
 
             merged, _ = _merge_sources([
                 sources["fragella"],
-                {},  # fragrantica slot empty
+                sources["fragrantica"],
                 sources["basenotes"],
                 sources["parfumo"],
             ])
