@@ -435,16 +435,25 @@ def _find_fragrantica_url(brand: str, name: str) -> str | None:
 
 def _scrape_fragrantica(url: str) -> dict:
     """Scrape a Fragrantica perfume page and return normalized data + image URL."""
-    import cloudscraper
     from bs4 import BeautifulSoup
     result = {}
+    _ft_error = None
     try:
-        scraper = cloudscraper.create_scraper()
+        try:
+            import cloudscraper
+            scraper = cloudscraper.create_scraper()
+        except Exception as e:
+            _ft_error = f"cloudscraper import failed: {e}"
+            print(f"[fragrantica] {_ft_error}")
+            result["_debug_error"] = _ft_error
+            return result
         _delay()
         resp = scraper.get(url, timeout=20)
-        log.info(f"Fragrantica fetch {url} → HTTP {resp.status_code} ({len(resp.text)} bytes)")
+        print(f"[fragrantica] GET {url} → {resp.status_code} ({len(resp.text)} bytes)")
         if resp.status_code != 200:
-            log.warning(f"Fragrantica blocked: {resp.status_code} — first 200 chars: {resp.text[:200]}")
+            _ft_error = f"HTTP {resp.status_code}: {resp.text[:300]}"
+            print(f"[fragrantica] blocked: {_ft_error}")
+            result["_debug_error"] = _ft_error
             return result
         soup = BeautifulSoup(resp.text, "lxml")
 
@@ -605,7 +614,8 @@ def _scrape_fragrantica(url: str) -> dict:
                     pass
 
     except Exception as e:
-        log.error(f"_scrape_fragrantica exception for {url}: {e}", exc_info=True)
+        print(f"[fragrantica] exception for {url}: {type(e).__name__}: {e}")
+        result["_debug_error"] = f"{type(e).__name__}: {e}"
     return result
 
 
@@ -1078,6 +1088,10 @@ def enrich_rescrape(frag_id: int, db = Depends(get_db)):
             "fragrantica": {k: v for k, v in sources["fragrantica"].items() if k not in ("fragrantica_image_url",)},
             "basenotes":   sources["basenotes"],
             "parfumo":     sources["parfumo"],
+        },
+        "debug": {
+            "fragrantica_url": sources.get("fragrantica_url"),
+            "fragrantica_error": sources["fragrantica"].get("_debug_error"),
         },
     }
 
