@@ -1172,6 +1172,11 @@ def apply_enrichment(frag_id: int, payload: dict, db = Depends(get_db)):
         if field in updates and isinstance(updates[field], list):
             updates[field] = json.dumps(updates[field])
 
+    # If a new fragella image is being applied, clear any stale R2 cache so the
+    # new image is shown (R2 takes display priority over fragella_image_url).
+    if "fragella_image_url" in updates:
+        updates["r2_image_url"] = None
+
     updates["enrichment_status"] = "success"
     updates["enrichment_locked"] = 1 if lock else 0
     updates["manually_edited"]   = 1
