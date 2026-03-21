@@ -266,8 +266,8 @@ const css = `
     overflow: hidden; position: relative;
   }
   .card-img-inner {
-    width: 88%; height: 88%;
-    background: transparent;
+    width: 82%; aspect-ratio: 1;
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
   }
