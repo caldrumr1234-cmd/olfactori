@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from rapidfuzz import fuzz
 from api.database import get_db, rows_to_list, row_to_dict
+from api.routers.images import mirror_url_to_r2
 
 router = APIRouter()
 
@@ -221,7 +222,7 @@ def create_fragrance(data: FragranceCreate, db = Depends(get_db)):
 
 # ── UPDATE ────────────────────────────────────────────────────
 @router.patch("/{frag_id}")
-def update_fragrance(frag_id: int, data: FragranceUpdate, db = Depends(get_db)):
+async def update_fragrance(frag_id: int, data: FragranceUpdate, db = Depends(get_db)):
     row = db.execute("SELECT * FROM fragrances WHERE id = ?", (frag_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Fragrance not found")
@@ -237,6 +238,14 @@ def update_fragrance(frag_id: int, data: FragranceUpdate, db = Depends(get_db)):
 
     if not updates:
         return row_to_dict(row)
+
+    # Auto-mirror custom image to R2 whenever it changes.
+    if "custom_image_url" in updates and updates["custom_image_url"]:
+        r2_url, err = await mirror_url_to_r2(updates["custom_image_url"], frag_id)
+        if r2_url:
+            updates["r2_image_url"] = r2_url
+        else:
+            print(f"[R2] auto-mirror failed for frag {frag_id}: {err}")
 
     updates["manually_edited"] = 1
     set_clause = ", ".join(f"{k} = ?" for k in updates)
@@ -1155,7 +1164,7 @@ def enrich_image_preview(frag_id: int, db = Depends(get_db)):
 
 
 @router.post("/{frag_id}/enrich/apply")
-def apply_enrichment(frag_id: int, payload: dict, db = Depends(get_db)):
+async def apply_enrichment(frag_id: int, payload: dict, db = Depends(get_db)):
     """
     Apply pre-reviewed enrichment data.
     payload: { "data": {...}, "lock": bool }
@@ -1172,10 +1181,14 @@ def apply_enrichment(frag_id: int, payload: dict, db = Depends(get_db)):
         if field in updates and isinstance(updates[field], list):
             updates[field] = json.dumps(updates[field])
 
-    # If a new fragella image is being applied, clear any stale R2 cache so the
-    # new image is shown (R2 takes display priority over fragella_image_url).
-    if "fragella_image_url" in updates:
-        updates["r2_image_url"] = None
+    # Auto-mirror new image to R2 so it always serves from Cloudflare.
+    image_url = updates.get("fragella_image_url") or updates.get("custom_image_url")
+    if image_url:
+        r2_url, err = await mirror_url_to_r2(image_url, frag_id)
+        if r2_url:
+            updates["r2_image_url"] = r2_url
+        else:
+            print(f"[R2] auto-mirror failed for frag {frag_id}: {err}")
 
     updates["enrichment_status"] = "success"
     updates["enrichment_locked"] = 1 if lock else 0
